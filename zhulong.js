@@ -16,14 +16,9 @@ if (url.indexOf(vip) != -1) {
     obj.result.is_vip = 1;
     obj.result.vip_level = 1;
     body = JSON.stringify(obj);
-    
 }
-
 if (url.indexOf(buy) != -1) {
     obj.result.is_buy = 1;
     body = JSON.stringify(obj);
-    
 }
-
 $done({body});
-
