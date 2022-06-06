@@ -2,7 +2,7 @@
 app下载地址：商店搜索：少儿趣配音
 ^https?:\/\/childapi40.qupeiyin.com url script-response-body seqpy.js
 MITM = *.qupeiyin.com
-作者：清清情
+作者：清清情  时间2022年6月6日
 */
 
 var body = $response.body;
