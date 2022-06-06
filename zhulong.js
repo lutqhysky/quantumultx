@@ -1,6 +1,6 @@
 /*
-app下载地址：商店搜索：知音漫客
-^https?:\/\/(www|f|m|newoss|edu).zhulong\.com(\/ucenter\/prod-api/\personal\/myinfo?|edu\/prod-api\/lesson\/lesson\/getScheduleByLessonId?) url script-response-body zhulong.js
+app下载地址：商店搜索：筑龙学社（现已下载，商店最终版本可用）
+^https?:\/\/(www|m).zhulong\.com url script-response-body zhulong.js
 MITM = *.zhulong.com
 作者：清清情
 */
