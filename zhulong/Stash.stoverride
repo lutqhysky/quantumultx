@@ -3,7 +3,7 @@ desc: 解锁视频vip课程观看
 
 http:
   mitm:
-    - '*.zhulong.com'
+    - "*.zhulong.com"
   script:
     - match: ^https?:\/\/(www|m).zhulong.com\/(ucenter/prod-api/personal/myinfo/getUserInfo|edu/prod-api/lesson/lesson/getScheduleByLessonId|/ucenter/prod-api/personal/History/lessonview|edu/prod-api/lesson/lesson/getLesson|edu/prod-api/lesson/lesson/play|bbs/prod-api/thread/thread/getThreadForTid)
       name: zhulong.response
