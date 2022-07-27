@@ -12,6 +12,6 @@ http:
       timeout: 10
       
 script-providers:
-  zulong:
+  zhulong:
     url: https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/zhulong/Script/zhulong.js
     interval: 86400
