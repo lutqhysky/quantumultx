@@ -1,5 +1,5 @@
 /*
-app下载地址：商店搜索：筑龙
+app下载地址：商店搜索：筑龙 时间 ：2022-7-27
 ^https?:\/\/(www|m).zhulong.com\/(ucenter/prod-api/personal/myinfo/getUserInfo|edu/prod-api/lesson/lesson/getScheduleByLessonId|/ucenter/prod-api/personal/History/lessonview|edu/prod-api/lesson/lesson/getLesson|edu/prod-api/lesson/lesson/play|bbs/prod-api/thread/thread/getThreadForTid) url script-response-body zhulong.js
 MITM = *.zhulong.com
 作者：清清情
@@ -35,7 +35,7 @@ if (url.indexOf(buybuy) != -1) {
 if (url.indexOf(play) != -1) {
     obj.result.is_vip = 1;
     obj.result.is_buy = 1;
-    body = JSON.stringify(obj);    
+    body = JSON.stringify (obj);    
 }
 if (url.indexOf(down) != -1) {
     obj.result.can_down = 1;
