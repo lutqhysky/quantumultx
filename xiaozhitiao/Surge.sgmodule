@@ -1,0 +1,10 @@
+#!name=小纸条
+#!desc=解锁本地会员(2022.07.28)
+#!openUrl=https://github.com/I-am-R-E/Functional-Store-Hub/tree/Master/WPSOffice
+#!author=@R·E https://t.me/Functional_Store_Hub
+
+[Script]
+小纸条 = type=http-response,pattern=^https?:https:\/\/app1\.zuowenzhitiao\.com\/user\/common\/getPersonInfo,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/xiaozhitiao/Script/xiaozhitiao.js,script-update-interval=0
+
+[MITM]
+hostname =  *.zuowenzhitiao.com
