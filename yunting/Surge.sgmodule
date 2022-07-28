@@ -1,0 +1,11 @@
+#!name=云听
+#!desc=解锁vip音频
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/yunting
+#!清清情
+#!2022-7-28
+
+[Script]
+云听 = type=http-response,pattern=^http:\/\/getway.radio.cn\/app*,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yunting/Script/yunting.js,script-update-interval=0
+
+[MITM]
+hostname = getway.radio.cn
