@@ -4,7 +4,7 @@
 #!清清情 2022-7-27
 
 [Script]
-配音秀 = type=http-response,pattern=^https?:\/\/iosapi.peiyinxiu.com\/Api\/user,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/peiyinxiu/Script/peiyinxiu.js,script-update-interval=0
+配音秀 = type=http-response,pattern=^https?:\/\/iosapi.peiyinxiu.com,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/peiyinxiu/Script/peiyinxiu.js,script-update-interval=0
 
 [MITM]
 hostname = *.peiyinxiu.com
