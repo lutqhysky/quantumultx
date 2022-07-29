@@ -13,6 +13,7 @@ const vip = '/api/user/me';
 
 if (url.indexOf(vip) != -1) {
     obj.data.isVip = 1;
+    obj.data.vip_end_time = 9876543210000;
     body = JSON.stringify(obj);
     
 }
