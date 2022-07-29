@@ -1,6 +1,6 @@
 /*
 app下载地址：商店搜索：配音秀
-^https?:\/\/iosapi.peiyinxiu.com\/Api\/user url script-response-body peiyinxiu.js
+^https?:\/\/iosapi.peiyinxiu.com url script-response-body peiyinxiu.js
 MITM = *.peiyinxiu.com
 作者：清清情
 */
