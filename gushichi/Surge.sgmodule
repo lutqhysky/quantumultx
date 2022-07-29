@@ -1,0 +1,10 @@
+#!name=古诗词
+#!desc=解锁vip(2022.07.27)
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/gushichi
+#!清清情 2022-7-27
+
+[Script]
+古诗词 = type=http-response,pattern=^https?:\/\/gushici.91iread.com,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js,script-update-interval=0
+
+[MITM]
+hostname = gushici.91iread.com
