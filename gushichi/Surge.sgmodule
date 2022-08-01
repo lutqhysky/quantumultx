@@ -4,7 +4,7 @@
 #!清清情 2022-7-27
 
 [Script]
-古诗词 = type=http-response,pattern=^https?:\/\/gushici.91iread.com,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js,script-update-interval=0
+古诗词 = type=http-response,pattern=^https?:\/\/gushici.91iread.com:8011/api\/(user\/me|/iap/verifyorder),requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js,script-update-interval=0
 
 [MITM]
 hostname = gushici.91iread.com
