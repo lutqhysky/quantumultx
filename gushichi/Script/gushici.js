@@ -21,4 +21,3 @@ if (url.indexOf(buy) != -1) {
     body = JSON.stringify(obj);
 }
 $done({body});
-https://gushici.91iread.com:8011/api/iap/verifyorder?version=ios_2.4
