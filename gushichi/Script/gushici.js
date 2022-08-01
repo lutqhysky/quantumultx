@@ -1,6 +1,6 @@
 /*
 app下载地址：商店搜索：古诗词
-^https?:\/\/gushici.91iread.com url script-response-body gushici.js
+^https?:\/\/gushici.91iread.com url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
 MITM =gushici.91iread.com
 作者：清清情
 */
