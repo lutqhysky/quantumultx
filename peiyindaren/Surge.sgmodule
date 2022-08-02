@@ -1,0 +1,10 @@
+#!name=配音达人
+#!desc=解锁vip(2022.08.02)
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/peiyindaren
+#!清清情 2022-08-02
+
+[Script]
+配音秀 = type=http-response,pattern=^https?:\/\/idubbing.csweimei.cn,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/peiyindaren/Script/peiyindaren.js,script-update-interval=0
+
+[MITM]
+hostname = *.csweimei.cn
