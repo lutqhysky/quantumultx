@@ -22,7 +22,6 @@ if (url.indexOf(vip) != -1) {
 if (url.indexOf(vip2) != -1) {
     obj.data.is_vip = 1;
     obj.data.isRenewal = 1;
-    obj.data.vipLevel = 10;
     obj.data.vip_end_time = 9876543210;
     obj.data.is_can_apply = 1;
     obj.data.tools.status = 1;
