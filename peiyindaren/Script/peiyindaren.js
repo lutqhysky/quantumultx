@@ -21,3 +21,4 @@ if (url.indexOf(vip) != -1) {
     body = JSON.stringify(obj);
 }
 $done({body});
+$done({body:JSON.stringify(body)})
