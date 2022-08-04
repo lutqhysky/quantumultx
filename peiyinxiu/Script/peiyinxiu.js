@@ -24,12 +24,8 @@ if (url.indexOf(vip2) != -1) {
     obj.data.isRenewal = 1;
     obj.data.vipLevel = 10;
     obj.data.vip_end_time = 9876543210;
-    obj.data.end_time = 2099-08-04 13:45:44;
     obj.data.is_can_apply = 1;
-    obj.data.tools.type = 1;
-    obj.data.tools.isEvent = 1;
     obj.data.tools.status = 1;
-    obj.data.tools.endTime = 2099-08-04 13:45:44;
     body = JSON.stringify(obj);
 }
 $done({body});
