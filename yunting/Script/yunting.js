@@ -1,7 +1,7 @@
 /* 
  app下载地址：商店搜索：云听 时间 ：2022-08-01 
- ^https?:\/\/http://39.106.98.80 url script-response-body zhulong.js 
- MITM = 39.106.98.80
+ ^https?:\/\/getway.radio.cn url script-response-body zhulong.js 
+ MITM = 39.106.98.80, getway.radio.cn
  作者：清清情 
  */ 
 var body = $response.body; 
