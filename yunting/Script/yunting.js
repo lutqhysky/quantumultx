@@ -8,10 +8,18 @@ var body = $response.body;
 var url = $request.url; 
 var obj = JSON.parse(body); 
 const vip = '/app2355d832116cc8bd/2b31294abeefdf0bfc305dd63fd052c5/9fd11b27cf4382ad25557f49496f7032'; 
+const buy = '/ytsrv/srv/appUser/getUserInfoH5'; 
 if (url.indexOf(vip) != -1) { 
        obj.isPurchased = 1;
        obj.isSubscribe = 1;
        obj.isVip = 1;
+       body = JSON.stringify(obj);  
+ } 
+if (url.indexOf(buy) != -1) { 
+       obj.object.baseInfo.isVip = 1;
+       obj.object.baseInfo.vipTime = "2029-12-12";
+       obj.object.baseInfo.user_type = 6;
+       obj.object.baseInfo.iconStatus = 99999;
        body = JSON.stringify(obj);  
  } 
 $done({body}); 
