@@ -1,7 +1,7 @@
 /* 
  app下载地址：商店搜索：云听 时间 ：2022-08-01 
  ^https?:\/\/getway.radio.cn url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yunting/Script/yunting.js
- MITM = 39.106.98.80, getway.radio.cn
+ MITM = 39.106.98.80, getway.radio.cn, ytapi.radio.cn
  作者：清清情 
  */ 
 var body = $response.body; 
