@@ -1,6 +1,6 @@
 /* 
  app下载地址：商店搜索：Readmoo 时间 ：2022-08-01 
- ^https?:\/\/https://api.readmoo.com url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Readmoo/Script/Readmoo.js
+ ^https?:\/\/api.readmoo.com url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Readmoo/Script/Readmoo.js
  MITM = api.readmoo.com
  作者：清清情 
  */ 
