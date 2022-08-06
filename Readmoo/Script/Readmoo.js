@@ -11,6 +11,6 @@ const buy = '/store/v3/books/210000175000101/reviews';
  
 if (url.indexOf(buy) != -1) { 
       obj.included.attributes.subscribable = true; 
-body = JSON.stringify(obj);  
+      body = JSON.stringify(obj);  
 } 
 $done({body}); 
