@@ -1,0 +1,16 @@
+/* 
+ app下载地址：商店搜索：Readmoo 时间 ：2022-08-01 
+ ^https?:\/\/https://api.readmoo.com url script-response-body Readmoo.js 
+ MITM = api.readmoo.com
+ 作者：清清情 
+ */ 
+ var body = $response.body; 
+ var url = $request.url; 
+ var obj = JSON.parse(body); 
+const buy = '/store/v3/books/210000175000101/reviews'; 
+ 
+  if (url.indexOf(buy) != -1) { 
+ obj.included.attributes.subscribable = true; 
+ body = JSON.stringify(obj);  
+ } 
+ $done({body}); 
