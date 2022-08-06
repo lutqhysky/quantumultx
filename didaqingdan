@@ -1,5 +1,5 @@
 /*
-TickTick (Tick list) unlock pro
+滴答清单，解锁vip 2022-08-10
 QX:
 ^https:\/\/(ticktick|dida365)\.com\/api\/v2\/user\/status url script-response-body https://raw.githubusercontent.com/NobyDa/Script/master/QuantumultX/File/DiDaQingDan.js
 
