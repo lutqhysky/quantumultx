@@ -1,43 +1,49 @@
-/*  
-脚本功能：傲软抠图解锁会员
-软件版本：1.5.9（商店最新版）
-脚本作者：king
-下载地址：http://t.cn/A6xBOE5d
-更新时间：2022.5.17
-电报频道：https://t.me/yqc_123
-问题反馈：https://t.me/yqc_007
-使用声明：⚠️⚠️⚠️此脚本仅供学习与交流，
-        请勿转载与贩卖！⚠️⚠️⚠️
+/***********************************
 
-更新日志：2022.5.17                1.5.9                  
-         2021.11.20               1.5.1
-使用方法: 打开规则 登录账号即可
-转载大佬的。。
-
-************ QX ***************
-
+> 應用名稱：傲軟摳圖
+> 軟件版本：1.5.4
+> 下載地址：https://apps.apple.com/cn/app/id1490054676
+> 腳本作者：Cuttlefish
+> 微信賬號：墨魚手記
+> 更新時間：2022-02-25
+> 通知頻道：https://t.me/ddgksf2021
+> 問題反饋：https://t.me/ddgksf2013_bot
+> 特别說明：本腳本僅供學習交流使用，禁止轉載售賣
+ 
 [rewrite_local]
 
-# 傲软抠图解锁会员
-^https?:(.+).aoscdn.com/app/aimage/usersInfo$ url script-response-body https://raw.githubusercontent.com/nameking77/Qx/main/rewrite/arkt.js
-[mitm] 
-
-hostname = *.aoscdn.com
-********** 小火箭 **************
-
-[Script]
-
-傲软抠图 = type=http-response,script-path=https://raw.githubusercontent.com/nameking77/Qx/main/rewrite/arkt.js,pattern=^https?:(.+).aoscdn.com/app/aimage/usersInfo$,max-size=131072,requires-body=true,timeout=10,enable=true
+# ～ 傲軟摳圖解鎖會員權限（2022-02-25）@ddgksf2013
+https?:\/\/gw\.aoscdn\.com\/base\/vip\/client\/authorizations$ url script-response-body https://raw.githubusercontent.com/ddgksf2013/Cuttlefish/master/Crack/apowersoft.js
 
 [mitm] 
 
-hostname = *.aoscdn.com
-*******************************
+hostname=gw.aoscdn.com
 
-*/
+***********************************/
 
 
-var body = $response.body
-      .replace(/\"is_activated\":\d/g, "\"is_activated\":1")
-      .replace(/\"expired_at\":\d/g, "\"expired_at\":4476655324");
-$done({ body });
+
+var cuttlefish ={"warning":"本腳本僅供學習交流使用，禁止轉載售賣","tgchannel":"https://t.me/ddgksf2021","feedback":"https://t.me/ddgksf2013_bot"};
+var ddgksf2013 = {
+  "status" : 200,
+  "message" : "success",
+  "data" : {
+    "expired_at" : 4045798296,
+    "is_activated" : 1,
+    "is_lifetime" : 1,
+    "expire_time" : "2099-01-01 00:00:00",
+    "device_id" : 600150864,
+    "period_type" : "active",
+    "remain_days" : 99999,
+    "product_id" : 369,
+    "has_present" : 0,
+    "allowed_device_count" : 1,
+    "has_buy_extend" : 0,
+    "will_expire" : 0,
+    "license_type" : "premium",
+    "begin_activated_time" : 1645798296,
+    "durations" : 0,
+    "vip_special" : 1
+  }
+};
+$done({body: JSON.stringify(ddgksf2013)});
