@@ -39,7 +39,7 @@
  } 
   if (url.indexOf(Font) != -1) { 
     obj.code = 0;
-    obj.error = null;
+    obj.error = "null";
     body = JSON.stringify(obj);  
  } 
 $done({body}); 
