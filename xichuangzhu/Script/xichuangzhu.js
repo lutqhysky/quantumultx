@@ -8,7 +8,7 @@
  var url = $request.url; 
  var obj = JSON.parse(body); 
  const vip = '/1.1/users'; 
- if (url.indexOf(buy) != -1) { 
+ if (url.indexOf(vip) != -1) { 
     obj.membership = true; 
     obj.premiumMembership = true; 
     obj.isAdmin = true;
