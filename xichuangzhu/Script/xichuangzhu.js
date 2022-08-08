@@ -22,7 +22,7 @@
     obj.result = true; 
     body = JSON.stringify(obj);  
  } 
- if (url.indexOf(buy) != -1) { 
+ if (url.indexOf(bought) != -1) { 
     obj.code = 0; 
     body = JSON.stringify(obj);  
  } 
