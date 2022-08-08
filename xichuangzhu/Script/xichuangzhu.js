@@ -1,6 +1,6 @@
 /* 
  app下载地址：商店搜索：西窗烛 时间 ：2022-08-08 
- ^https?:\/\/lchttpapi.xczim.com url script-response-body https://raw.githubusercontent.com/lutqhysky/Surge/Mylove/xichuangzhu/Script/xichuangzhu.js?token=GHSAT0AAAAAABXAVOA4PE5C2EN4KKORUKG2YXQU44Q
+ ^https?:\/\/lchttpapi.xczim.com url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/xichuangzhu/Script/xichuangzhu.js
  MITM = *.xczim.com
  作者：清清情 
  */ 
