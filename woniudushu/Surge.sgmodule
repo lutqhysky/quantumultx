@@ -1,0 +1,11 @@
+#!name=蜗牛读书
+#!desc=解锁vip功能（2022年8月份）
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/woniudushu
+#!清清情
+#!2022-08-08
+
+[Script]
+西窗烛 = type=http-response,pattern=^https?:\/\/p\.du\.163\.com\/gain\/readtime\/info\.json,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/woniudushu/Script/woniudushu.js,script-update-interval=0
+
+[MITM]
+hostname = p.du.163.com
