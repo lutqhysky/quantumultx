@@ -1,0 +1,11 @@
+#!name=西窗烛
+#!desc=解锁vip功能（2022年8月份）
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/xichuangzhu
+#!清清情
+#!2022-08-08
+
+[Script]
+西窗烛 = type=http-response,pattern=^https?:\/\/lchttpapi.xczim.com\/1.1\/(users|functions/checkDidBoughtBook|functions/receiveBookCollectionByProUser),requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/xichuangzhu/Script/xichuangzhu.js,script-update-interval=0
+
+[MITM]
+hostname = *.xczim.com
