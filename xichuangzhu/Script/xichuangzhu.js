@@ -8,12 +8,17 @@
  var url = $request.url; 
  var obj = JSON.parse(body); 
  const vip = '/1.1/users'; 
+ const buy = '/1.1/functions/checkDidBoughtBook'; 
  if (url.indexOf(vip) != -1) { 
     obj.membership = true; 
     obj.premiumMembership = true; 
     obj.isAdmin = true;
     obj.lifetimeMembership = true;
     obj.avatarReviewState = 1;
+    body = JSON.stringify(obj);  
+ } 
+ if (url.indexOf(buy) != -1) { 
+    obj.result = true; 
     body = JSON.stringify(obj);  
  } 
  $done({body}); 
