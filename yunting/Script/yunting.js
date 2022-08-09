@@ -2,7 +2,7 @@
  app下载地址：商店搜索：云听 时间 ：2022-08-01 
  ^https?:\/\/(getway|ytapi).radio.cn url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yunting/Script/yunting.js
  MITM = 39.106.98.80, getway.radio.cn, ytapi.radio.cn
- 作者：清清情 
+ 作者：清清情 ,解锁VIP，但是下面有些碍眼的东西，没去掉。。
  */ 
 var body = $response.body; 
 var url = $request.url; 
@@ -13,10 +13,6 @@ if (url.indexOf(vip) != -1) {
        obj.isPurchased = 1;
        obj.isSubscribe = 1;
        obj.isVip = 1;
-       obj.expire = 0;
-       obj.expireTime = 2099-12-12;
-       obj.hadPurchasedSong = 1;
-       obj.expireDate = 1;
        body = JSON.stringify(obj);  
  } 
 if (url.indexOf(buy) != -1) { 
