@@ -13,6 +13,10 @@ if (url.indexOf(vip) != -1) {
        obj.isPurchased = 1;
        obj.isSubscribe = 1;
        obj.isVip = 1;
+       obj.expire = 0;
+       obj.expireTime = 2099-12-12;
+       obj.hadPurchasedSong = 1;
+       obj.expireDate = 1;
        body = JSON.stringify(obj);  
  } 
 if (url.indexOf(buy) != -1) { 
