@@ -1,0 +1,10 @@
+#!name=知音漫客
+#!desc=解锁本地会员(2022.08.28)
+#!openUrl=https://github.com/lutqhysky/quantumultx/tree/mylove/zhiyinmanke
+#!author=@R·E https://t.me/Functional_Store_Hub（转载）
+
+[Script]
+知音漫客 = type=http-response,pattern=^https:\/\/apigate\.zymk\.cn\/(zymk-getuserinfo-api\/v1\/getuserinfo|zymk-userpurchased-api\/v1\/userpurchased\/paychapters)\/,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/zhiyinmanke/Script/zhiyinmanke.js,script-update-interval=0
+
+[MITM]
+hostname = apigate.zymk.cn
