@@ -14,6 +14,7 @@ if (url.indexOf(vip) != -1) {
     obj.data.vipday = 9999;
     obj.data.boughtCourse = 1;
     obj.data.status = 1;
+    obj.data.nickname = "清清情";
     obj.data.user_type_id = 3;
     obj.data.isApply = 1;
     obj.data.ischeckreal = 1;
