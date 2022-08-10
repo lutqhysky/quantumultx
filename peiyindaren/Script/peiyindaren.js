@@ -1,6 +1,6 @@
 /*
 app下载地址：商店搜索：配音达人
-^https?:\/\/dubbing.csweimei.cn url script-response-body peiyindaren.js
+^https?:\/\/dubbing\.csweimei\.cn\/user\/GetUserInfo url script-response-body peiyindaren.js
 MITM = dubbing.csweimei.cn
 作者：清清情
 */
