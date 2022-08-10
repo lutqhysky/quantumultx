@@ -10,7 +10,7 @@ var url = $request.url;
 var obj = JSON.parse(body);
 
 const vip = '/user/GetUserInfo';
-if (url.indexOf(vip) != -1) {
+if (url.indexOf(vip) != -1)[ {
     obj.data.vipday = 9999;
     obj.data.boughtCourse = 1;
     obj.data.status = 1;
@@ -19,5 +19,5 @@ if (url.indexOf(vip) != -1) {
     obj.data.isApply = 1;
     obj.data.ischeckreal = 1;
     body = JSON.stringify(obj);
-}
+}]
 $done({body});
