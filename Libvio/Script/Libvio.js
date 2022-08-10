@@ -1,6 +1,7 @@
 /*
 app下载地址：下载Libvio，需要自己签名
 ^https?:\/\/apjson\.nftvio\.space\/xgapp\.php\/v2\/(video_detail|app_config) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Libvio/Script/Libvio.jsMITM =apjson.nftvio.space
+MITM =apjson.nftvio.space
 作者：清清情
 */
 
