@@ -1,5 +1,5 @@
 /*
-app下载地址：商店搜索：番薯小说
+app下载地址：商店搜索：番薯小说(2022-08-10)
 ^https?:\/\/ggs\.manmeng168\.com\/v1\/(user\/info|ios/user/info) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/fanshuxiaoshu/Script/fanshuxiaoshu.js
 MITM = ggs.manmeng168.com
 作者：清清情
