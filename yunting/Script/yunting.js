@@ -1,7 +1,7 @@
 /* 
  app下载地址：商店搜索：云听 时间 ：2022-08-01 
- ^https?:\/\/(getway|ytapi)\.radio.cn\/(app2355d832116cc8bd/2b31294abeefdf0bfc305dd63fd052c5/9fd11b27cf4382ad25557f49496f7032|ytsrv/srv/appUser/getUserInfoH5) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yunting/Script/yunting.js
- MITM = 39.106.98.80, getway.radio.cn, ytapi.radio.cn
+ ^https?:\/\/(9.106.98.80|9.106.98.80|ytapi.radio.cn)\/(app2355d832116cc8bd/2b31294abeefdf0bfc305dd63fd052c5/9fd11b27cf4382ad25557f49496f7032|ytsrv/srv/appUser/getUserInfoH5) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yunting/Script/yunting.js
+ MITM = 39.106.98.80, 9.106.98.80, ytapi.radio.cn
  作者：清清情 ,解锁VIP，但是下面有些碍眼的东西，没去掉。。
  */ 
 var body = $response.body; 
