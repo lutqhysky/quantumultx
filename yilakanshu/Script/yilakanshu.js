@@ -1,6 +1,6 @@
 /*
 app下载地址：商店搜索：咿啦看书
-^https?:\/\/bookapi\.ellabook\.cn\/rest\/api\/service url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/wenyuqupeiyin/Script/yuwenqupeiyin.js
+^https?:\/\/bookapi\.ellabook\.cn\/rest\/api\/service url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yilakanshu/Script/yilakanshu.js
 MITM = bookapi.ellabook.cn
 作者：清清情  时间2022年6月6日
 */
