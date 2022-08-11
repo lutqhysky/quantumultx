@@ -16,6 +16,7 @@ if (url.indexOf(vip) != -1) {
     obj.data.is_svip = "1";
     obj.data.is_vip = "1";
     obj.data.dv_status = "1";
+    obj.data.dv_type = "2";
     obj.data.svip_endtime = "999999999";
     obj.data.vip_endtime = "9999999999";
     body = JSON.stringify(obj);
