@@ -1,7 +1,7 @@
 /*
 app下载地址：商店搜索：语文趣配音
 ^https?:\/\/cnapi\.qupeiyin\.com\/(user\/memberData|member|top\/showTop) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/wenyuqupeiyin/Script/yuwenqupeiyin.js
-MITM = *.qupeiyin.com
+MITM = cnapi.qupeiyin.com
 作者：清清情  时间2022年6月6日
 */
 
