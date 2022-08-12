@@ -5,3 +5,6 @@
  */ 
 
 ^https?:\/\/api\.readmoo\.com\/store\/v3\/books\/210240108000101\/reviews url response-body subscribable":false response-body subscribable":true
+
+body = $response.body.replace(/subscribable":false/g, "subscribable\":\"true\"")
+$done({body});
