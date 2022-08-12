@@ -4,4 +4,4 @@
  作者：清清情 
  */ 
 
-^https?:\/\/api\.readmoo\.com\/store\/v3\/books\/210000175000101\/reviews$ url response-body subscribable":false response-body subscribable":true
+^https?:\/\/api\.readmoo\.com\/store\/v3\/books\/210000175000101\/reviews url response-body subscribable":false response-body subscribable":true
