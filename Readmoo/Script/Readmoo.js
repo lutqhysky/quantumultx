@@ -7,5 +7,5 @@
 
 
 
-body = $response.body.replace(/subscribable":false/g, "subscribable\":\"true\"")
+var body = $response.body.replace(/subscribable":false/g, 'subscribable":true')
 $done({body});
