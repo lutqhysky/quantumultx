@@ -13,7 +13,7 @@
 [rewrite_local]
 
 # ～ 一言解锁会员权限（2022-07-21）@ddgksf2013
-^https:\/\/app\.yiyan\.art\/yiyan\/ url script-response-body https://raw.githubusercontent.com/ddgksf2013/Cuttlefish/master/Crack/yiyan.js
+^https:\/\/app\.yiyan\.art\/yiyan\/ url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/yiyan/Script/yiyan.js
 
 [mitm] 
 
