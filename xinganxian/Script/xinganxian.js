@@ -11,7 +11,7 @@
 
 if (url.indexOf(buy) != -1) { 
     obj.bought = true; 
-    obj.bought = true; 
+    obj.vip = true; 
     body = JSON.stringify(obj);  
 } 
 $done({body}); 
