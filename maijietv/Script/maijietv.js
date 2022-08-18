@@ -13,9 +13,13 @@ const vip = '/mes/mesIosRechargeList';
 const buy = '/mes/queryMesUserInfo';
 const bought = '/urm/getUserInfo';
 
-if (url.indexOf(buy) != -1) {
+if (url.indexOf(vip) != -1) {
      obj.body.expireTime = null;
      obj.body.mesLev = 9;
+     obj.body.isVip = 1;
+     body = JSON.stringify(obj);    
+}
+ if (url.indexOf(buy) != -1) {
      obj.body.isVip = 1;
      body = JSON.stringify(obj);    
 }
