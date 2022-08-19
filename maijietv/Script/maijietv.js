@@ -2,7 +2,6 @@
 app下载地址：麦秸TV
 ^https?:\/\/api\.maijitv\.com\/(mes|urm|common)\/(mesIosRechargeList|queryMesUserInfo|getUserInfo|queryKnowledgeResItems) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/maijietv/Script/maijietv.js
 MITM =api.maijitv.com
-作者：清清情
 */
 
 var body = $response.body;
