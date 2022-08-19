@@ -29,7 +29,7 @@ if (url.indexOf(bought) != -1) {
      body = JSON.stringify(obj);    
 }
 if (url.indexOf(bought) != -1) {
-     obj.body.resItems.[freeScope] = "FREE";
+     obj.body.resItems.freeScope = "FREE";
      body = JSON.stringify(obj);    
 }
 $done({body});
