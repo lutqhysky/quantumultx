@@ -1,5 +1,5 @@
 /*
-app下载地址：下载Libvio，需要自己签名
+app下载地址：麦秸TV
 ^https?:\/\/api\.maijitv\.com\/(mes|urm)\/(mesIosRechargeList|queryMesUserInfo|getUserInfo) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/maijietv/Script/maijietv.js
 MITM =api.maijitv.com
 作者：清清情
