@@ -14,7 +14,7 @@ const buy = '/mes/queryMesUserInfo';
 const bought = '/urm/getUserInfo';
 
 if (url.indexOf(vip) != -1) {
-     obj.body.expireTime = 2099-08-09;
+     obj.body.expireTime = 9876543210;
      obj.body.mesLev = 9;
      obj.body.isVip = 1;
      body = JSON.stringify(obj);    
