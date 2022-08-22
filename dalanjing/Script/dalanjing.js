@@ -13,9 +13,9 @@
  
   if (url.indexOf(buy) != -1) { 
      obj.data.isV = 1;  
-     obj.data.isIDNumberValid = true; 
-     obj.data.isMember = 1; 
-     obj.data.memberEndTimestamp = 9876543210; 
+     obj.data.memberInfo.isIDNumberValid = true; 
+     obj.data.memberInfo.isMember = 1; 
+     obj.data.memberInfo.memberEndTimestamp = 9876543210; 
      body = JSON.stringify(obj);  
  } 
  $done({body});
