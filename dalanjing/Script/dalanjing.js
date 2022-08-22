@@ -8,9 +8,7 @@
  var url = $request.url; 
  var obj = JSON.parse(body); 
   const buy = '/PassportUser/userinfo/get?'; 
- const bought = '/ucenter/prod-api/personal/History/lessonview'; 
- const buybuy = '/edu/prod-api/lesson/lesson/getLesson'; 
- 
+
   if (url.indexOf(buy) != -1) { 
      obj.data.isV = 1;  
      obj.data.memberInfo.isIDNumberValid = true; 
