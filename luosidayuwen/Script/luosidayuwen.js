@@ -3,7 +3,7 @@
  
 [rewrite_local]
 #螺丝大语文（2022-08-20）
-https?:\/\/api8\.luosijiaoyu\.com\/api\/(HZLSJY20200817Controller\/selectFMVideoById\.html|LsjyMyContoller\/selectUserInfo\.html) url script-response-body https://raw.githubusercontent.com/ddgksf2013/Cuttlefish/master/Crack/elabook.js
+https?:\/\/api8\.luosijiaoyu\.com\/api\/(HZLSJY20200817Controller\/selectFMVideoById\.html|LsjyMyContoller\/selectUserInfo\.html) url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/luosidayuwen/Script/luosidayuwen.js
 [mitm] 
 hostname=api8.luosijiaoyu.com
 ***********************************/
