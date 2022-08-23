@@ -8,5 +8,5 @@
 
 
 
-var body = $response.body.replace(/vip":0/g, 'vip":1')
+var body = $response.body.replace(\u002F\u0076\u0069\u0070\u0022\u003A\u0030\u002F\u0067\u002C\u0020\u0027\u0076\u0069\u0070\u0022\u003A\u0031\u0027)
 $done({body});
