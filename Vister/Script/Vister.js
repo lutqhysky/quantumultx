@@ -10,7 +10,7 @@
 
 var body = $response.body.replace(/isActive":0/g, 'isActive":1')
                          .replace(/isVip":0/g, 'isVip":1')
-                         .replace(/endTime"":/d{13}/g, '/endTime":2652198399000')
+                         .replace(/endTime":/d{13}/g, '/endTime":2652198399000')
                          .replace(/isMiniVip":0/g, 'isMiniVip":1')
                          .replace(/expireVip":1/g, 'expireVip":0')
 $done({body});
