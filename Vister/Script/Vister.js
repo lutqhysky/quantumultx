@@ -13,6 +13,6 @@
 
 
 
-body = $response.body.replace(/isVip":0/g, 'isVip":1').replace(/endTime":\d{13}/g, 'endTime":2652198399000');
+body = $response.body.replace(/isVip":0/g, 'isVip":1').replace(/endTime":\d{13}/g, 'endTime":2652198399000').replace(/isBuyMag":0/g, 'isBuyMag":1').replace(/isBuyArticle":0/g, 'isBuyArticle":1');
 $done({body});
 
