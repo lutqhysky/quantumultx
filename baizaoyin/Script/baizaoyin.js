@@ -1,5 +1,5 @@
 /* 
- app下载地址：商店搜索：Readmoo 时间 ：2022-08-01 
+ app下载地址：白噪音
   MITM = matrix.fingerplay.cn
  ^http:\/\/matrix\.fingerplay\.cn\/user\/fetchUserInfo url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/baizaoyin/Script/baizaoyin.js
  作者：清清情
