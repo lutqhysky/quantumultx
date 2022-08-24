@@ -1,5 +1,5 @@
 #########################################
-#^https?://api\.revenuecat\.com/v\d/(subscribers/\$RCAnonymousID\%(\w)+|receipts)$ url echo-response text/json echo-response https://napi.ltd/script/FileBall/FileBall
+#^https?://api\.revenuecat\.com/v\d/(subscribers/\$RCAnonymousID\%(\w)+|receipts)$ url echo-response text/json echo-response https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Fileball/Script/Fileball.js
 #mimt: api.revenuecat.com
 #
 #
