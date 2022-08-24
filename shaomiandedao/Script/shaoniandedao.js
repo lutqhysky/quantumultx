@@ -1,7 +1,7 @@
 /* 
  app下载地址：少年得到
   MITM = igetcool-gateway.igetcool.com
- ^https?:\/\/igetcool-gateway.igetcool\.com\/（app-api-user-server\/oath\/user\/info\.json|app-api-product-server\/option\/course\/audios\.json|app-api-product-server\/white\/course\/videos\.json） url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
+ ^https?:\/\/igetcool-gateway\.igetcool\.com\/（app-api-user-server\/oath\/user\/info\.json|app-api-product-server\/option\/course\/audios\.json|app-api-product-server\/white\/course\/videos\.json） url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
  作者：清清情
  下面，不用一级一级的去找了，直接像网球锤子，替换就可以了。。。！！！！
  https://igetcool-gateway.igetcool.com/app-api-user-server/oath/user/info.json
