@@ -7,7 +7,6 @@
  https://igetcool-gateway.igetcool.com/app-api-user-server/oath/user/info.json
  https://igetcool-gateway.igetcool.com/app-api-product-server/option/course/audios.json
  https://igetcool-gateway.igetcool.com/app-api-product-server/white/course/videos.json
- body = $response.body.replace(/hasPay":0/g, 'hasPay":1').replace(/userTag":0/g, 'userTag":1').replace(/audioActivityLockStatus":\d{1}/g, 'audioActivityLockStatus":2').replace(/buy":0/g, 'buy":1').replace(/free":0/g, 'free":1');
  */ 
 body = $response.body.replace(/hasPay":0/g, 'hasPay":1').replace(/userTag":0/g, 'userTag":1').replace(/audioActivityLockStatus":\d{1}/g, 'audioActivityLockStatus":2').replace(/buy":0/g, 'buy":1').replace(/free":0/g, 'free":1');
 $done({body});
