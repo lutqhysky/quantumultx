@@ -1,6 +1,6 @@
 /*
 app下载地址：心语听书
-^https?:\/\/i\.xinyulib\.com\.cn\/api\/querytoken url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Libvio/Script/Libvio.jsMITM =apjson.nftvio.space
+^https?:\/\/i\.xinyulib\.com\.cn\/api\/querytoken url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/xinyutingshu/Script/xinyutingshu.js
 MITM =i.xinyulib.com.cn
 作者：清清情
 */
