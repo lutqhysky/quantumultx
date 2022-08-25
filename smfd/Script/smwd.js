@@ -19,7 +19,7 @@ WX: L-190705
 
 本地重写
 
-^https:\/\/shimo\.im\/lizard-api\/users\/me url script-response-body smwd.js
+^https:\/\/shimo\.im\/lizard-api\/users\/me url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/smfd/Script/smwd.js
 
 
 
