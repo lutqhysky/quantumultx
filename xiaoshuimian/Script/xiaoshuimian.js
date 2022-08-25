@@ -12,14 +12,19 @@ var obj = JSON.parse(body);
 const vip = '/cosleep/user/info';
 if (url.indexOf(vip) != -1) {
       obj.data.is_vip = 1;
+      obj.data.vip_expires = 2900839229; 
       obj.data.visitor.sound.is_sound = 1;
       obj.data.visitor.sound.have_sound = 1;
       obj.data.visitor.sound.is_auto_renew = true;
       obj.data.visitor.have_vip = 1;
       obj.data.visitor.is_auto_renew = true;
-      obj.data.visitor.vip_expires = 1900839229;
+      obj.data.visitor.vip_expires = 2900839229;
       obj.data.visitor.is_vip = 1;
-      obj.data.vip_expires = 1900839229; 
+      obj.data.visitor.baby.is_baby = 1;
+      obj.data.visitor.baby.is_auto_renew = true;
+      obj.data.visitor.baby.baby_expires = 2900839229;
+      obj.data.visitor.baby.have_baby = 1;
+      obj.data.visitor.is_vip = 1; 
       body = JSON.stringify(obj);    
 }
 $done({body});
