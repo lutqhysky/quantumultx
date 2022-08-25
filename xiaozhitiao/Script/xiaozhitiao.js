@@ -1,18 +1,6 @@
 /*
 >app下载地址：商店搜索：纸条
 >^https?:\/\/(app1|zwzt-h5)\.zuowenzhitiao.com\/(user|content|behavior|longApi)\/(common|member|seminar|content|article)\/(getPersonInfo|info|getSeminarDetailNoContentList|list|openInfo|article|commonInfo)\/content\/detail url script-response-body xiaozhitiao.js
-const vip = '/user        /common     /getPersonInfo';
-const vip2 = '/user       /member     /info';
-const vip3 = '/content    /seminar    /getSeminarDetailNoContentList';
-const vip4 = '/behavior   /paragraph  /list';
-const vip5 = '/user       /member     /openInfo';
-const vip6 = 'longApi     /content    /article                          /content     /detail';
-const vip7 = '/content    /article    /commonInfo';
-
-
-
-
-
 >MITM = *.zuowenzhitiao.com
 >作者：清清情 时间：2022年6月6日
 */
