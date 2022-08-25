@@ -31,6 +31,8 @@ if (url.indexOf(vip2) != -1) {
 }
 if (url.indexOf(vip3) != -1) {
     obj.data.purchased = true;
+    obj.data.data.freeList.article.limitFree = true; 
+    obj.data.data.list.article.limitFree = true; 
     body = JSON.stringify(obj);
 }
 if (url.indexOf(vip4) != -1) {
