@@ -1,20 +1,25 @@
-//*by 黑黑酱 ^https:\/\/api\.psy-1\.com\/cosleep\/user\/info
+/*
+app下载地址：下载Libvio，需要自己签名
+^https:\/\/api\.psy-1\.com\/cosleep\/user\/info url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Libvio/Script/Libvio.jsMITM =apjson.nftvio.space
+MITM =api.psy-1.com
+作者：清清情
+*/
 
+var body = $response.body;
+var url = $request.url;
+var obj = JSON.parse(body);
 
-re('"is_vip":\\d@"vip_expires":\\d+@"point_expires_time":\\d','"is_vip":1@"vip_expires":1900839229@"point_expires_time":1900839229')
-
-function re() {
- var body = $response.body;
- if (arguments[0].includes("@")) {
-  var regs = arguments[0].split("@");
-  var strs = arguments[1].split("@");
-  for (i = 0;i < regs.length;i++) {
-   var reg = new RegExp(regs[i],"g");
-   body = body.replace(reg, strs[i]);
- }
+const vip = '/cosleep/user/info';
+if (url.indexOf(vip) != -1) {
+      obj.data.is_vip = 1;
+      obj.data.visitor.sound.is_sound = 1;
+      obj.data.visitor.sound.have_sound = 1;
+      obj.data.visitor.sound.is_auto_renew = true;
+      obj.data.visitor.have_vip = 1;
+      obj.data.visitor.is_auto_renew = true;
+      obj.data.visitor.vip_expires = 1900839229;
+      obj.data.visitor.is_vip = 1;
+      obj.data.vip_expires = 1900839229; 
+      body = JSON.stringify(obj);    
 }
- else {
-  var reg = new RegExp(arguments[0],"g");
-  body = body.replace(reg, arguments[1]);
-}
- $done(body);
+$done({body});
