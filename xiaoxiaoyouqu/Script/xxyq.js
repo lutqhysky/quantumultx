@@ -1,6 +1,6 @@
 /*
 app下载地址：商店搜索：小小优趣
-^https?:\/\/prod\.ukids\.cn\/(uch5\/getUser|coreapp\/classOqd\/course\/detail)url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
+^https?:\/\/(prod|fastapi)\.ukids\.cn\/(uch5\/getUser|coreapp\/classOqd\/course\/detail)url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
 MITM =*.ukids.cn
 作者：清清情
 */
