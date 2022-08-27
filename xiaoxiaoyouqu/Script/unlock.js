@@ -4,5 +4,5 @@
 
 
 
-body = $response.body.replace(/purchased":false/g, 'subscribable":true').replace(/purchased":false/g, 'subscribable":true');
+body = $response.body.replace(/unlock":false/g, 'unlock":true').replace(/purchased":false/g, 'subscribable":true');
 $done({body});
