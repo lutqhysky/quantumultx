@@ -29,7 +29,7 @@ if (url.indexOf(vip) != -1) {
 }
 if (url.indexOf(vip) != -1) {
     obj.data.weeks.purchased = true;
-    obj. data.weeks.unlock = true;
+    obj.data.weeks.unlock = true;
     body = JSON.stringify(obj);
 }
 $done({body});
