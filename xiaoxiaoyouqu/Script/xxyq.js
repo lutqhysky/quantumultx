@@ -10,7 +10,7 @@ var url = $request.url;
 var obj = JSON.parse(body);
 
 const vip = '/uch5/getUser';
-const vip = '/coreapp/classOqd/course/detail';
+const lock = '/coreapp/classOqd/course/detail';
 
 if (url.indexOf(vip) != -1) {
     obj.data.vip = 1;
@@ -27,7 +27,7 @@ if (url.indexOf(vip) != -1) {
     obj.data.svipEffect = 987654321;
     body = JSON.stringify(obj);
 }
-if (url.indexOf(vip) != -1) {
+if (url.indexOf(lock) != -1) {
     obj.data.weeks.purchased = true;
     obj.data.weeks.unlock = true;
     body = JSON.stringify(obj);
