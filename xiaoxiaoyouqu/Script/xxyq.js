@@ -1,7 +1,7 @@
 /*
 app下载地址：商店搜索：小小优趣
-^https?:\/\/prod\.ukids\.cn\/uch5\/getUser url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
-MITM =prod.ukids.cn
+^https?:\/\/prod\.ukids\.cn\/(uch5\/getUser|coreapp\/classOqd\/course\/detail)url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
+MITM =*.ukids.cn
 作者：清清情
 */
 
@@ -10,6 +10,8 @@ var url = $request.url;
 var obj = JSON.parse(body);
 
 const vip = '/uch5/getUser';
+const vip = '/coreapp/classOqd/course/detail';
+
 if (url.indexOf(vip) != -1) {
     obj.data.vip = 1;
     obj.data.vipReal = 1;
@@ -23,6 +25,11 @@ if (url.indexOf(vip) != -1) {
     obj.data.svipTotal = 987654321;    
     obj.data.vipEffect = 987654321;     
     obj.data.svipEffect = 987654321;
+    body = JSON.stringify(obj);
+}
+if (url.indexOf(vip) != -1) {
+    obj.data.weeks.purchased = true;
+    obj. data.weeks.unlock = true;
     body = JSON.stringify(obj);
 }
 $done({body});
