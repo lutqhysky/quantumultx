@@ -1,7 +1,7 @@
 /* 
  app下载地址：Vister看天下
   MITM = 47.104.228.152
- ^https?:\/\/47\.104\.228\.152\/api\/apiAppUser\/getUser url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
+ ^https?:\/\/47\.104\.228\.152:9001\/api\/apiAppUser\/getUser url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
  作者：清清情
  下面，不用一级一级的去找了，直接像网球锤子，替换就可以了。。。！！！！
  */ 
