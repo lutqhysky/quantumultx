@@ -5,5 +5,5 @@
  作者：清清情
  下面，不用一级一级的去找了，直接像网球锤子，替换就可以了。。。！！！！
  */ 
-body = $response.body.replace(/cardType":"-\d"/g, 'cardType":"1"').replace(/days":"\d+"/g, 'days":"6666"').replace(/isExpire":"1"/g, 'isExpire":"0"').replace(/expireTime":".".*?"/g, 'expireTime":"2099-05-10"');
+body = $response.body.replace(/cardType":"-\d"/g, 'cardType":"1"').replace(/days":"\d+"/g, 'days":"6666"').replace(/isExpire":"1"/g, 'isExpire":"0"').replace(/expireTime":".*?"/g, 'expireTime":"2099-05-10"');
 $done({body});
