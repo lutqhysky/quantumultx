@@ -4,10 +4,9 @@ app下载地址：商店搜索：小小优趣
 MITM =*.ukids.cn
 作者：清清情
 */
-
-var body = $response.body;
-var url = $request.url;
-var obj = JSON.parse(body);
+var body = $response.body; 
+var url = $request.url; 
+var obj = JSON.parse(body); 
 const vip = '/uch5/getUser';
 if (url.indexOf(vip) != -1) {
     obj.data.vip = 1;
