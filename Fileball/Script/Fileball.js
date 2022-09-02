@@ -2,7 +2,8 @@
 #^https?:\/\/api\.revenuecat\.com/v\d/subscribers/\$RCAnonymousID\%\w+ url echo-response text/json echo-response https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Fileball/Script/Fileball.js
 #mimt: api.revenuecat.com
 #########################################
-let obj = JSON.parse($response.body);obj ={
+let obj = JSON.parse($response.body);
+obj.subscriber.entitlements = {
     "request_date": "1983-03-15T00:00:00Z",
     "request_date_ms": 416505600000,
     "subscriber": {
@@ -39,4 +40,4 @@ let obj = JSON.parse($response.body);obj ={
         "subscriptions": {}
     }
 }
-;$done({body: JSON.stringify(obj)});
+$done({body: JSON.stringify(obj)});
