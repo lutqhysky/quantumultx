@@ -1,7 +1,7 @@
 /*
 黄油相机 2022-9-4
 
-^https:\/\/api4\.bybutter\.com\/v4\/users* url script-response-body hhyyxj.js
+^https:\/\/api4\.bybutter\.com\/v4\/users* url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/hyxj/Script/hyxj.js
 
 hostname：api4.bybutter.com
 
