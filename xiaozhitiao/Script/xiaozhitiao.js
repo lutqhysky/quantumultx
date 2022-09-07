@@ -55,4 +55,5 @@ if (url.indexOf(vip7) != -1) {
     obj.data.member.status = 1;
     obj.data.checkStatus = true;
     body = JSON.stringify(obj);
+}
 $done({body});
