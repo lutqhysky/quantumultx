@@ -1,6 +1,6 @@
 /*
 >app下载地址：商店搜索：纸条
->^https?:\/\/(app1|zwzt-h5)\.zuowenzhitiao.com\/(user|content|behavior|longApi)\/(common|member|seminar|content|article)\/(getPersonInfo|info|getSeminarDetailNoContentList|list|openInfo|article|commonInfo)\/content\/detail url script-response-body xiaozhitiao.js
+>^https?:\/\/(app1|zwzt-h5)\.zuowenzhitiao.com\/(user|content|behavior|longApi)\/(common|member|seminar|content|article)\/(getPersonInfo|info|getSeminarDetailNoContentList|list|openInfo|article|commonInfo) url script-response-body xiaozhitiao.js
 >MITM = *.zuowenzhitiao.com
 >作者：清清情 时间：2022年6月6日
 */
