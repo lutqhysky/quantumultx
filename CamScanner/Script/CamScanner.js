@@ -36,3 +36,4 @@ let body = JSON.parse($response.body)
       "last_payment_method": "appstore",
       "product_id": "com.intsig.camscanner.premiums.oneyear.autorenewable.svip.low"}
     $done({body:JSON.stringify(body)})
+    
