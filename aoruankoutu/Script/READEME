@@ -1,0 +1,26 @@
+
+https://gw.aoscdn.com/base/vip/client/authorizations
+
+
+{
+"status": 200,
+  "message": "success",
+  "data": {
+    "begin_activated_time": 1645798296,
+    "is_activated": 1,
+    "is_lifetime": 1,
+    "durations": 0,
+    "vip_special": 1,
+    "period_type": "active",
+    "remain_days": 99999,
+    "product_id": 369,
+    "has_present": 0,
+    "expired_at": 4045798296,
+    "allowed_device_count": 1,
+    "device_id": 600150864,
+    "has_buy_extend": 0,
+    "will_expire": 0,
+    "license_type": "premium",
+    "expire_time": "2099-01-01 00:00:00"
+  }
+}
