@@ -40,7 +40,7 @@ var ddgksf2013 = {
     "candy_expired_at" : 4045798296,
     "product_id" : 369,
     "has_present" : 1,
-    "allowed_device_count" : 1,
+    "allowed_device_count" : 999999,
     "has_buy_extend" : 0,
     "will_expire" : 0,
     "license_type" : "premium",
