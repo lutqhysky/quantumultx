@@ -45,7 +45,7 @@ var ddgksf2013 = {
     "will_expire" : 0,
     "license_type" : "premium",
     "begin_activated_time" : 1647732362,
-    "durations" : 0,
+    "durations" : 1,
     "vip_special" : 1
   }
 };
