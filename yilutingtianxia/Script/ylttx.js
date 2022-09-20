@@ -1,2 +1,28 @@
-var body = $response.body.replace(/vipType":".*?"/g, 'vipType":"SVIP年卡"').replace(/vipEndTime":.*?/g, 'vipEndTime":2099-12-12 12:12:12').replace(/vipEndDate":.*?/g, 'vipEndDate":2099-12-12').replace(/vipEndDate":".*?"/g, 'vipEndDate":"9876543210000"').replace(/labelTypeValue":".*?"/g, 'labelTypeValue":""').replace(/isSubscribe":"0"/g, 'isSubscribe":"1"').replace(/isVip":\d+/g, 'isVip":0').replace(/isCanListen":\d+/g, 'isCanListen":1').replace(/isFree":\d+/g, 'isFree":1').replace(/isBuy":\d+/g, 'isBuy":1');
-$done({body});
+url = $request.url;
+let obj = JSON.parse($response.body);
+
+    obj={
+  "code" : 200,
+  "flag" : true,
+  "data" : {
+    "rights" : [
+      {
+        "icon" : "https://h5.t1678.com/core/attachment/preview?storeFilePath=test/2020/10/29/46160396711451385.png"
+      },
+      {
+        "icon" : "https://h5.t1678.com/core/attachment/preview?storeFilePath=test/2020/10/29/93160396717617612.png"
+      },
+      {
+        "icon" : "https://h5.t1678.com/core/attachment/preview?storeFilePath=test/2020/10/29/02160396722898870.png"
+      },
+      {
+        "icon" : "https://h5.t1678.com/core/attachment/preview?storeFilePath=test/2020/10/29/98160396719998494.png"
+      }
+    ],
+    "countDown" : "VIP剩395天23小时到期",
+    "vipEndDate" : "2023-10-20 10:05:03"
+  },
+  "msg" : "成功",
+  "timestamp" : 1663639516605
+};
+$done({body:JSON.stringify(obj)});
