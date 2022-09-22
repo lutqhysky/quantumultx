@@ -7,7 +7,7 @@ let obj = JSON.parse($response.body);
   "data" : {
     "profile" : {
       "ebookDiscount" : 1,
-      "vipEndTime" : 1666346324000,
+      "vipEndTime" : 1697731200000,
       "fansCount" : 0,
       "waitTakeDelivery" : 0,
       "reworkApplyQty" : 0,
@@ -18,7 +18,7 @@ let obj = JSON.parse($response.body);
       "audioDiscount" : 0.94999999999999996,
       "attentionAnchorCount" : 0,
       "integral" : 0,
-      "vipEndDate" : "2022-10-21",
+      "vipEndDate" : "2023-10-20",
       "vipType" : "VIP",
       "purchaseCount" : 0,
       "couponAmount" : 0
