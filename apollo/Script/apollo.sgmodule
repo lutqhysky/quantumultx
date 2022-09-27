@@ -1,0 +1,4 @@
+[Script]
+# >Apollo  
+Apollo(2022.08.10) = type=http-response,pattern=^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Apollo.js,script-update-interval=0
+hostname = api.revenuecat.com
