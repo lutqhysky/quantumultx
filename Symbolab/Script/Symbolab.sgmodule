@@ -1,0 +1,9 @@
+#!name=🇨🇳清清情的合集㊙️
+#!desc=自己用，不外传，不负责，不回答，不知道，不了解，不清楚
+
+########################################################
+
+[Script]
+# >Symbolab 【🟢】    
+Symbolab(2022.08.10) = type=http-response,pattern=^https?:\/\/scibug\.com\/appleSubscriptionValidate$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/89996462/Quantumult-X/main/ycdz/Symbolab.js,script-update-interval=0
+hostname = scibug.com
