@@ -32,6 +32,6 @@ obj.vip = {
         "gived": 0,
         "createdTime": 1429260383,
         "maxRate": 100
-},
+}
 };
 $done({body: JSON.stringify(obj)});
