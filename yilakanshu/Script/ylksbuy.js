@@ -4,5 +4,6 @@
 [mitm] 
 hostname= englishapi.ellabook.cn
 ***********************************/
-var body = $response.body.replace(/bought":false/g, 'bought":true').replace(/isBuy":false/g, 'isBuy":true').replace(/isReadFinish":false/g, 'isReadFinish":true');
+var body = $response.body.replace(/bought":"false/g, "bought\":\"true")
+                         .replace(/isBuy":"false/g, "isBuy\":\"true");
 $done({body})
