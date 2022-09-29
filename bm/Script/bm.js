@@ -1,7 +1,8 @@
 const path1 = "/api/v2.user/appLaunchWithUser";
 let obj = JSON.parse($response.body);
 if ($request.url.indexOf(path1) != -1){
-obj.vip = {"id": 999999,
+obj.vip = {
+      "id": 999999,
       "userId": 9999999,
       "levelId": 2,
       "deadline": 9999986324,
@@ -31,7 +32,7 @@ obj.vip = {"id": 999999,
         "gived": 0,
         "createdTime": 1429260383,
         "maxRate": 100
-}
-}
+},
+},
 };
 $done({body: JSON.stringify(obj)});
