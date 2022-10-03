@@ -1,7 +1,7 @@
 /*
-Unlocks by Cuttlefish 公众号：墨鱼手记
+Unlocks by 清清情
 
 ulr 匹配路径 http://getway.radio.cn/app*
 */
-var body = $response.body.replace(/\u0069\u0073\u0056\u0069\u0070\u0022\u003A\u0031/g, '\u0069\u0073\u0056\u0069\u0070\u0022\u003A\u0030');
+var body = $response.body.replace(/isVip":1/g, 'isVip":0').replace(/expire":\d+/g, 'expire":0').replace(/isPurchased":\w+/g, 'isPurchased":1').replace(/needPay":\w+/g, 'needPay":0').replace(/isSubscribe":\w+/g, 'isSubscribe":1').replace(/needPay":\w+/g, 'needPay":0');
 $done({ body });
