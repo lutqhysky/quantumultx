@@ -5,7 +5,7 @@ let obj = JSON.parse($response.body);
   "data" : {
     "gender" : 2,
     "had_vip" : true,
-    "vip_type" : "com.yuanlue.cxs.paylife",
+    "vip_type" : "temporary",
     "id" : 571268,
     "last_login" : "2022-10-04 12:31:29",
     "is_device_user" : true,
