@@ -25,13 +25,4 @@ if (ua.indexOf('widget_art') != -1) {
     Body = {"request_date_ms":1662621160568,"request_date":"2022-09-08T07:12:40Z","subscriber":{"non_subscriptions":{},"first_seen":"2022-08-02T14:29:16Z","original_application_version":"156","other_purchases":{},"management_url":null,"subscriptions":{"com.ziheng.totowallet.yearly":{"is_sandbox":false,"ownership_type":"PURCHASED","billing_issues_detected_at":null,"period_type":"trial","expires_date":"9999-09-08T01:16:31Z","grace_period_expires_date":null,"unsubscribe_detected_at":"2022-08-03T16:34:13Z","original_purchase_date":"2022-08-02T14:30:16Z","purchase_date":"2022-08-02T14:30:15Z","store":"app_store"}},"entitlements":{"all":{"grace_period_expires_date":null,"purchase_date":"2022-08-02T14:30:15Z","product_identifier":"com.ziheng.totowallet.yearly","expires_date":"9999-09-08T01:16:31Z"}},"original_purchase_date":"2022-08-02T14:27:40Z","original_app_user_id":"$RCAnonymousID:08ebc4caefdc4e84a503087d0e3544a2","last_seen":"2022-09-08T07:09:37Z"}};
 }
 
-Status = 'HTTP/1.1 200 OK';
-Headers = {"Content-Type": "application/json"};
-
-const Response = {
-    status: Status,
-    headers: Headers,
-    body: JSON.stringify(Body)
-};
-
 $done(Response);
