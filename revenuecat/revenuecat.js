@@ -25,6 +25,48 @@ if (ua.indexOf('VSCO') != -1) {
     Body = {"request_date":"2022-08-22T15:45:13Z","request_date_ms":1661183113727,"subscriber":{"entitlements":{"membership":{"expires_date":"2099-03-15T00:00:00Z","grace_period_expires_date":null,"product_identifier":"vsco_global_2999_annual_7D_free","purchase_date":"2022-08-22T15:42:10Z"}},"first_seen":"2022-08-22T15:29:41Z","last_seen":"2022-08-22T15:30:16Z","management_url":"https://apps.apple.com/account/subscriptions","non_subscriptions":{},"original_app_user_id":"$RCAnonymousID:7bb196482332456a92f0883d972bc680","original_application_version":"4396","original_purchase_date":"2022-08-22T15:27:36Z","other_purchases":{},"subscriptions":{"vsco_global_2999_annual_7D_free":{"billing_issues_detected_at":null,"expires_date":"2099-03-15T00:00:00Z","grace_period_expires_date":null,"is_sandbox":false,"original_purchase_date":"2022-08-22T15:42:11Z","ownership_type":"PURCHASED","period_type":"trial","purchase_date":"2022-08-22T15:42:10Z","store":"app_store","unsubscribe_detected_at":null}}}};
 }
 
+if (ua.indexOf('Percento') != -1) {
+    Body = {
+  "request_date_ms" : 1663991714863,
+  "request_date" : "2022-09-24T03:55:14Z",
+  "subscriber" : {
+    "non_subscriptions" : {
+
+    },
+    "first_seen" : "2022-09-24T03:10:31Z",
+    "original_application_version" : "8145",
+    "other_purchases" : {
+
+    },
+    "management_url" : "https://apps.apple.com/account/subscriptions",
+    "subscriptions" : {
+      "com.kevinreutter.Sagittarius.Premium3Months" : {
+        "is_sandbox" : false,
+        "ownership_type" : "PURCHASED",
+        "billing_issues_detected_at" : null,
+        "period_type" : "normal",
+        "expires_date" : "9999-12-24T04:53:09Z",
+        "grace_period_expires_date" : null,
+        "unsubscribe_detected_at" : "2022-09-24T03:55:14Z",
+        "original_purchase_date" : "2022-09-24T03:53:13Z",
+        "purchase_date" : "2022-09-24T03:53:09Z",
+        "store" : "app_store"
+      }
+    },
+    "entitlements" : {
+      "premium" : {
+        "grace_period_expires_date" : null,
+        "purchase_date" : "2022-09-24T03:53:09Z",
+        "product_identifier" : "com.kevinreutter.Sagittarius.Premium3Months",
+        "expires_date" : "9999-12-24T04:53:09Z"
+      }
+    },
+    "original_purchase_date" : "2022-09-24T03:08:21Z",
+    "original_app_user_id" : "$RCAnonymousID:1b0860a86963473592b911a17ad80ff4",
+    "last_seen" : "2022-09-24T03:10:31Z"
+  }
+};
+}
 Status = 'HTTP/1.1 200 OK';
 Headers = {"Content-Type": "application/json"};
 
