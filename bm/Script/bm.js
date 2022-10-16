@@ -31,5 +31,5 @@ body.value.vip = {
       "deadlineNotified" : 0,
       "deadline" : 9999986324,
       "boughtAmount" : 30
-};
+}
 $done({ body: JSON.stringify(body) })
