@@ -1,7 +1,7 @@
 const path1 = "/api/v2.user/appLaunchWithUser";
 let obj = JSON.parse($response.body);
 if ($request.url.indexOf(path1) != -1){
-obj.vip = {
+obj.value.vip = {
       "id" : 999999,
       "boughtType" : "new",
       "createdTime" : 1586253524,
@@ -33,5 +33,5 @@ obj.vip = {
       "deadlineNotified" : 0,
       "deadline" : 9999986324,
       "boughtAmount" : 30
-},;
+};
 $done({body: JSON.stringify(obj)});
