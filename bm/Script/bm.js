@@ -1,7 +1,5 @@
-const path1 = "/api/v2.user/appLaunchWithUser";
-let obj = JSON.parse($response.body);
-if ($request.url.indexOf(path1) != -1){
-obj.value.vip = {
+let body = JSON.parse($response.body)
+body.value.vip = {
       "id" : 999999,
       "boughtType" : "new",
       "createdTime" : 1586253524,
@@ -34,4 +32,4 @@ obj.value.vip = {
       "deadline" : 9999986324,
       "boughtAmount" : 30
 };
-$done({body: JSON.stringify(obj)});
+$done({ body: JSON.stringify(body) })
