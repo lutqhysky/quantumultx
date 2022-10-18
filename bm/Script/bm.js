@@ -1,5 +1,9 @@
-let body = JSON.parse($response.body)
-body.value.vip = {
+var body = $response.body;
+var url = $request.url;
+var obj = JSON.parse(body);
+
+if ($request.url.indexOf("/api/v2.user/appLaunchWithUser") != -1){
+obj.value.vip = {
       "id" : 999999,
       "boughtType" : "new",
       "createdTime" : 1586253524,
@@ -32,4 +36,5 @@ body.value.vip = {
       "deadline" : 9999986324,
       "boughtAmount" : 30
 }
-$done({ body: JSON.stringify(body) })
+
+$done({body});
