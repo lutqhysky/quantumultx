@@ -9,7 +9,7 @@ var body = $response.body;
 var url = $request.url;
 var obj = JSON.parse(body);
 
-const vip = '/xgapp.php/v2/video_detail';
+const vip = '/xgapp.php/v3/video_detail';
 if (url.indexOf(vip) != -1) {
 obj.data.permission_info.download_permission = 1;
 obj.data.permission_info.trysee_permission = 1;
