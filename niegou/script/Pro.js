@@ -3,7 +3,7 @@
 2、项目名称：ProKnockOut 解锁订阅
 ************************************
 var head = $request.headers;
-var ua = head['User-Agent'];
+var ua = head['user-agent'];
 
 if (ua.indexOf('%E6%98%9F%E7%A9%BA') != -1) {
     Body = 
