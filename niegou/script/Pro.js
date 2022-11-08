@@ -1,7 +1,3 @@
-/***********************************
-1、项目名称：星空
-2、项目名称：ProKnockOut 解锁订阅
-************************************
 var QC1 = JSON['parse']($response['body']);
 var tFr_tYLL2 = QC1['receipt']["bundle_id"];
 
