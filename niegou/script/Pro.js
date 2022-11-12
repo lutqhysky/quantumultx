@@ -1,5 +1,5 @@
 /*
-星空、bazaart
+knockout、星空、bazaart
 */
 var obj = JSON.parse($response.body);
 var bundle_id = obj.receipt["bundle_id"];
