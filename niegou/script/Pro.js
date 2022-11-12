@@ -1,3 +1,6 @@
+/*
+星空、bazaart
+*/
 var obj = JSON.parse($response.body);
 var bundle_id = obj.receipt["bundle_id"];
 
