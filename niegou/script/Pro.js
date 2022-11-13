@@ -1,5 +1,5 @@
 /*
-knockout、星空、bazaart、booka@彭于晏、texteditor@R_E作者
+knockout、星空、bazaart、booka@彭于晏、texteditor@R_E
 */
 var obj = JSON.parse($response.body);
 var bundle_id = obj.receipt["bundle_id"];
