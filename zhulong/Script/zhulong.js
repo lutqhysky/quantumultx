@@ -1,38 +1,6 @@
-/* 
- app下载地址：商店搜索：筑龙 时间 ：2022-08-01 
- ^https?:\/\/(www|m).zhulong.com\/(ucenter/prod-api/personal/myinfo/getUserInfo|edu/prod-api/lesson/lesson/getScheduleByLessonId|/ucenter/prod-api/personal/History/lessonview|edu/prod-api/lesson/lesson/getLesson|edu/prod-api/lesson/lesson/play|bbs/prod-api/thread/thread/getThreadForTid) url script-response-body zhulong.js 
- MITM = *.zhulong.com 
- 作者：清清情 
- */ 
- var body = $response.body; 
- var url = $request.url; 
- var obj = JSON.parse(body); 
-  const buy = '/edu/prod-api/lesson/lesson/getScheduleByLessonId'; 
- const bought = '/ucenter/prod-api/personal/History/lessonview'; 
- const buybuy = '/edu/prod-api/lesson/lesson/getLesson'; 
- const play = '/edu/prod-api/lesson/lesson/play'; 
- const down = '/bbs/prod-api/thread/thread/getThreadForTid'; 
-  if (url.indexOf(buy) != -1) { 
- obj.result.is_buy = 1; 
- body = JSON.stringify(obj);  
- } 
- if (url.indexOf(bought) != -1) { 
- obj.result.list.is_buy = 1; 
- body = JSON.stringify(obj);  
- } 
- if (url.indexOf(buybuy) != -1) { 
- obj.result.lesson_info.is_vip = 1; 
- obj.result.is_buy = 1; 
- obj.result.vip_level = 1; 
- body = JSON.stringify(obj);  
- } 
- if (url.indexOf(play) != -1) { 
- obj.result.is_vip = 1; 
- obj.result.is_buy = 1; 
- body = JSON.stringify (obj);  
- } 
- if (url.indexOf(down) != -1) { 
- obj.result.can_down = 1; 
- body = JSON.stringify(obj);  
- } 
- $done({body}); 
+/*
+ * 加密工具已经升级了一个版本，目前为 jsjiami.com.v6 ，更新了加密算法，缩减了体积;
+ * 另外 jsjiami.com.v6 已经强制加入校验，注释可以去掉，但是 jsjiami.com.v6 不能去掉，其他都没有任何绑定。
+ * 誓死不会加入任何后门，JsJiami.com 加密的使命就是为了保护你们的Javascript 。
+ */
+ var _0xodZ='jsjiami.com.v6',_0xodZ_=['‮_0xodZ'],_0x55a9=[_0xodZ,'FVFfe8O5woDDtsKJOQMCfcKTwr3CqB7CicOlw6vCocO2FMKSw7I4wqrCsMKIT8KQBsOTcsK0ChJmwogZwqcQdsOidRo=','w7bCiMOOwq0nejVrUSjCrRrDisOAR8ORw7HCgTjCpcK0w7BnwoxBBhjCksK0Y8K5dA==','NsOJw7PDuTt2Sw==','wpLCl8OrfsOnw5M=','wobCqsKpw7YWLFvCisKq','MzJKwoQdw7Qk','B3JQw4jCssKF','w61gelw=','w5HCtSQtwrTCosOTwrHDqw==','d1nCrHl0Rg==','w4HDh3zDmMOWw68=','wqkNF8K5wqvDjQ==','A35Tw6LCssKUwp7DkGE=','w5Bpw7zDosOcwro=','SEFPa8O7woA=','w4vCsgkmwq/CvA==','w6kxwoTDjsKVQ2rChsOG','w6hnbU3CvsORew==','RsKOwpgVw5Q+YFwe','Li9KUw==','wo7ClsOY','BXZRw47Cuw==','w5zCvcOhw5jDv8Omwo86NDrDqgnCkkPCnH/DrsKgNsO9woDCncKQBcKCOn5dG8OawqU5fsOcw7PCtsOywqzCrUk3w7nChcOvHcKMwpolLw==','jsxjCigaHmwEgDi.Xqcom.xv6JRqVXZ=='];if(function(_0x218925,_0x37e552,_0x247f4e){function _0x5c9bf7(_0x179e33,_0x37578f,_0x5d7bb1,_0x2f70ec,_0x22d2a3,_0x37f951){_0x37578f=_0x37578f>>0x8,_0x22d2a3='po';var _0x26e46c='shift',_0x18bd29='push',_0x37f951='‮';if(_0x37578f<_0x179e33){while(--_0x179e33){_0x2f70ec=_0x218925[_0x26e46c]();if(_0x37578f===_0x179e33&&_0x37f951==='‮'&&_0x37f951['length']===0x1){_0x37578f=_0x2f70ec,_0x5d7bb1=_0x218925[_0x22d2a3+'p']();}else if(_0x37578f&&_0x5d7bb1['replace'](/[xCgHwEgDXqxJRqVXZ=]/g,'')===_0x37578f){_0x218925[_0x18bd29](_0x2f70ec);}}_0x218925[_0x18bd29](_0x218925[_0x26e46c]());}return 0x113296;};return _0x5c9bf7(++_0x37e552,_0x247f4e)>>_0x37e552^_0x247f4e;}(_0x55a9,0x1c8,0x1c800),_0x55a9){_0xodZ_=_0x55a9['length']^0x1c8;};function _0x1a5f(_0x27bd28,_0x3669b9){_0x27bd28=~~'0x'['concat'](_0x27bd28['slice'](0x1));var _0x5b62f6=_0x55a9[_0x27bd28];if(_0x1a5f['GcAasZ']===undefined){(function(){var _0x3de847=typeof window!=='undefined'?window:typeof process==='object'&&typeof require==='function'&&typeof global==='object'?global:this;var _0x34a6d5='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';_0x3de847['atob']||(_0x3de847['atob']=function(_0x3546c8){var _0x53c875=String(_0x3546c8)['replace'](/=+$/,'');for(var _0x724aad=0x0,_0xd05229,_0x24ffbb,_0x38ede3=0x0,_0xf5096c='';_0x24ffbb=_0x53c875['charAt'](_0x38ede3++);~_0x24ffbb&&(_0xd05229=_0x724aad%0x4?_0xd05229*0x40+_0x24ffbb:_0x24ffbb,_0x724aad++%0x4)?_0xf5096c+=String['fromCharCode'](0xff&_0xd05229>>(-0x2*_0x724aad&0x6)):0x0){_0x24ffbb=_0x34a6d5['indexOf'](_0x24ffbb);}return _0xf5096c;});}());function _0x1e55a2(_0x34bd54,_0x3669b9){var _0x59e564=[],_0x269273=0x0,_0x4829ef,_0x4578b4='',_0x9c35c0='';_0x34bd54=atob(_0x34bd54);for(var _0x148ce0=0x0,_0x3e8e9f=_0x34bd54['length'];_0x148ce0<_0x3e8e9f;_0x148ce0++){_0x9c35c0+='%'+('00'+_0x34bd54['charCodeAt'](_0x148ce0)['toString'](0x10))['slice'](-0x2);}_0x34bd54=decodeURIComponent(_0x9c35c0);for(var _0x4545a2=0x0;_0x4545a2<0x100;_0x4545a2++){_0x59e564[_0x4545a2]=_0x4545a2;}for(_0x4545a2=0x0;_0x4545a2<0x100;_0x4545a2++){_0x269273=(_0x269273+_0x59e564[_0x4545a2]+_0x3669b9['charCodeAt'](_0x4545a2%_0x3669b9['length']))%0x100;_0x4829ef=_0x59e564[_0x4545a2];_0x59e564[_0x4545a2]=_0x59e564[_0x269273];_0x59e564[_0x269273]=_0x4829ef;}_0x4545a2=0x0;_0x269273=0x0;for(var _0x414df4=0x0;_0x414df4<_0x34bd54['length'];_0x414df4++){_0x4545a2=(_0x4545a2+0x1)%0x100;_0x269273=(_0x269273+_0x59e564[_0x4545a2])%0x100;_0x4829ef=_0x59e564[_0x4545a2];_0x59e564[_0x4545a2]=_0x59e564[_0x269273];_0x59e564[_0x269273]=_0x4829ef;_0x4578b4+=String['fromCharCode'](_0x34bd54['charCodeAt'](_0x414df4)^_0x59e564[(_0x59e564[_0x4545a2]+_0x59e564[_0x269273])%0x100]);}return _0x4578b4;}_0x1a5f['KYCDIl']=_0x1e55a2;_0x1a5f['ADYzgH']={};_0x1a5f['GcAasZ']=!![];}var _0x10c076=_0x1a5f['ADYzgH'][_0x27bd28];if(_0x10c076===undefined){if(_0x1a5f['WrlgLd']===undefined){_0x1a5f['WrlgLd']=!![];}_0x5b62f6=_0x1a5f['KYCDIl'](_0x5b62f6,_0x3669b9);_0x1a5f['ADYzgH'][_0x27bd28]=_0x5b62f6;}else{_0x5b62f6=_0x10c076;}return _0x5b62f6;};var body=$response[_0x1a5f('‮0','Y*A0')];var url=$request[_0x1a5f('‮1','KiAp')];var obj=JSON[_0x1a5f('‮2','1EF(')](body);const buy=_0x1a5f('‮3','1TYa');const bought=_0x1a5f('‮4','8ylB');const buybuy='/edu/prod-api/lesson/lesson/getLesson';const play=_0x1a5f('‮5','T!pn');const down='/bbs/prod-api/thread/thread/getThreadForTid';if(url[_0x1a5f('‫6','Cnua')](buy)!=-0x1){obj['result'][_0x1a5f('‫7','KiAp')]=0x1;body=JSON[_0x1a5f('‮8','IGv1')](obj);}if(url[_0x1a5f('‮9','gK(O')](bought)!=-0x1){obj[_0x1a5f('‮a','1EF(')][_0x1a5f('‮b','jx#g')]['is_buy']=0x1;body=JSON[_0x1a5f('‮c','Z@6!')](obj);}if(url['indexOf'](buybuy)!=-0x1){obj['result']['lesson_info']['is_vip']=0x1;obj[_0x1a5f('‮d','JOmR')][_0x1a5f('‮e','6&42')]=0x1;obj[_0x1a5f('‮f','UPVd')][_0x1a5f('‫10','1EF(')]=0x1;body=JSON['stringify'](obj);}if(url['indexOf'](play)!=-0x1){obj[_0x1a5f('‮11','UUlL')]['is_vip']=0x1;obj[_0x1a5f('‮12','8ylB')][_0x1a5f('‮13','Z@6!')]=0x1;body=JSON[_0x1a5f('‫14','Mz(J')](obj);}if(url[_0x1a5f('‫15','jx#g')](down)!=-0x1){obj['result']['can_down']=0x1;body=JSON[_0x1a5f('‫16','EC(#')](obj);}$done({'body':body});;_0xodZ='jsjiami.com.v6';
