@@ -1,0 +1,31 @@
+{
+  "errCode": 0,
+  "data": {
+    "tagInfo": "npay",
+    "userid": "d6ce8367da75582eefd9d87501af2d57",
+    "integrate": 2,
+    "nickname": "清清情",
+    "continuousLoginDays": 1,
+    "sex": 1,
+    "loginDays": 729,
+    "exclusiveTime": 7955154064000,
+    "getCoin": 0,
+    "bindPhoneNumber": false,
+    "activeProduct": 7,
+    "bindAlipay": true,
+    "activeTime": 1667998574,
+    "isTopLevel": false,
+    "userLevel": 100,
+    "inviteType": 1,
+    "headImgUrl": "https:\/\/thirdwx.qlogo.cn\/mmopen\/vi_32\/6KJcYf8PnO2saJvu1oYHVI0jYJHibBAhIVmIJypBnSBolOB9veMn14h1162EQ9PmekxZDEk4YlF84PlmWYtACkQ\/132",
+    "adEquityTime": 7955154064000,
+    "equityTime": 7955154064000,
+    "nextLevelName": "黄金会员",
+    "pActiveTime": 1667998574,
+    "createTime": 1541379122,
+    "nowLevelName": "黄金会员",
+    "createDays": 1466,
+    "userTag": 1,
+    "nextIntegrate": 998
+  }
+}
