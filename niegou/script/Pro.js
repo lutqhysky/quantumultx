@@ -1,6 +1,3 @@
-/*
-年轮3、knockout、星空、bazaart、booka@彭于晏、texteditor@R_E、waterreminder、Voloco（5.75不要升级）、anki not、Kode、ever play，印章
-*/
 var obj = JSON.parse($response.body);
 var bundle_id = obj.receipt["bundle_id"];
 
