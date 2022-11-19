@@ -8,6 +8,8 @@
  const Coins = '/1.1/functions/getMyCoins'; 
  const Font = '/1.1/functions/buyFont'; 
  const sound = "/1.1/call/getXTTracksByAlbum";
+const XTAlbumIsBought = "/1.1/functions/checkXTAlbumIsBought";
+
 if (url.indexOf(vip) != -1) { 
     obj.membership = true; 
     obj.premiumMembership = true; 
@@ -31,13 +33,18 @@ if (url.indexOf(vip) != -1) {
     obj.result.iosCoins = 10000;
     body = JSON.stringify(obj);  
  } 
-  if (url.indexOf(Font) != -1) { 
+ if (url.indexOf(Font) != -1) { 
     obj.code = 0;
     obj.error = "null";
     body = JSON.stringify(obj);  
  } 
 if (url.indexOf(sound) != -1) { 
     obj.result["isPaid"] = true;
+    body = JSON.stringify(obj);  
+ } 
+
+if (url.indexOf(XTAlbumIsBought) != -1) { 
+    obj.result = true;
     body = JSON.stringify(obj);  
  } 
 $done({body}); 
