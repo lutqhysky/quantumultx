@@ -14,7 +14,8 @@
  const bought = '/1.1/functions/receiveBookCollectionByProUser'; 
  const Coins = '/1.1/functions/getMyCoins'; 
  const Font = '/1.1/functions/buyFont'; 
- if (url.indexOf(vip) != -1) { 
+ const sound = "/1.1/call/getXTTracksByAlbum";
+if (url.indexOf(vip) != -1) { 
     obj.membership = true; 
     obj.premiumMembership = true; 
     obj.isAdmin = true;
@@ -40,6 +41,10 @@
   if (url.indexOf(Font) != -1) { 
     obj.code = 0;
     obj.error = "null";
+    body = JSON.stringify(obj);  
+ } 
+if (url.indexOf(sound) != -1) { 
+    obj.result["isPaid"] = true;
     body = JSON.stringify(obj);  
  } 
 $done({body}); 
