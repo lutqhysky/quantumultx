@@ -1,0 +1,5 @@
+#!name=NotePlan3解锁永久订阅㊙️
+#!desc=Passer_by_yun
+#𝑼𝑹𝑳: https://raw.githubusercontent.com/lutqhysky/Surge/Mylove/MySelf/Surge.sgmodule
+[Script]
+Pro = type=http-response,pattern=^https?:\/\/api\.revenuecat\.com\/v1\/(receipts|subscribers\/\$RCAnonymousID%3A\w{32})$,requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/NotePlan/Script/NotePlan3.js,script-update-interval=0
