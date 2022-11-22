@@ -1,0 +1,58 @@
+{
+  "status" : "ok",
+  "content" : {
+    "created" : "2022-11-18T22:59:44.381Z",
+    "tier" : {
+      "level" : "genius"
+    },
+    "binomialType" : "NotationOne",
+    "status" : "pending",
+    "subscription" : {
+      "expiry" : "2029-11-25T23:00:22.000Z",
+      "orderId" : "400001176919858",
+      "autoRenewing" : false,
+      "productId" : "com.microblink.PhotoMath.purchase.genius.one_month",
+      "status" : "active",
+      "isTrial" : true,
+      "inGracePeriod" : false,
+      "packageName" : "com.microblink.PhotoMath",
+      "started" : "2022-11-18T23:00:22.000Z"
+    },
+    "subscriptionSharing" : {
+      "isOwner" : false,
+      "updatedAt" : "1970-01-01T00:00:00Z",
+      "isShareRequestValid" : false
+    },
+    "pushConsent" : false,
+    "region" : "",
+    "pushToken" : "duQB-CckikCJjspQKQrgqs:APA91bGwUc0Iq-OHc49XRwxoZSnHlYSeo1Os2MraWZADLhtkGDdjjKEr00ArttFEWRBGTF8O1ia_ApoVBaivSQ4gbucyZ07_7dzCaenGKZFQOKHLCciDeF4q2FxV88HgmDLBMzKYBsVl",
+    "locale" : "zh",
+    "updated" : "2022-11-22T13:56:08.526Z",
+    "type" : "anonymous",
+    "freeSunday" : false,
+    "iam" : "Parent",
+    "scope" : [
+      "free:solution",
+      "paid:solution",
+      "trial:solution",
+      "wip:basic"
+    ],
+    "token" : "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2Mzc4MGU2MDE3MDQwYzAzMzU4ZTk1YTQiLCJhdWQiOiJwaG90b21hdGgiLCJuYmYiOjE2NjkxMjUzNjgsInNjb3BlIjpbImZyZWU6c29sdXRpb24iLCJwYWlkOnNvbHV0aW9uIiwidHJpYWw6c29sdXRpb24iLCJ3aXA6YmFzaWMiXSwiaXNzIjoiaHR0cHM6Ly9sYXBpLnBob3RvbWF0aC5uZXQvdjQiLCJyb2xlc0tleSI6InNjb3BlIiwiZXhwIjoxNjY5NzMwMTY4LCJpYXQiOjE2NjkxMjUzNjh9.NL0RMcbEfEYVoOFNOnzG3Dz0ucrQfObTeSiTEBEw_O0",
+    "providerIds" : [
+      "CD84351E-C3DD-4C09-858F-7FAEE6092D3B"
+    ],
+    "refreshToken" : "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI2Mzc4MGU2MDE3MDQwYzAzMzU4ZTk1YTQiLCJhdWQiOiJwaG90b21hdGgiLCJuYmYiOjE2NjkxMjUzNjgsInNjb3BlIjpbInJlZnJlc2giXSwiaXNzIjoiaHR0cHM6Ly9sYXBpLnBob3RvbWF0aC5uZXQvdjQiLCJyb2xlc0tleSI6InNjb3BlIiwiZXhwIjoxNjg0Njc3MzY4LCJpYXQiOjE2NjkxMjUzNjh9.6W2FyXxi-6j3hRK-_PrtuGLVpVqEluVmxzHVTSUHBzI",
+    "age" : 38,
+    "provider" : "photomath",
+    "freeSundayVariant" : "Disabled",
+    "problemDbEnabled" : false,
+    "userId" : "63780e6017040c03358e95a4"
+  },
+  "geo" : {
+    "age" : 13,
+    "eu" : false,
+    "americas" : false,
+    "region" : "",
+    "country" : "HK"
+  }
+}
