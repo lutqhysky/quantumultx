@@ -1,0 +1,16 @@
+{
+  "message": "success",
+  "data": {
+    "avatar": "avatar\/1527578_B2614B5F-E408-4E32-886A-64347C8DE180_1669367946.png",
+    "phone": "170****4224",
+    "registerDays": 1,
+    "id": 1527578,
+    "nickname": "情情情",
+    "age": null,
+    "vipActive": true,
+    "vipExpireTime": "2099年12月12日",
+    "sex": null,
+    "registerChannelCode": null
+  },
+  "code": 0
+}
