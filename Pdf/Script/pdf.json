@@ -1,0 +1,42 @@
+{
+	"responseCreationDate": "03:49 01/12/2022",
+	"signInSessionToken": "7a3118d6-e9b2-429c-b73d-a72f0710e914",
+	"newAccount": false,
+	"accountInfo": {
+		"email": "lutqhywow@gmail.com",
+		"properties": {
+			"userOccupation": "Constructor"
+		}
+	},
+	"userInfo": [],
+	"deviceInfo": {
+		"deviceModel": "iPhone13,2",
+		"amplitudeDeviceId": "A7AB915D-1830-432A-9AA6-06E04402A0BD"
+	},
+	"linkedProducts": [{
+		"bundleId": "com.readdle.PDFExpert5",
+		"chargingPlatform": "iOS AppStore",
+		"receiptId": 1447676708000,
+		"originalTransactionId": 400001183941197,
+		"inAppStates": [{
+			"type": "subscription",
+			"productId": "com.readdle.PDFExpert5.subscription.year50_pe6",
+			"originalTransactionId": 400001183941197,
+			"productName": "subscription",
+			"isEligibleForIntroPeriod": false,
+			"subscriptionExpirationDate": "03:44 08/12/2029",
+			"subscriptionState": "trial",
+			"subscriptionAutoRenewStatus": "autoRenewOff",
+			"isInGracePeriod": false,
+			"isInBillingRetryPeriod": false,
+			"entitlements": ["ios.pe.subscription.pdf-features"]
+		}, {
+			"type": "custom purchase",
+			"productId": "pdfexpert6-user",
+			"entitlements": ["ios.pe6.basic-features"]
+		}],
+		"statisticsInfo": {
+			"events": []
+		}
+	}]
+}
