@@ -135,9 +135,9 @@ obj.limits = {
     }
   },
   
-  obj.premium = true,
-  obj.sus_rbt = true,
-
+obj.premium = true,
+obj.sus_rbt = true,
+obj.current_subscription = true,
 
 
 body = JSON.stringify(obj);
