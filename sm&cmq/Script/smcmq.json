@@ -1,0 +1,13 @@
+{
+	"purchase_scenario": "intro.intro.auto_renew_off",
+	"purchase_state": "INTRO",
+	"is_premium": true,
+	"groups_statuses": {
+		"20516827": {
+			"was_trial": true
+		}
+	},
+	"is_subscription_gifted": true,
+	"is_family_subscription_gifted": true,
+	"is_web_purchase": true
+}
