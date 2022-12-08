@@ -1,0 +1,34 @@
+{
+	"code": 0,
+	"error_code": "00000",
+	"message": "success",
+	"data": {
+		"account_type": 1,
+		"account_id": 1906556362,
+		"is_vip": true,
+		"valid_time": 1670306019322,
+		"invalid_time": "253392455349000",
+		"have_valid_contract": true,
+		"show_renew_flag": true,
+		"sub_type": 2,
+		"sub_type_name": "续期",
+		"active_product_id": 0,
+		"active_order_id": 7005771217546803000,
+		"active_sub_type": 2,
+		"active_sub_type_name": "续期",
+		"active_promotion_status": 2,
+		"in_trial_period": true,
+		"trial_period_invalid_time": 253392455349000,
+		"current_order_invalid_time": 253392455349000,
+		"derive_type": 1,
+		"derive_type_name": "普通会员",
+		"membership": {
+			"id": 18,
+			"display_name": "海报工厂普通会员",
+			"level": 1,
+			"level_name": "普通会员"
+		}
+	},
+	"request_id": "82ff467854ee47328909932fa6f35b15",
+	"success": true
+}
