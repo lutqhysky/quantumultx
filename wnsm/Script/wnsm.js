@@ -8,7 +8,7 @@ MITM = snailsleep.net,music.snailsleep.net,community.snailsleep.net
 
 
 
-re('"expires":\\d+@"expired":\\w+@"vip":\\w+@"vipNeedPay":\\w+@"needPay":\\w+@"bought":\\w+@"buy":\\w+','"expires":4079147492000@"expired":false@"vip":true@"vipNeedPay":false@"needPay":false@"bought":true@"buy":true')
+re('"expires":\\d+@"expired":\\w+@"vip":\\w+@"vipNeedPay":\\w+@"needPay":\\w+@"bought":\\w+@"buy":\\w+@"needPay":\\w+','"expires":4079147492000@"expired":false@"vip":true@"vipNeedPay":false@"needPay":false@"bought":true@"buy":true"needPay":false')
 
 function re() {
  var body = $response.body;
