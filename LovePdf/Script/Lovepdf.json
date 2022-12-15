@@ -1,9 +1,10 @@
-#https://service.ilovepdf.com/v1/user
-#
-var body = $response.body;
-var obj = JSON.parse(body);
-
-obj.limits = {
+{
+  "id": 84316918,
+  "name": "清清情",
+  "email": "lutqhysky@outlook.com",
+  "active": 1,
+  "avatar": "https://www.ilovepdf.com/img/avatar/default30.png",
+  "limits": {
     "merge": {
       "mb": 4000,
       "files": 500
@@ -134,11 +135,17 @@ obj.limits = {
       "files": 5
     }
   },
-  
-obj.premium = true,
-obj.sus_rbt = true,
-obj.current_subscription = true,
-
-
-body = JSON.stringify(obj);
-$done({body});
+  "mode": 3,
+  "premium": true,
+  "country": "US",
+  "loginkey": "qGKSFS8v8HJFIioSJ8EGpgA4mt-JUjjC",
+  "can_trial": true,
+  "current_subscription": true,
+  "team_role": "owner",
+  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzZXJ2aWNlLmlsb3ZlcGRmLmNvbSIsImF1ZCI6IiIsImlhdCI6MTY3MDExNzU5NywibmJmIjoxNjcwMTE3NTk3LCJqdGkiOjg0MzE2OTE4fQ.QnCZeObB4AZ8LCbDg0PAOhzZrYSjnuPZks9jElBJ6gU",
+  "sus_rbt": true,
+  "custom_avatar": 0,
+  "signatures_left": 0,
+  "sms_left": 0,
+  "certificates_left": 0
+}
