@@ -1,15 +1,4 @@
-/*
-#蜗牛睡眠 全功能解锁VIP&付费音乐
-^https:\/\/(snailsleep\.net\/|(music|community)\.snailsleep\.net\/)(snail\/v1\/profile\/get|snail-music\/music\/(sleeping|meditation)\/single\/list) url script-response-body wnsm1.js
-
-MITM = snailsleep.net,music.snailsleep.net,community.snailsleep.net
-*/
-
-
-
-
-re('"expires":\\d+@"expired":\\w+@"vip":\\w+@"vipNeedPay":\\w+@"needPay":\\w+@"bought":\\w+@"buy":\\w+@"needPay":\\w+','"expires":4079147492000@"expired":false@"vip":true@"vipNeedPay":false@"needPay":false@"bought":true@"buy":true@"needPay":false')
-
+re('"expires":\\d+@"expired":\\w+@"vip":\\w+@"vipNeedPay":\\w+@"needPay":\\w+@"bought":\\w+@"buy":\\w+','"expires":4079147492000@"expired":false@"vip":true@"vipNeedPay":false@"needPay":false@"bought":true@"buy":true')
 function re() {
  var body = $response.body;
  if (arguments[0].includes("@")) {
