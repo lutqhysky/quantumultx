@@ -1,4 +1,4 @@
-re('"MembersEndDateMs": \\w+@"vip": \\d+','"MembersEndDateMs": 1871024163000@"vip": 1')
+re('"MembersEndDateMs": \\w+@"VIP": \\d+','"MembersEndDateMs": 1871024163000@"VIP": 1')
 function re() {
 var body = $response.body;
 if(!body){
