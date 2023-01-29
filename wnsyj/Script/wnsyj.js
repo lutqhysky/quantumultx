@@ -11,7 +11,7 @@ if (url.indexOf(Vipdate) != -1) {
     obj.data.haspremiumhistory = true;
  body = JSON.stringify(obj);  
  } 
-if ($request.url.indexOf(getway) != -1){
+if ($request.url.indexOf(vip) != -1){
     body = $response.body.replace(/\"__v":\d+/g, '\"__v":1');
 }
 $done({body}); 
