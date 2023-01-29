@@ -2,7 +2,7 @@ var body = $response.body;
 var url = $request.url; 
 var obj = JSON.parse(body); 
 const Vipdate = 'api/user/profile';
-const vip = 'api/notifications';
+const vip = 'api/（notifications|stations)';
 if (url.indexOf(Vipdate) != -1) { 
     obj.data.__v = 1;
     obj.data.ispremium = true;
@@ -11,14 +11,7 @@ if (url.indexOf(Vipdate) != -1) {
     obj.data.haspremiumhistory = true;
  body = JSON.stringify(obj);  
  } 
-if (url.indexOf(vip) != -1) { 
-    obj.data.__v = 1;
- body = JSON.stringify(obj);  
- }
-
 if ($request.url.indexOf(getway) != -1){
     body = $response.body.replace(/\"__v":\d+/g, '\"__v":1');
 }
-
-
 $done({body}); 
