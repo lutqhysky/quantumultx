@@ -12,6 +12,6 @@ if (url.indexOf(Vipdate) != -1) {
  body = JSON.stringify(obj);  
  } 
 if ($request.url.indexOf(vip) != -1){
-    body = $response.body.replace(/\"__v":\d+/g, '\"__v":1');
+    body = $response.body.replace(/__v":\d+/g, '__v":1');
 }
 $done({body}); 
