@@ -12,7 +12,7 @@ if (url.indexOf(vip) != -1) {
 obj.data.permission_info.download_permission = 1;
 obj.data.permission_info.trysee_permission = 1;
 obj.data.permission_info.download_need_permission = 1;
-obj.data.permission_info.play_need_permission = 1;
+obj.data.permission_info.play_need_permission = 0;
 obj.data.permission_info.play_permission = 1;    
     body = JSON.stringify(obj);    
 }
