@@ -3,7 +3,7 @@ let obj = JSON.parse($response.body);
  obj= {
   "code" : 200,
   "data" : {
-    "gender" : 2,
+    "gender" : 3,
     "had_vip" : true,
     "vip_type" : "temporary",
     "id" : 571268,
