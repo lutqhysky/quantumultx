@@ -10,7 +10,7 @@ let obj = JSON.parse($response.body);
     "last_login" : "2022-10-04 12:31:29",
     "is_device_user" : true,
     "head" : "https://thirdwx.qlogo.cn/mmopen/vi_32/1r66gSheha0tzHOx5jKxHiauy8oerwZHjYQ3esIYcMH9yjQSEPsd5WT54sBwFibU4xDBc4Jwxo2NZjicGUwg8sqbg/132",
-    "vip_expire" : "2029-11-03 14:09:32",
+    "vip_expire" : "2099-12-02 14:09:32",
     "name" : "清清情"
   },
   "msg" : "ok",
