@@ -10,6 +10,4 @@ if (url.indexOf(vip) != -1) {
     obj.res.userinfo.reg_type = 1;
     body = JSON.stringify(obj);
 }
-$done({
-    body
-});
+$done({body});
