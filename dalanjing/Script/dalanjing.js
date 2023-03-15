@@ -13,7 +13,7 @@
      obj.data.isV = 1;  
      obj.data.memberInfo.isIDNumberValid = true; 
      obj.data.memberInfo.isMember = 1; 
-     obj.data.memberInfo.memberEndTimestamp = 9876543210; 
+     obj.data.memberInfo.memberEndTimestamp = 4100771404; 
      body = JSON.stringify(obj);  
  } 
  $done({body});
