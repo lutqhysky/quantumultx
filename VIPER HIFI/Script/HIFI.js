@@ -1,5 +1,5 @@
 /*
-https:\/\/viperhifi\.kugou\.com\/v1\/hifi\/membership\/vipinfo
+https:\/\/viperhifi\.kugou\.com\/v1\/(hifi\/membership\/vipinfo|membership\/vipuser)
 */
 
 var body = $response.body;
