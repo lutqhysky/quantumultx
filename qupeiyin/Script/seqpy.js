@@ -7,7 +7,7 @@ if (url.indexOf(vip) != -1) {
     obj.data.is_vip = "1";
     obj.data.svip_endtime = "1891758867";
     obj.data.vip_endtime = "1891758867";
-      obj.data.libu_vip_endtime = "1891758867";
+    obj.data.libu_vip_endtime = "1891758867";
     body = JSON.stringify(obj);
 
 }
