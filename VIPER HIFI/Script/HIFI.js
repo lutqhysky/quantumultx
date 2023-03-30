@@ -21,8 +21,8 @@ if (url.indexOf(Vip) != -1) {
     body = JSON.stringify(obj);
 }
 if (url.indexOf(song) != -1) {
-    obj.data[rebuy_pay_type] = 3;
-    obj.data[buy_count_vip] = 1;
+    obj["data"]["rebuy_pay_type"] = 3;
+    obj["data"]["buy_count_vip"] = 1;
     body = JSON.stringify(obj);
 }
 $done({body});
