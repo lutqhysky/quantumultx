@@ -29,18 +29,18 @@ var ddgksf2013 = {
   "message": "success",
   "data": {
     "group_expired_at": 4100748696,
-    "is_tried": 0,
+    "is_tried": 1,
     "max_devices": 1000,
     "period_type": "premium",
     "candy_expired_at": 4100748696,
-    "pending": 0,
-    "remained_seconds": 0,
+    "pending": 1,
+    "remained_seconds": 9000000,
     "limit": 0,
     "expired_at": 4100748696,
     "candy": 1,
     "license_type": "premium",
-    "quota": 0,
-    "status": 0,
+    "quota": 1,
+    "status": 1,
     "coin": 9999
   }
 };
