@@ -22,7 +22,10 @@ if (url.indexOf(Vip) != -1) {
     body = JSON.stringify(obj);
 }
 if (url.indexOf(song) != -1) {
-   body = $response.body.replace(/"rebuy_pay_type":\d+/g, "\"rebuy_pay_type\":3").replace(/"buy_count_vip":\d+/g, "\"buy_count_vip\":1")
+   body = $response.body.replace(/"rebuy_pay_type":\d+/g, "\"rebuy_pay_type\":3")
+                        .replace(/"buy_count_vip":\d+/g, "\"buy_count_vip\":1")
+                        .replace(/"buy_count_audios":\d+/g, "\"buy_count_audios\":1")
+                        .replace(/"buy_count_kubi":\d+/g, "\"buy_count_kubi\":1")
 $done({body});
 }
 $done({body});
