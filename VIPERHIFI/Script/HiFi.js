@@ -1,5 +1,5 @@
 /*
-^https?:\/\/(viperhifi|media\.store)\.kugou\.com\/v1\/(hifi\/membership\/vipinfo|membership\/vipuser|get_res_privilege)
+^https?:\/\/(viperhifi|media\.store|login\.user)\.kugou\.com\/v\d+\/(hifi\/membership\/vipinfo|membership\/vipuser|get_res_privilege|login_by_token)
 http://login.user.kugou.com/v5/login_by_token
 */
 
