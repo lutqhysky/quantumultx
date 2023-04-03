@@ -21,8 +21,7 @@ if (url.indexOf(Vip) != -1) {
     body = JSON.stringify(obj);
 }
 if (url.indexOf(song) != -1) {
-    obj["data"]["rebuy_pay_type"] = 3;
-    obj["data"]["buy_count_vip"] = 1;
-    body = JSON.stringify(obj);
+   body = $response.body.replace(/"rebuy_pay_type":\d+/g, "\"rebuy_pay_type\":3").replace(/"buy_count_vip":\d+/g, "\"buy_count_vip\":1")
+$done({body});
 }
 $done({body});
