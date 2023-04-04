@@ -1,10 +1,3 @@
-var body = $response.body;
-var url = $request.url;
-var obj = JSON.parse(body);
-const lock = '/api/v1/whole/bannerInfo';
+var body = $response.body.replace(/is_unlock":\d+/g, 'is_unlock":1');
+$done({ body });
 
-if (url.indexOf(lock) != -1) {
-   body = $response.body.replace(/"is_unlock":\d+/g, "\"is_unlock\":1")
-$done({body});
-}
-$done({body});
