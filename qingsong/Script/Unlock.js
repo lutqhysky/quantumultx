@@ -4,7 +4,7 @@ var obj = JSON.parse(body);
 const lock = '/api/v1/whole/bannerInfo';
 
 if (url.indexOf(lock) != -1) {
-   body = $response.body.replace(/"is_unlock":\d+/g, "\"is_unlock\":3")
+   body = $response.body.replace(/"is_unlock":\d+/g, "\"is_unlock\":1")
 $done({body});
 }
 $done({body});
