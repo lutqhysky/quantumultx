@@ -14,6 +14,6 @@ let obj = JSON.parse($response.body);
                       .replace(/"feeType":\d+/g, "\"feeType\":0")
 $done({body});
  }
-$done({body: JSON.stringify(obj)});
+$done({body:JSON.stringify(obj)});
 
 
