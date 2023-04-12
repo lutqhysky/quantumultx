@@ -13,6 +13,7 @@ var body = $response.body;
      obj.model.zhuanlan.vip = true;
      obj.model.zhuanlan.vipValid = true;
      obj.model.zhuanlan.subscribeState = 1;
+     obj.model.vipValid = true;
      body = JSON.stringify(obj);
  }
 $done({body});
