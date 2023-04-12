@@ -4,7 +4,7 @@
 */ 
 
 
-const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
+const zhuanlan = "(/zhuanlan/zhuanlanV50305.do|/article/detailV50305)";
 const bqc = "/api/appDistribution/distributionPoster";
 let obj = JSON.parse($response.body);
 
