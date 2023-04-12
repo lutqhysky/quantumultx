@@ -1,9 +1,11 @@
 /* 
  https:\/\/apis\.lifeweek\.com\.cn\/zhuanlan\/zhuanlanV50305\.do 
- */ 
+ https:\/\/apis\.lifeweek\.com\.cn\/api\/appDistribution\/distributionPoster
+*/ 
 
 
 const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
+const bqc = "/api/appDistribution/distributionPoster";
 let obj = JSON.parse($response.body);
 
  if ($request.url.indexOf(zhuanlan) != -1) {
@@ -13,6 +15,9 @@ let obj = JSON.parse($response.body);
                       .replace(/subscribeState\":\d+/g, 'subscribeState":1')
                       .replace(/feeType\":\d+/g, 'feeType":0')
 $done({body});
+ }
+if ($request.url.indexOf(bqc) != -1) {
+obj.model.userVflag = 1
  }
 $done({body:JSON.stringify(obj)});
 
