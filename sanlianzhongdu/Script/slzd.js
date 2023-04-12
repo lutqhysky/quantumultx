@@ -9,13 +9,13 @@ var body = $response.body;
  const zhuanlan = '/zhuanlan/zhuanlanV50305.do';
 
  if (url.indexOf(zhuanlan) != -1) {
-     obj.model.zhuanlan.isSubscribed = true;
-     obj.model.zhuanlan.vip = true;
-     obj.model.zhuanlan.vipValid = true;
-     obj.model.zhuanlan.subscribeState = 1;
-     obj.model.vipValid = true;
-     obj.model.articleList["feeType"] = 0;
-     body = JSON.stringify(obj);
+     body = $response.body.replace(/"isSubscribed":\w+/g, "\"isSubscribed\":true")
+                          .replace(/"vipe":\w+/g, "\"vip\":true")
+                          .replace(/"vipValid":\w+/g, "\"vipValid\":true")
+                          .replace(/"subscribeState":\d+/g, "\"subscribeState\":1")
+                          .replace(/"vipValid":\w+/g, "\"vipValid\":true")
+                          .replace(/"feeType":\d+/g, "\"feeType\":0")
+$done({body});
  }
 $done({body});
 
