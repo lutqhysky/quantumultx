@@ -6,7 +6,7 @@
 const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
 let obj = JSON.parse($response.body);
 
- if (url.indexOf(zhuanlan) != -1) {
+ if ($request.url.indexOf(zhuanlan) != -1) {
  body = $response.body.replace(/isSubscribed\":\w+/g, 'isSubscribed":true')
                       .replace(/vipe\":\w+/g, 'vip":true')
                       .replace(/vipValid\":\w+/g, 'vipValid":true')
