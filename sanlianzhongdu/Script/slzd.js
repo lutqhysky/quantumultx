@@ -14,7 +14,7 @@ var body = $response.body;
      obj.model.zhuanlan.vipValid = true;
      obj.model.zhuanlan.subscribeState = 1;
      obj.model.vipValid = true;
-     obj.model.articleList[{"feeType"}] = 0;
+     obj.model.articleList["feeType"] = 0;
      body = JSON.stringify(obj);
  }
 $done({body});
