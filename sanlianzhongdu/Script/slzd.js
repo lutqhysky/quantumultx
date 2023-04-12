@@ -14,6 +14,7 @@ let obj = JSON.parse($response.body);
                       .replace(/vipValid\":\w+/g, 'vipValid":true')
                       .replace(/subscribeState\":\d+/g, 'subscribeState":1')
                       .replace(/feeType\":\d+/g, 'feeType":0')
+                      .replace(/type\":\d+/g, 'type":4')
 $done({body});
  }
 if ($request.url.indexOf(bqc) != -1) {
