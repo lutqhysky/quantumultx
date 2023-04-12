@@ -16,6 +16,7 @@ let obj = JSON.parse($response.body);
                       .replace(/feeType\":\d+/g, 'feeType":0')
                       .replace(/type\":\d+/g, 'type":4')
                       .replace(/zhunalanSubscribe\":\w+/g, 'zhunalanSubscribe":true')
+                      .replace(/readFlag\":\d+/g, 'readFlag":1')
 $done({body});
  }
 if ($request.url.indexOf(bqc) != -1) {
