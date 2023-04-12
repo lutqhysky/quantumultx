@@ -3,20 +3,17 @@
  */ 
 
 
-var body = $response.body;
- var url = $request.url;
- var obj = JSON.parse(body);
- const zhuanlan = '/zhuanlan/zhuanlanV50305.do';
+const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
+let obj = JSON.parse($response.body);
 
  if (url.indexOf(zhuanlan) != -1) {
-     body = $response.body.replace(/"isSubscribed":\w+/g, "\"isSubscribed\":true")
+ body = $response.body.replace(/"isSubscribed":\w+/g, "\"isSubscribed\":true")
                           .replace(/"vipe":\w+/g, "\"vip\":true")
                           .replace(/"vipValid":\w+/g, "\"vipValid\":true")
                           .replace(/"subscribeState":\d+/g, "\"subscribeState\":1")
-                          .replace(/"vipValid":\w+/g, "\"vipValid\":true")
                           .replace(/"feeType":\d+/g, "\"feeType\":0")
 $done({body});
  }
-$done({body});
+$done({body: JSON.stringify(obj)});
 
 
