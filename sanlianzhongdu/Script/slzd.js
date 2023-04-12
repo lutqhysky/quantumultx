@@ -11,7 +11,7 @@ let obj = JSON.parse($response.body);
                       .replace(/vipe\":\w+/g, 'vip":true')
                       .replace(/vipValid\":\w+/g, 'vipValid":true')
                       .replace(/subscribeState\":\d+/g, 'subscribeState":1')
-                      .replace(/feeType\":\d+/g, 'feeType":0');
+                      .replace(/feeType\":\d+/g, 'feeType":0')
 $done({body});
  }
 $done({body:JSON.stringify(obj)});
