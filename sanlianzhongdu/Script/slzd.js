@@ -19,7 +19,9 @@ let obj = JSON.parse($response.body);
                       .replace(/type\":\d+/g, 'type":4')
                       .replace(/zhunalanSubscribe\":\w+/g, 'zhunalanSubscribe":true')
                       .replace(/readFlag\":\d+/g, 'readFlag":1')
-$done({body});
+                      .replace(/vipLevel\":\d+/g, 'vipLevel":1')
+                      .replace(/bookShelfId\":\d+/g, 'bookShelfId":1')
+  $done({body});
  }
 if ($request.url.indexOf(bqc) != -1) {
 obj.model.userVflag = 1
