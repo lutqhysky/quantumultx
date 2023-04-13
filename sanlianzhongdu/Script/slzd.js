@@ -7,7 +7,7 @@
 const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
 const bqc = "/api/appDistribution/distributionPoster";
 const vip = "/article/detailV50305";
-const ceshi = "/article/detailV50305";
+const ceshi = "/user/msgCount";
 let obj = JSON.parse($response.body);
 
  if ($request.url.indexOf(zhuanlan) != -1) {
