@@ -19,8 +19,7 @@ let obj = JSON.parse($response.body);
                       .replace(/type\":\d+/g, 'type":4')
                       .replace(/zhunalanSubscribe\":\w+/g, 'zhunalanSubscribe":true')
                       .replace(/readFlag\":\d+/g, 'readFlag":1')
-                      .replace(/vipLevel\":\d+/g, 'vipLevel":1')
-                      .replace(/bookShelfId\":\d+/g, 'bookShelfId":1')
+                      .replace(/vipLevel\":\d+/g, 'vipLevel":8')
                       .replace(/expireTime\":\d+/g, 'expireTime":4100739826000')
 $done({body});
  }
