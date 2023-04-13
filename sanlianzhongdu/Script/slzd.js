@@ -15,7 +15,7 @@ let obj = JSON.parse($response.body);
                       .replace(/vip\":\w+/g, 'vip":true')
                       .replace(/vipValid\":\w+/g, 'vipValid":true')
                       .replace(/subscribeState\":\d+/g, 'subscribeState":1')
-                      .replace(/feeType\":\d+/g, 'feeType":0')
+                      .replace(/feeType\":\d+/g, 'feeType":4')
                       .replace(/type\":\d+/g, 'type":4')
                       .replace(/zhunalanSubscribe\":\w+/g, 'zhunalanSubscribe":true')
                       .replace(/readFlag\":\d+/g, 'readFlag":1')
