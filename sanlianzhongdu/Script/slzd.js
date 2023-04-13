@@ -33,7 +33,8 @@ if ($request.url.indexOf(vip) != -1) {
                       .replace(/type\":\d+/g, 'type":4')
                       .replace(/zhunalanSubscribe\":\w+/g, 'zhunalanSubscribe":true')
                       .replace(/vipExpiration\":".*?"/g, 'vipExpiration":"2099-12-12"')
-$done({body});
+                      .replace(/isZhuanlanSubscribed\":\w+/g, 'isZhuanlanSubscribed":true')
+ $done({body});
  }
 if ($request.url.indexOf(ceshi) != -1) {
 obj.model.data = 1
