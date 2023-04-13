@@ -1,9 +1,3 @@
-/* 
- https:\/\/apis\.lifeweek\.com\.cn\/zhuanlan\/zhuanlanV50305\.do 
- https:\/\/apis\.lifeweek\.com\.cn\/api\/appDistribution\/distributionPoster
-*/ 
-
-
 const zhuanlan = "/zhuanlan/zhuanlanV50305.do";
 const bqc = "/api/appDistribution/distributionPoster";
 const vip = "/article/detailV50305";
