@@ -21,7 +21,8 @@ let obj = JSON.parse($response.body);
                       .replace(/readFlag\":\d+/g, 'readFlag":1')
                       .replace(/vipLevel\":\d+/g, 'vipLevel":1')
                       .replace(/bookShelfId\":\d+/g, 'bookShelfId":1')
-  $done({body});
+                      .replace(/expireTime\":\d+/g, 'expireTime":4100739826000')
+$done({body});
  }
 if ($request.url.indexOf(bqc) != -1) {
 obj.model.userVflag = 1
