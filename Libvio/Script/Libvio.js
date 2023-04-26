@@ -16,4 +16,8 @@ obj.data.permission_info.play_need_permission = 0;
 obj.data.permission_info.play_permission = 1;    
     body = JSON.stringify(obj);    
 }
+if (url.indexOf(vip) != -1) {
+obj. no_permission = flase;  
+    body = JSON.stringify(obj);    
+}
 $done({body});
