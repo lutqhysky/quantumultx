@@ -19,7 +19,7 @@ obj.data.permission_info.play_permission = 1;
     body = JSON.stringify(obj);    
 }
 if (url.indexOf(path2) != -1) {
-obj. no_permission = flase;  
+obj. no_permission = false;  
     body = JSON.stringify(obj);    
 }
 $done({body});
