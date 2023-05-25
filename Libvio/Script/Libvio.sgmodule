@@ -2,6 +2,6 @@
 #!desc=自己用,经常性的更换域名
 [Script]
 > 001 Libvio【🟢】需要购买，自签用的电影播放软件。
-Libvio（2023-02-23） = type=http-response,pattern= https://\s\S/xgapp.php/v3/(video_detail|video),requires-body=1,max-size=0,script-path= https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Libvio/Script/Libvio.js,script-update-interval=0
+Libvio（2023-02-23） = type=http-response,pattern= ^https?:\/\/\s\S/xgapp\.php\/v3\/(video_detail|video),requires-body=1,max-size=0,script-path= https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Libvio/Script/Libvio.js,script-update-interval=0
 [MITM]
 hostname = %APPEND% play.2s6.cn
