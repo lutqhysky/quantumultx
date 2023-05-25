@@ -4,7 +4,7 @@ let obj = JSON.parse($response.body);
   "osVersion" : "15.1.1",
   "lastDeviceId" : "00000000-0000-0000-0000-000000000000",
   "packageId" : "one_year_VIP_trial",
-  "vipExpireDate" : "2099-10-12",
+  "vipExpireDate" : "2099-12-12",
   "_instanceName" : "1,816,654 (+86)",
   "registerUuid" : "B36259F6-487C-4917-9E98-DE056931ED8C",
   "countryCode" : "86",
