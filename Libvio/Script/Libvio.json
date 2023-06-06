@@ -1,0 +1,16 @@
+{
+  "msg": "用户详情",
+  "data": {
+    "user_portrait": "",
+    "user_nick_name": "",
+    "user_points": 999999959,
+    "user_email": "",
+    "user_type": 2,
+    "user_id": 101765,
+    "user_name": "lutqhysky",
+    "user_portrait_origin": "",
+    "user_end_time": "2099.12.12到期",
+    "invite_code": "L0JGgj"
+  },
+  "code": 1
+}
