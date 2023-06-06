@@ -1,0 +1,19 @@
+{
+  "error": false,
+  "data": {
+    "remain_coins": 8888,
+    "total_coins": 8888,
+    "uid": 14795018,
+    "invitation_users": 0,
+    "ID": 5638,
+    "masterid": 0,
+    "vip_expired": 4100688000,
+    "is_paid": 1,
+    "masterid_bind_udid": "",
+    "masterid_bind_time": 0,
+    "token": "f37269337c6987a5eb7d850f7d86687e",
+    "used_coins": 8888,
+    "is_vip": 1
+  },
+  "status": 200
+}
