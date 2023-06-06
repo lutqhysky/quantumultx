@@ -1,0 +1,37 @@
+{
+  "message" : "success",
+  "data" : {
+    "login_type" : "phone",
+    "source" : "",
+    "birthday" : "",
+    "invite_code" : "55892331",
+    "range_age" : "",
+    "sleep_total_time" : 0,
+    "nickname" : "52Pojie",
+    "wx_openid" : "",
+    "default_group_banner" : "https://hwcdn.navoinfo.cn/resource/Now/love_planet/default_group_banner.png",
+    "sleep_average_time" : 0,
+    "sleep_remind" : 0,
+    "reg_days" : 1,
+    "sleep_average_quality" : 0,
+    "sleep_remind_status" : {
+      "status" : 0,
+      "remind_time" : ""
+    },
+    "is_svip" : true,
+    "id" : 90103,
+    "unionid" : "",
+    "platform" : "ios",
+    "gender" : "other",
+    "is_vip" : true,
+    "wx_new_openid" : "",
+    "avatar" : "https://i.imgtg.com/2022/10/31/Rhzig.jpg",
+    "continue_day_count" : 0,
+    "is_wx_reg" : 0,
+    "created_at" : "2023-05-25T13:08:18.000000Z",
+    "expiration" : "2099-12-12",
+    "expiration_time" : "2099-12-12",
+    "username" : "52Pojie"
+  },
+  "code" : 200
+}
