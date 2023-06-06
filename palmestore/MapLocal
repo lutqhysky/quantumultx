@@ -1,0 +1,63 @@
+{
+  "body": {
+    "amount": 0,
+    "isAuthor": true,
+    "switch": 1,
+    "gold": {
+      "goldAmount": 10000,
+      "url": "https:\/\/dj.palmestore.com\/zycl\/gold\/withdraw?source=mine",
+      "isShow": 1,
+      "goldText": "10000元"
+    },
+    "read": {
+      "tingDay": 0,
+      "time": 0,
+      "tingWeek": 0,
+      "week": 0,
+      "tingTotal": 0,
+      "total": 0,
+      "tingMonth": 0
+    },
+    "userRank": 0,
+    "myaccount_url": "https:\/\/dj.palmestore.com\/zyuc\/user\/account?source=mine",
+    "isLogin": 1,
+    "userInfo": {
+      "unlockVipInfo": {
+        "vipType": 1,
+        "vipExpire": 4100741502,
+        "expireDate": "2099-12-12"
+      },
+      "phone": "",
+      "introduction": "",
+      "title": [
+      ],
+      "avatar": "https:\/\/thirdwx.qlogo.cn\/mmopen\/vi_32\/2AO31mdaKaoJicaNY7H8LOAmLKux3s0cAfN4icmB1TRbpx14Ag1kJUqRxib9VRa7kDjuQMvZ5ib7oA3icRtwicibDVrJg\/132",
+      "backgroundImage": "https:\/\/book.img.zhangyue01.com\/idc_1\/m_1,w_300,h_400\/c11e8740\/group61\/M00\/F5\/AD\/CmQUOGE3GMmENFRGAAAAAHV735M262748889.png?v=1uEVZNDO&t=CmQUOGE3GMk.",
+      "level": 1,
+      "birthday": "",
+      "hohorAmount": {
+        "amount": 0,
+        "amountText": "0"
+      },
+      "userNick": "清清情",
+      "gender": 2,
+      "vipInfo": {
+        "content": "点击进入购买会员",
+        "vipType": 1,
+        "expireDate": "2099-12-12",
+        "halfScreen": "https:\/\/dj.palmestore.com\/zytc\/public\/index.php?ca=FreeVip.Index&source=book",
+        "realExpire": 9876543210000,
+        "expireDateNew": "2099-12-12",
+        "description": "开通会员",
+        "fullScreen": "https:\/\/dj.palmestore.com\/zytc\/public\/index.php?ca=FreeVip.Index&showContentInStatusBar=1&source=mine",
+        "vipExpire": 4100741502
+      }
+    },
+    "followInfo": {
+      "fans": 0,
+      "follow": 0
+    }
+  },
+  "msg": "",
+  "code": 0
+}
