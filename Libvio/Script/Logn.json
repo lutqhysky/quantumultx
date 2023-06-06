@@ -1,0 +1,17 @@
+{
+  "msg": "登录成功",
+  "data": {
+    "user_portrait": "",
+    "invite_code": "L0JGgj",
+    "user_nick_name": "",
+    "user_points": 999999959,
+    "user_email": "",
+    "user_type": 2,
+    "user_id": 101765,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0aW1lIjoxNjg0NzY1MTY3LCJ1aWQiOjEwMTc2NX0.ncLII0ry-AZ9TRFjEikymqhwNt4RJtXYhMX-1pyt__A",
+    "user_name": "lutqhysky",
+    "user_end_time": "2099.12.12到期",
+    "user_portrait_origin": ""
+  },
+  "code": 1
+}
