@@ -1,0 +1,23 @@
+{
+  "success" : 1,
+  "message" : null,
+  "data" : {
+    "user" : {
+      "id" : 76043,
+      "promotion_days" : 0,
+      "checkin_days" : 0,
+      "want_watch_count" : 34,
+      "promotion_code" : "2zbzpa",
+      "vip_expired_at" : "2099-12-12T17:35:01.000+08:00",
+      "username" : "lutqhysky",
+      "share_url" : "https://jav009.app/?source=2zbzpa",
+      "last_checkin_at" : null,
+      "promote_users_count" : 0,
+      "email" : "lutqhysky@outlook.com",
+      "is_vip" : true,
+      "watched_count" : 1
+    },
+    "banner_type" : "payment"
+  },
+  "action" : null
+}
