@@ -1,7 +1,7 @@
 /* 
  app下载地址：Vister看天下
   MITM = open3.vistastory.com
- ^https?:\/\/open3\.vistastory\.com\/v3\/api\/(vip\/get_vip_info_and_recommend_mags|article\/article_detail2|my\/home\/get_home_center|vip\/get_vip_price_info|magazine\/mag_column_detail) url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
+ ^https?:\/\/open3\.vistastory\.com\/v3\/api\/(vip\/get_vip_info_and_recommend_mags|article\/article_detail2|my\/home\/get_home_center|vip\/get_vip_price_info|magazine\/mag_column_detail|magazine\/mag_column_detail) url response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/Vister/Script/Vister.js
  magazine/mag_column_detail
  作者：清清情
  下面，不用一级一级的去找了，直接像网球锤子，替换就可以了。。。！！！！
