@@ -16,6 +16,8 @@ obj.data.permission_info.trysee_permission = 1;
 obj.data.permission_info.download_need_permission = 0;
 obj.data.permission_info.play_need_permission = 0;
 obj.data.permission_info.play_permission = 1;    
+obj.data.vod_url_with_player["parse_after_config_enable"] = 1; 
+    
     body = JSON.stringify(obj);    
 }
 if (url.indexOf(path2) != -1) {
