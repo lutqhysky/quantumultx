@@ -1,4 +1,4 @@
-body = $response.body.replace(/play_permission"\d+/g, 'play_permission":1').replace(/play_need_permission":\d+/g, 'play_need_permission":0').replace(/parse_after_config_enable":"\d+"/g, 'parse_after_config_enable":"1"').replace(/trysee_permission":\d+/g, 'trysee_permission":1').replace(/isMiniVipdownload_permission":\d+/g, 'download_permission":1');
+body = $response.body.replace(/play_permission":\d+/g, 'play_permission":1').replace(/play_need_permission":\d+/g, 'play_need_permission":0').replace(/parse_after_config_enable":"\d+"/g, 'parse_after_config_enable":"1"').replace(/trysee_permission":\d+/g, 'trysee_permission":1').replace(/isMiniVipdownload_permission":\d+/g, 'download_permission":1');
 $done({body});
 /*
 app下载地址：下载Libvio，需要自己签名
