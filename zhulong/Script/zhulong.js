@@ -28,6 +28,7 @@
  if (url.indexOf(play) != -1) {
      obj.result.is_vip = 1;
      obj.result.is_buy = 1;
+     obj.result.vip_type = 1;
      body = JSON.stringify(obj);
  }
  if (url.indexOf(down) != -1) {
