@@ -1,0 +1,9 @@
+{
+  "message": "校验成功",
+  "data": {
+    "isVip": "1",
+    "userId": "abcd3180-13f9-11ee-8892-71b989d40a33",
+    "expiresDateMs": "4100707200000"
+  },
+  "code": 200
+}
