@@ -13,12 +13,12 @@ const vip = '/v1/user/info?';
 const buy = '/v1/ios/user/info?';
 if (url.indexOf(vip) != -1) {
     obj.data.vip = true;
-    obj.data.vip_end_time = 20290427130123;
+    obj.data.vip_end_time = 4100731932000;
     body = JSON.stringify(obj);
 }
 if (url.indexOf(buy) != -1) {
     obj.data.userInfo.vip = true;
-    obj.data.userInf.vip_end_time = 20290427130123;
+    obj.data.userInf.vip_end_time = 4100731932000;
     body = JSON.stringify(obj);
 }
 $done({body});
