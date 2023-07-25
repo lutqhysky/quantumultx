@@ -4,6 +4,7 @@
 下载地址：https://t.cn/A6ouQ21g
 使用声明：⚠️仅供参考，🈲转载与售卖！
 使用说明：已解锁免费在线听以及可下载。
+转载的，仅修改了到期时间
 
 **************************************
 
@@ -57,7 +58,7 @@ if ($request.url.indexOf(ad2) != -1){
 //VIP信息
 if ($request.url.indexOf(vip1) != -1){
   doudou.data.sex = 1;
-  doudou.data.vipExpireTime = 4092599349000;
+  doudou.data.vipExpireTime = 4100740039000;
   doudou.data.vipFlag = 1;
   doudou.data.memberMarkVo = {
       "signActiveImg" : "https://ytmedia.radio.cn/CCYT%2F2023%2F01%2F06%2F1672991809upc7cd442706edf9cd097eab02ddbc0fe7.png",
@@ -75,13 +76,13 @@ if ($request.url.indexOf(vip1) != -1){
 
 if ($request.url.indexOf(vip2) != -1){
   doudou.object.baseInfo.isVip = 1;
-  doudou.object.baseInfo.vipTime = "2099-12-31";
+  doudou.object.baseInfo.vipTime = "2099-12-12";
   body = JSON.stringify(doudou);
 }
 
 if ($request.url.indexOf(vip3) != -1){
   doudou.data.userPackageExpireVo =  {
-      "endTime" : "2099-12-31 09:09:09",
+      "endTime" : "2099-12-12 09:09:09",
       "startTime" : "2023-07-31 00:00:00"
     };
 
