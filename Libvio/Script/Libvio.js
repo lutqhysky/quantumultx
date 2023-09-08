@@ -1,7 +1,6 @@
-/*
+
 body = $response.body.replace(/play_permission":\d+/g, 'play_permission":1').replace(/play_need_permission":\d+/g, 'play_need_permission":0').replace(/parse_after_config_enable":"\d+"/g, 'parse_after_config_enable":"1"').replace(/trysee_permission":\d+/g, 'trysee_permission":1').replace(/isMiniVipdownload_permission":\d+/g, 'download_permission":1');
 $done({body});
-*/
 
 function AES_Encrypt(r,t,p){var e=CryptoJS.enc.Utf8.parse(r);return t=CryptoJS.enc.Utf8.parse(t),CryptoJS.AES.encrypt(e,t,{iv:CryptoJS.enc.Utf8.parse(p),mode:CryptoJS.mode.CBC,padding:CryptoJS.pad.Pkcs7}).toString()}function AES_Decrypt(r,t,p){var e=r;return t=CryptoJS.enc.Utf8.parse(t),CryptoJS.AES.decrypt(e,t,{iv:CryptoJS.enc.Utf8.parse(p),mode:CryptoJS.mode.CBC,padding:CryptoJS.pad.Pkcs7}).toString(CryptoJS.enc.Utf8)}function B64_Decrypt(r){var t=CryptoJS.enc.Base64.parse(r);return CryptoJS.enc.Utf8.stringify(t)}function B64_Encrypt(r){var t=CryptoJS.enc.Utf8.parse(r);return CryptoJS.enc.Base64.stringify(t)}
 
