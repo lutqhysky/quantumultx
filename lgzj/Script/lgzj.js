@@ -1,4 +1,4 @@
-re('"expireTime":\\d+@"checkIsVip":\\w+@"checkIsExpire":\\w+@"validVip":\\w+@"trialPeriod":\\w+','"expireTime":4079147492000@"checkIsVip":true@"checkIsExpire":false@"validVip":true@"trialPeriod":true')
+re('"expireTime":\\d+@"checkIsVip":\\w+@"checkIsExpire":\\w+@"validVip":\\w+@"trialPeriod":\\w+','"expireTime":4100731932000@"checkIsVip":true@"checkIsExpire":false@"validVip":true@"trialPeriod":true')
 function re() {
 var body = $response.body;
 if(!body){
