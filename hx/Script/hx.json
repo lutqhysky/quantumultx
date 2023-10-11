@@ -1,16 +1,21 @@
 {
   "message": "success",
   "data": {
-    "avatar": "avatar\/1527578_B2614B5F-E408-4E32-886A-64347C8DE180_1669367946.png",
-    "phone": "170****4224",
-    "registerDays": 1,
     "id": 1527578,
-    "nickname": "情情情",
-    "age": null,
+    "registerChannelCode": null,
+    "phone": "170****4224",
+    "sex": 1,
+    "age": "85后",
+    "weight": null,
+    "sipActive": true,
+    "sipExpireTime": "2099年12月12日",
+    "avatar": "avatar\/1527578_B2614B5F-E408-4E32-886A-64347C8DE180_1669367946.png",
     "vipActive": true,
-    "vipExpireTime": "2099年12月12日",
-    "sex": null,
-    "registerChannelCode": null
+    "birthday": null,
+    "registerDays": 321,
+    "height": null,
+    "vipExpireTime":"2099年12月12日"
+    "nickname": "情情情"
   },
   "code": 0
 }
