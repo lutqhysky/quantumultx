@@ -18,3 +18,7 @@ obj.no_permission = false;
     body = JSON.stringify(obj);    
 }
 $done({body});
+
+const path1 = '/xgapp.php/v3/video_detail';
+if ($request.url.indexOf(ytapi) != -1){body = $response.body.replace(/\"download_permission":\d+/g,'\"download_permission":1').replace(/\"trysee_permission":\d+/g,'\"trysee_permission":1');}
+$done({body})
