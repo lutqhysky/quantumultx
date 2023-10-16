@@ -6,7 +6,7 @@ if ($request.url.indexOf(ytapi) != -1) {
                          .replace(/\"download_need_permissio":\d+/g, '\"download_need_permissio":1')
                          .replace(/\"play_need_permission":\d+/g, '\"play_need_permission":1')     
                          .replace(/\"play_permission":\d+/g, '\"play_permission":1')      
-                         .replace(/\"parse_after_config_enable":\d+/g, '\"parse_after_config_enable":1')    
+                         .replace(/\"parse_after_config_enable":\d+/g, '\"parse_after_config_enable":1') ;   
 }
 if (url.indexOf(path2) != -1) {
    body = $response.body.replace(/\"no_permission":\w+/g, '\"no_permission":false')
