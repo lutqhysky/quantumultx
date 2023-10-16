@@ -9,6 +9,6 @@ if ($request.url.indexOf(path1) != -1) {
                          .replace(/\"parse_after_config_enable":\d+/g, '\"parse_after_config_enable":1') ;   
 }
 if (url.indexOf(path2) != -1) {
-   body = $response.body.replace(/\"no_permission":\w+/g, '\"no_permission":false')
+   body = $response.body.replace(/\"no_permission":\w+/g, '\"no_permission":false');
 }
 $done({body});
