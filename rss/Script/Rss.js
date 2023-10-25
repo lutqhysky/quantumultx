@@ -1,6 +1,6 @@
 let obj = JSON.parse($response.body);
 var sub = {
-    "username": "@lutqhysky",
+    "username": "lutqhysky@outlook.com",
     "membershipType": "subscription",
     "expireAt": 1669351050571,
     "serverTime": 1666672709136
