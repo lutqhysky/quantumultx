@@ -1,0 +1,26 @@
+{
+  "localSaveDays": 7,
+  "firstDiscount": 0,
+  "quotaLimit": "10737418240",
+  "quotaLeft": "10737418240",
+  "useSafeWaterMark": true,
+  "batchOcr": true,
+  "removeHandwritingLimit": 500,
+  "removeHandwritingLeft": 500,
+  "level": 2,
+  "npd": "2099-12-12",
+  "freeUsed": 1,
+  "commonResponse": {
+    "status": 0,
+    "msg": "SUCCESS",
+    "protoStatus": "SUCCESS"
+  },
+  "isItunes": true,
+  "removeWaterMark": true,
+  "LatestRecurringType": 1,
+  "noteSizeLimit": "314572800",
+  "ocrLeft": 500,
+  "renewSubscription": true,
+  "hasRecurringYear": false,
+  "userId": 37471980
+}
