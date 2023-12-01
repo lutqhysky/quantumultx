@@ -3,7 +3,7 @@ app下载地址：商店搜索：小小优趣
 ^https?:\/\/(prod|fastapi)\.ukids\.cn\/(uch5\/getUser|coreapp\/classOqd\/course\/detail)url script-response-body https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/gushichi/Script/gushici.js
 MITM =*.ukids.cn
 作者：清清情
-*/
+
 var body = $response.body; 
 var url = $request.url; 
 var obj = JSON.parse(body); 
@@ -23,4 +23,13 @@ if (url.indexOf(vip) != -1) {
     obj.data.svipEffect = 987654321;
     body = JSON.stringify(obj);
 }
+$done({body});
+*/
+var body = $response.body.replace(/vip":\d+/g, 'vip":1')
+    .replace(/vipReal":\d+/g, 'vipReal":1')
+    .replace(/svip":\d+/g, 'svip":1')
+    .replace(/vipEnd":".*?"/g, 'vipEnd": “2099-12-12”')
+    .replace(/vipEndReal":".*?"/g, 'vipEndReal": “2099-12-12”')
+    .replace(/svipEnd":".*?"/g, 'svipEnd": “2099-12-12”')
+    .replace(/svipType":\d+/g, 'svipType":1');
 $done({body});
