@@ -1,0 +1,18 @@
+{
+  "is_payments_banned": false,
+  "is_renewal_paused": false,
+  "billing_cycle": "y",
+  "platform_product_id": "com.tradingview.pro.premium.yearly",
+  "is_hold_period": false,
+  "subscription_id": "400001430689987",
+  "promo_available_timestamp": null,
+  "merchant": "apple",
+  "next_billing_cycle": "y",
+  "pro_plan_expire_on": 9705594522,
+  "is_trial_available": false,
+  "next_pro_plan": "pro_premium",
+  "pro_plan": "pro_premium",
+  "is_grace_period": false,
+  "status": "ok",
+  "is_renewal_active": true
+}
