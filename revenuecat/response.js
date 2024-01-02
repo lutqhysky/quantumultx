@@ -156,6 +156,7 @@ if (typeof $response == "undefined") {
     'MusicMate':{ name: 'premium', id: 'mm_lifetime_198_premium'},
     'Blurer':{ name: 'paid_access', id: 'pro_free'},
     'reader':{ name: 'vip2', id: 'com.valo.reader.vip2.year'},
+    '%E4%BA%8B%E7%BA%BF':{ name: 'pro', id: 'xyz.jiaolong.eventline.pro.lifetime'},
 
 
     
