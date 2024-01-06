@@ -160,6 +160,7 @@ if (typeof $response == "undefined") {
     'dtdvibe':{ name: 'pro', id: 'com.dtd.aroundu.year'},
     //'%E8%B0%9C%E5%BA%95%E6%97%B6%E9%92%9F':{ name: 'pro', id: 'tech.miidii.MDClock.subscription.year'},
     //'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
+    'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
     
   };
   const data = {
