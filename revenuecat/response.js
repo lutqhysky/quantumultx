@@ -159,7 +159,7 @@ if (typeof $response == "undefined") {
     '%E4%BA%8B%E7%BA%BF':{ name: 'pro', id: 'xyz.jiaolong.eventline.pro.lifetime'},
     'dtdvibe':{ name: 'pro', id: 'com.dtd.aroundu.year'},
     '%E8%B0%9C%E5%BA%95%E6%97%B6%E9%92%9F':{ name: 'pro', id: 'tech.miidii.MDClock.subscription.year'},
-    
+    'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
     
   };
   const data = {
