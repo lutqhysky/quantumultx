@@ -161,7 +161,7 @@ if (typeof $response == "undefined") {
     //'%E8%B0%9C%E5%BA%95%E6%97%B6%E9%92%9F':{ name: 'pro', id: 'tech.miidii.MDClock.subscription.year'},
     //'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
     'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
-    
+    'Color%20Widgets':{ name: 'pro', id: 'cw_1999_1y_3d0'},
   };
   const data = {
     "expires_date": "2099-12-12T06:06:06Z",
