@@ -2,6 +2,7 @@
 DOMAIN-SUFFIX,push-kr.misakaf.org
 DOMAIN-SUFFIX,porn.aca.best
 DOMAIN-SUFFIX,emby.aca.best
+IP-CIDR,102.223.180.108/24
 DOMAIN,emby.enjoyit.eu.org
 DOMAIN-SUFFIX,aca.best
 DOMAIN-SUFFIX,agahk1.jmsooo.com
