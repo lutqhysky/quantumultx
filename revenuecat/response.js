@@ -163,7 +163,7 @@ if (typeof $response == "undefined") {
     'Cadmio':{ name: 'editor', id: 'cd_1y_2w0'},
     'Color%20Widgets':{ name: 'pro', id: 'cw_1999_1y_3d0'},
     'ScientificCalculator':{ name: 'premium', id: 'com.simpleinnovation.calculator.ai.premium.yearly.base'},
-  
+    'Unfold':{ name: 'PC1_STORY', id: 'UNFOLD_PLUS_YEAR'},
   };
   const data = {
     "expires_date": "2099-12-12T06:06:06Z",
