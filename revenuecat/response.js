@@ -164,7 +164,17 @@ if (typeof $response == "undefined") {
     'Color%20Widgets':{ name: 'pro', id: 'cw_1999_1y_3d0'},
     'ScientificCalculator':{ name: 'premium', id: 'com.simpleinnovation.calculator.ai.premium.yearly.base'},
     'Unfold':{ name: 'PC1_STORY', id: 'UNFOLD_PLUS_YEAR'},
-  };
+  'apollo':{ name: 'all', id: 'com.ziheng.apollo.onetime'},
+    'OneBox':{ name: 'all', id: 'com.ziheng.pandora.lifetime'},
+    'totowallet':{ name: 'all', id: 'com.ziheng.totowallet.onetimepurchase'},
+    'AIWeatherBot':{ name: 'Premium', id: 'com.lionsapp.AIWeatherBot.Premium.Annual'},
+    'Rond':{ name: 'pro', id: 'lifetime_108'},
+    'SwitchGallery':{ name: 'switchbuddy+', id: 'sb_lifetime_purchase'},
+    //以下内容来自卑鄙的Baby（@Yu9191）
+    'Spark':{ name: 'premium', id: 'spark_5999_1y_1w0'},
+ 
+  
+   };
   const data = {
     "expires_date": "2099-12-12T06:06:06Z",
     "original_purchase_date": "2023-06-06T06:06:06Z",
