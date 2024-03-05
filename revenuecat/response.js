@@ -172,7 +172,7 @@ if (typeof $response == "undefined") {
     'SwitchGallery':{ name: 'switchbuddy+', id: 'sb_lifetime_purchase'},
     //以下内容来自卑鄙的Baby（@Yu9191）
     'Spark':{ name: 'premium', id: 'spark_5999_1y_1w0'},
- 
+    'NoteCircle':{ name: 'premium', id: 'Genau.NoteCircle.autoRenewableYearly.2nd'},
   
    };
   const data = {
