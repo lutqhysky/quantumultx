@@ -31,7 +31,6 @@ if (typeof $response == "undefined") {
   var UA = $request.headers['user-agent'];
   const app = 'gd';
   const UAMappings = {
-    'APTV': { name: 'pro', id: 'com.kimen.aptvpro.lifetime' },
     'Photo%20Vault': { name: 'PRO', id: '2fa_0499_1y' },
     'Authenticator': { name: 'PRO', id: '2fa_0499_1y' },
     'PhotoRoom': { name: 'business', id: 'com.background.business.yearly' },
