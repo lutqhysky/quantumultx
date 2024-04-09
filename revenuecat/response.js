@@ -173,7 +173,7 @@ if (typeof $response == "undefined") {
     'Spark':{ name: 'premium', id: 'spark_5999_1y_1w0'},
     'NoteCircle':{ name: 'premium', id: 'Genau.NoteCircle.autoRenewableYearly.2nd'},
    'Hi%E8%AE%BA%E5%9D%9B/69':{ name: 'plus', id: 'plus_yearly'},
-  
+   'ShineScanGlobal/25':{ name: 'ProVersion', id: 'com.shinescan.yearlysub.one'},//白描扫描
   
    };
   const data = {
