@@ -174,7 +174,9 @@ if (typeof $response == "undefined") {
     'NoteCircle':{ name: 'premium', id: 'Genau.NoteCircle.autoRenewableYearly.2nd'},
    'Hi%E8%AE%BA%E5%9D%9B/69':{ name: 'plus', id: 'plus_yearly'},
    'ShineScanGlobal/25':{ name: 'ProVersion', id: 'com.shinescan.yearlysub.one'},//白描扫描
-  
+   'ShellBean':{ name: 'pro', id: 'com.ningle.shellbean.subscription.year'},
+   'Langster':{ name: 'Premium', id: 'com.langster.universal.lifetime'},
+   'AudioPlayer':{ name: 'Pro', id: 'xyz.lijun.www.AudioPlayer.premium.newuser'},
    };
   const data = {
     "expires_date": "2099-12-12T06:06:06Z",
