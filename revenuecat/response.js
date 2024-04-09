@@ -177,6 +177,12 @@ if (typeof $response == "undefined") {
    'ShellBean':{ name: 'pro', id: 'com.ningle.shellbean.subscription.year'},
    'Langster':{ name: 'Premium', id: 'com.langster.universal.lifetime'},
    'AudioPlayer':{ name: 'Pro', id: 'xyz.lijun.www.AudioPlayer.premium.newuser'},
+   'WeeklyNote':{ name: 'org.zrey.weeklynote', id: 'org.zrey.weeklynote.flash_lifetime'},//周周记
+   'Text%20Workflow':{ name: 'pro', id: 'tw_99_1m'},
+
+
+
+    
    };
   const data = {
     "expires_date": "2099-12-12T06:06:06Z",
