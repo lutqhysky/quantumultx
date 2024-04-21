@@ -24,7 +24,6 @@ $tool.get(url, (error, response, data) => {
         $tool.notify("错误", "网络请求失败", error);
     }
     $done();
-})
 });
 function Tool() {
     this.notify = (title, info, texts, options) => {
