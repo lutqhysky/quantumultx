@@ -7,7 +7,7 @@ $tool.get(url, (error, response, data) => {
     if (!error) {
         let obj = JSON.parse(data);
         if (obj.code === 200 && obj.result && obj.result.list && obj.result.list.length > 0) {
-            let title = "神回复";
+            let title = "⁽⁽◞(꒪ͦᴗ̵̍꒪ͦ=͟͟͞͞ ꒪ͦᴗ̵̍꒪ͦ)◟⁾⁾神回复";
             let info = obj.result.list[0].title; // 标题作为附加信息
             let texts = obj.result.list[0].content; // 内容作为文本
             let options = {
