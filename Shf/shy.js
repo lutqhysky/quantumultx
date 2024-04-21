@@ -12,7 +12,7 @@ $tool.get(url, (error, response, data) => {
             let texts = obj.result.list[0].content; // 内容作为文本
             let options = {
                 "action": "clipboard",
-                "text": texts,
+                "text": info+texts,
                 "auto-dismiss": 10
             };
             // 由于 JSON 结构不同，没有图片信息，所以不传递 media-url 参数
@@ -31,6 +31,13 @@ function Tool() {
         // 根据 Surge 的 $notification.post 可用参数调整
         $notification.post(title, info, texts, options);
     };
+
+    this.get = (url, callback) => {
+        $httpClient.get(url, (error, response, data) => {
+            callback(error, response, data);
+        });
+    };
+}
 
     this.get = (url, callback) => {
         $httpClient.get(url, (error, response, data) => {
