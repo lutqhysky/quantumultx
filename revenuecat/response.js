@@ -180,7 +180,7 @@ if (typeof $response == "undefined") {
    'WeeklyNote':{ name: 'org.zrey.weeklynote', id: 'org.zrey.weeklynote.flash_lifetime'},//周周记
    'Text%20Workflow':{ name: 'pro', id: 'tw_99_1m'},
    '%E9%B2%B8%E8%90%BD%E6%96%87%E6%A1%88':{ name: 'vip', id: 'jl_year'},
-'Journal_iOS/':{ name: 'pro'},
+'Journal_iOS/':{ name: 'pro' id: 'com.pureformstudio.diary.yearly_2022_promo'},
 
     
    };
