@@ -1,0 +1,231 @@
+[
+  {
+    "id": "NWNR9jg7RbU",
+    "rootId": "fDZXPoD0Xog",
+    "createdOn": "2025-03-24T01:19:34+0000",
+    "filesCount": 0,
+    "access": "FULL_ACCESS",
+    "updatedOn": "2025-04-02T11:49:28+0000",
+    "license": {
+      "ownerId": "90a8285d-8fbe-47bc-8b6f-b21286123aa8",
+      "maxStorage": 107373108658176,
+      "maxInvites": 99999,
+      "sku": "SKP-GO-YR-WEB-01",
+      "usedProjects": 16,
+      "ecomSource": "TRMB",
+      "maxUsers": 1,
+      "usedInvites": 0,
+      "upgradeLink": "https:\/\/connect.trimble.com\/upgrade.html",
+      "statusShare": false,
+      "name": "SKP-GO-YR-WEB-01",
+      "type": "BUSINESS",
+      "accounts": [
+        {
+          "source": "TRMB",
+          "accountId": "1717384845041833",
+          "adminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+          "primary": true,
+          "type": "Individual",
+          "name": "youtao hong",
+          "accountTRN": "trn::tc-ecom:na:account:trmb:1717384845041833"
+        }
+      ],
+      "maxCollaborators": 99999,
+      "id": "55977333",
+      "mrp": false,
+      "subscriptionId": "2d512aae-3b6d-41a4-9ae5-8f11074ee98b",
+      "ecomAdminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+      "usedStorage": 107857895,
+      "orgName": "youtao hong",
+      "maxProjects": 99999,
+      "maxForms": 50,
+      "description": "SketchUp Go, Annual Plan"
+    },
+    "modifiedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "lastVisitedOn": "2025-03-24T01:19:35+0000",
+    "size": 0,
+    "location": "asia",
+    "modifiedOn": "2025-03-24T01:19:34+0000",
+    "createdBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "foldersCount": 2,
+    "usersCount": 1,
+    "thumbnail": "https:\/\/resources.connect.trimble.com\/thumb\/project.png",
+    "updatedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "versionsCount": 0,
+    "name": "su"
+  },
+  {
+    "id": "P29CbLw_WZc",
+    "rootId": "6cPBNgrR4HM",
+    "createdOn": "2025-03-18T05:27:45+0000",
+    "filesCount": 0,
+    "access": "FULL_ACCESS",
+    "updatedOn": "2025-03-18T08:27:47+0000",
+    "license": {
+      "ownerId": "90a8285d-8fbe-47bc-8b6f-b21286123aa8",
+      "maxStorage": 107373108658176,
+      "maxInvites": 99999,
+      "sku": "SKP-GO-YR-WEB-01",
+      "usedProjects": 16,
+      "ecomSource": "TRMB",
+      "maxUsers": 1,
+      "usedInvites": 0,
+      "upgradeLink": "https:\/\/connect.trimble.com\/upgrade.html",
+      "statusShare": false,
+      "name": "SKP-GO-YR-WEB-01",
+      "type": "BUSINESS",
+      "accounts": [
+        {
+          "source": "TRMB",
+          "accountId": "1717384845041833",
+          "adminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+          "primary": true,
+          "type": "Individual",
+          "name": "youtao hong",
+          "accountTRN": "trn::tc-ecom:na:account:trmb:1717384845041833"
+        }
+      ],
+      "maxCollaborators": 99999,
+      "id": "55853160",
+      "mrp": false,
+      "subscriptionId": "2d512aae-3b6d-41a4-9ae5-8f11074ee98b",
+      "ecomAdminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+      "usedStorage": 107857895,
+      "orgName": "youtao hong",
+      "maxProjects": 99999,
+      "maxForms": 50,
+      "description": "SketchUp Go, Annual Plan"
+    },
+    "modifiedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "lastVisitedOn": "2025-03-18T05:27:46+0000",
+    "size": 0,
+    "location": "asia",
+    "modifiedOn": "2025-03-18T05:27:46+0000",
+    "createdBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "foldersCount": 1,
+    "usersCount": 1,
+    "thumbnail": "https:\/\/resources.connect.trimble.com\/thumb\/project.png",
+    "updatedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "versionsCount": 0,
+    "name": "MrTipso"
+  },
+  {
+    "thumbnail": "https:\/\/resources.connect.trimble.com\/thumb\/project.png",
+    "location": "asia",
+    "modifiedOn": "2025-03-09T09:45:49+0000",
+    "modifiedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "usersCount": 1,
+    "createdOn": "2025-03-09T09:45:48+0000",
+    "rootId": "toMVmOsuibs",
+    "updatedOn": "2025-03-11T17:15:51+0000",
+    "name": "安泰2f",
+    "foldersCount": 1,
+    "lastVisitedOn": "2025-03-09T09:45:49+0000",
+    "size": 0,
+    "id": "s9em6_I91ik",
+    "createdBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "versionsCount": 0,
+    "access": "FULL_ACCESS",
+    "updatedBy": {
+      "status": "ACTIVE",
+      "id": "wZOGwr_PexE",
+      "email": "h208889040@foxmail.com",
+      "firstName": "11",
+      "lastName": "H",
+      "tiduuid": "870f52d4-ea59-43f9-bd98-c67e18ca60ec"
+    },
+    "license": {
+      "ownerId": "870f52d4-ea59-43f9-bd98-c67e18ca60ec",
+      "maxStorage": 107373108658176,
+      "maxInvites": 99999,
+      "sku": "SKP-STDO-TRL-WEB-23A",
+      "usedProjects": 2,
+      "ecomSource": "TRMB",
+      "maxUsers": 1,
+      "usedInvites": 0,
+      "upgradeLink": "https:\/\/connect.trimble.com\/upgrade.html",
+      "statusShare": false,
+      "name": "SKP-STDO-TRL-WEB-23A",
+      "type": "BUSINESS",
+      "accounts": [
+        {
+          "source": "TRMB",
+          "accountId": "1741336210648406",
+          "adminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+          "primary": true,
+          "type": "Individual",
+          "name": "小苏 万能",
+          "accountTRN": "trn::tc-ecom:na:account:trmb:1741336210648406"
+        }
+      ],
+      "maxCollaborators": 99999,
+      "id": "55654731",
+      "mrp": false,
+      "subscriptionId": "08b6fb16-92c5-435d-b452-09a0510cffa4",
+      "ecomAdminPortalUrl": "https:\/\/ecom-prd.trimblepaas.com\/ecom\/portal\/login",
+      "usedStorage": 394297,
+      "orgName": "小苏 万能",
+      "maxProjects": 99999,
+      "maxForms": 50,
+      "description": "SketchUp Studio Trial"
+    },
+    "filesCount": 0,
+    "description": ""
+  }
+]
