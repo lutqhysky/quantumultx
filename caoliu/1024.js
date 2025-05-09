@@ -28,7 +28,7 @@ let scriptName = '草榴特定帖(含备选)',
     baseURL = 'https://t66y.com/',
     isRandomFromBoxJs = ($.getdata('1024_israndom') || 'false').toString() === 'true';
 
-const anyOfKeywords = ["兲朝浮世绘", "微语录精选", "微视眼", "历史上的今天"];
+const anyOfKeywords = ["兲朝浮世绘", "微语录精选", "微视眼", "历史上的今天", "福利"];
 const MIN_CONTENT_LENGTH = 100;
 
 !(async () => {
