@@ -41,25 +41,10 @@
     }
 
     // 这一步在您的最新日志中被跳过，说明 response 和 body 在 JS 层面并非 null/undefined
-    if (!response || body === undefined || body === null) {
-      let debugMessage = "未能获取有效的HTTP响应或响应体。";
-      if (response) {
-        debugMessage += ` Response存在，但可能无效。Status: ${response.statusCode || 'N/A'}`;
-        console.log("Response对象属性:", JSON.stringify(response, Object.getOwnPropertyNames(response) || ['statusCode', 'headers']));
-      } else {
-        debugMessage += " Response对象为null/undefined。";
-      }
-
-      $notification.post("骚话推送失败", "API响应异常", debugMessage + " 请检查网络或MITM设置。");
-      console.log("❌ API响应异常:", debugMessage);
-      $done({ result: "API响应异常" });
-      return;
-    }
-
-    // 再次尝试打印 response 和 body 的状态，以确认它们在这一步是否真实存在
+    // 增加更多细节的打印，确保能看到实际值
     console.log("--- HTTP 响应详情 (解析后) ---");
-    console.log("Status Code:", response.statusCode);
-    console.log("Headers (present):", !!response.headers); // 检查 headers 对象是否存在
+    console.log("Status Code:", response ? response.statusCode : "N/A (Response null/undefined)");
+    console.log("Headers (present):", response ? !!response.headers : "N/A (Response null/undefined)"); // 检查 headers 对象是否存在
     console.log("Body Type:", typeof body); // 打印 body 的类型
     if (typeof body === 'string') {
         console.log("Body Length:", body.length);
@@ -69,47 +54,78 @@
     }
     console.log("----------------------------");
 
+
+    if (!response || body === undefined || body === null || (typeof body === 'string' && body.trim().length === 0)) {
+      let debugMessage = "未能获取有效的HTTP响应或响应体。";
+      if (response && response.statusCode) {
+        debugMessage += ` Status: ${response.statusCode}`;
+      } else if (response) {
+        debugMessage += ` Response存在但无状态码。`;
+      } else {
+        debugMessage += " Response对象为null/undefined。";
+      }
+      if (typeof body === 'string' && body.trim().length === 0) {
+        debugMessage += " 响应体为空字符串。";
+      }
+
+      $notification.post("骚话推送失败", "API响应异常", debugMessage + " 请检查网络或MITM设置。");
+      console.log("❌ API响应异常:", debugMessage);
+      $done({ result: "API响应异常" });
+      return;
+    }
+
     // 检查HTTP状态码的逻辑修正：
     // 只有当状态码明确存在且不是200时，才视为错误。
     // 如果状态码是undefined，我们将信任body的内容并继续处理。
-    if (response.statusCode !== undefined && response.statusCode !== 200) {
-      $notification.post("骚话推送失败", "API返回非200状态码", `状态码: ${response.statusCode}. 响应: ${body.substring(0, 100)}`);
+    if (response && response.statusCode !== undefined && response.statusCode !== 200) {
+      $notification.post("骚话推送失败", "API返回非200状态码", `状态码: ${response.statusCode}. 响应: ${body.substring(0, Math.min(body.length, 100))}`);
       console.log(`❌ API返回非200状态码: ${response.statusCode}. 响应体: ${body}`);
       $done({ result: "API返回非200" });
       return;
     }
 
-    // 检查响应体是否为空字符串（如果body是字符串类型且为空）
-    if (typeof body === 'string' && body.trim().length === 0) {
-      $notification.post("骚话推送失败", "空响应体", "API返回了空内容。");
-      console.log("❌ API返回了空内容。");
-      $done({ result: "API返回空内容" });
-      return;
-    }
 
     try {
       const json = JSON.parse(body);
+      console.log("DEBUG: Parsed JSON Object:", JSON.stringify(json, null, 2)); // 打印完整的解析后JSON对象
 
-      // === 核心修改在这里：优先从 json.data.content 中提取 ===
-      const text =
+      // === 核心修改在这里：更健壮的文本提取和空字符串检查 ===
+      let text =
         json?.data?.content || // <-- **修改：首先尝试获取 data.content 字段**
         json?.data?.text ||   // 作为次要 fallback
         json?.text ||         // 作为更次要 fallback
-        (typeof json?.data === "string" ? json.data : null); // 兼容某些直接返回字符串 data 的情况
+        null;                 // 默认值设为null
 
-      if (!text) {
-        $notification.post("骚话推送失败", "数据解析错误", "接口未返回文本内容");
-        console.log("⚠ 数据缺失或结构异常: 无法从JSON中提取文本");
-        // 增加日志，打印解析后的json结构，帮助您确认
-        console.log("Parsed JSON object:", JSON.stringify(json, null, 2));
+      // 兼容某些直接返回字符串 data 的情况 (虽然 vvhan.com 不会这样)
+      if (text === null && typeof json?.data === "string") {
+          text = json.data;
+      }
+
+      // 确保 text 是字符串，并去除首尾空格
+      if (typeof text === 'string') {
+          text = text.trim();
+      }
+
+      // === 增加详细的 text 变量调试信息 ===
+      console.log("DEBUG: Extracted 'text' value:", text);
+      console.log("DEBUG: Type of 'text':", typeof text);
+      console.log("DEBUG: Is 'text' null/undefined?", text === null || text === undefined);
+      console.log("DEBUG: Is 'text' an empty string?", typeof text === 'string' && text.length === 0);
+
+
+      // 更严格的空内容判断：如果 text 为 null/undefined 或空字符串
+      if (!text || (typeof text === 'string' && text.length === 0)) {
+        $notification.post("骚话推送失败", "数据解析错误", "接口未返回有效文本内容或内容为空。");
+        console.log("⚠ 数据缺失或结构异常: 无法从JSON中提取文本 (或为空字符串)");
+        console.log("Parsed JSON object (for context):", JSON.stringify(json, null, 2));
         $done({ result: "数据缺失或结构异常" });
         return;
       }
 
       const title = pick(titles);
       const subtitle = pick(subtitles);
-      $notification.post(title, subtitle, text);
-      console.log("✅ 通知已发送:", text);
+      $notification.post(title, subtitle, text); // 使用经过检查和处理的 text 变量
+      console.log("✅ 通知已发送: [" + text + "]"); // 用方括号包起来，防止空字符串显示不明显
       $done({ result: "通知发送成功" });
 
     } catch (e) {
