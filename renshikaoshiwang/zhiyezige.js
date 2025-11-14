@@ -1,6 +1,6 @@
 const url = "http://www.cpta.com.cn/notice.html";
 const keywords = ["监理","造价","建造师","职业资格","提醒"];
-const maxCount = 5;
+const maxCount = 10;
 
 $httpClient.get({ url, headers: { "User-Agent": "Mozilla/5.0" } }, (err, resp, data) => {
   if (err) return $done({title:"人事考试网通知", content:"❌ 请求失败", icon:"appletv","icon-color":"#b8b8b8"});
