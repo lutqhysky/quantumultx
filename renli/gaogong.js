@@ -20,7 +20,7 @@ $httpClient.get({ url, headers: { "User-Agent": "Mozilla/5.0" } }, function(err,
   if (results.length === 0) return $done({ title: "职称公告", content: "⚠️ 没有找到相关公告", icon: "appletv", "icon-color": "#b8b8b8" });
 
   // 拼接内容，只显示标题和日期
-  const content = results.map((item, idx) => `${idx+1}. ${item.title}\n📅 ${item.date}`).join("\n");
+  const content = results.map((item, idx) => `${idx+1}. ${item.title}--📅 ${item.date}`).join("\n");
 
   $notification.post("职称公告更新", "", content);
 
