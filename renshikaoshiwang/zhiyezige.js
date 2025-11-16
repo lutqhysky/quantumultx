@@ -21,10 +21,31 @@ $httpClient.get({ url, headers: { "User-Agent": "Mozilla/5.0" } }, (err, resp, d
 
   if(results.length === 0) return $done({title:"人事考试网通知", content:"⚠️ 没有找到相关关键字的公告", icon:"appletv","icon-color":"#b8b8b8"});
 
-  // 每条公告在同一行显示：标题 — 日期
-  const content = results.map((item, idx) => `${idx+1}. ${item.title} — 📅 ${item.date}`).join("\n");
+  // 计算一个月前的日期
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-  $notification.post("人事考试网 — 关键公告","",""+content);
+  // 根据日期添加不同的标记
+  const content = results.map((item) => {
+    const itemDate = new Date(item.date);
+    const isRecent = itemDate >= oneMonthAgo;
+    
+    // 最近一个月用红色圆点🔴，超过一个月用灰色圆点⚪
+    const marker = isRecent ? "🔴" : "⚪";
+    
+    return `${marker} ${item.title} — 📅 ${item.date}`;
+  }).join("\n");
 
-  $done({title:"人事考试网关键公告", content, icon:"appletv","icon-color":"#FF5A5A"});
+  // 统计最近一个月的数量
+  const recentCount = results.filter(item => new Date(item.date) >= oneMonthAgo).length;
+  const title = recentCount > 0 
+    ? `人事考试网 — 🔴${recentCount}条最新公告` 
+    : "人事考试网 — 关键公告";
+
+  $notification.post(title, "", content);
+
+  // 如果有最近的消息，图标颜色用红色，否则用灰色
+  const iconColor = recentCount > 0 ? "#FF5A5A" : "#b8b8b8";
+
+  $done({title:"人事考试网关键公告", content, icon:"appletv","icon-color": iconColor});
 });
