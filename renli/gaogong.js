@@ -9,18 +9,38 @@ $httpClient.get({ url, headers: { "User-Agent": "Mozilla/5.0" } }, function(err,
   let matches;
   let results = [];
 
+  // 获取当前日期和一个月前的日期
+  const now = new Date();
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(now.getMonth() - 1);
+
   while ((matches = pattern.exec(data)) !== null) {
     const title = matches[2].trim();
-    const date = matches[3].trim();
+    const dateStr = matches[3].trim();
 
-    if (title.includes(keyword)) results.push({ title, date });
+    if (title.includes(keyword)) {
+      // 解析日期字符串 (假设格式为 YYYY-MM-DD 或 YYYY/MM/DD)
+      const dateMatch = dateStr.match(/(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);
+      let isRecent = false;
+      
+      if (dateMatch) {
+        const articleDate = new Date(dateMatch[1], dateMatch[2] - 1, dateMatch[3]);
+        isRecent = articleDate >= oneMonthAgo;
+      }
+      
+      results.push({ title, date: dateStr, isRecent });
+    }
+    
     if (results.length >= maxCount) break;
   }
 
   if (results.length === 0) return $done({ title: "职称公告", content: "⚠️ 没有找到相关公告", icon: "appletv", "icon-color": "#b8b8b8" });
 
-  // 拼接内容，只显示标题和日期
-  const content = results.map((item, idx) => `${idx+1}. ${item.title}--📅 ${item.date}`).join("\n");
+  // 拼接内容，用红点标记最近一个月的，白点标记更早的
+  const content = results.map((item, idx) => {
+    const dot = item.isRecent ? "🔴" : "⚪";
+    return `${dot} ${item.title}-📅 ${item.date}`;
+  }).join("\n");
 
   $notification.post("职称公告更新", "", content);
 
