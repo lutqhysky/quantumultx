@@ -1,3 +1,4 @@
+// ==================== 节日列表 ====================
 var tlist = {
     1:  ["元旦",       "2026-01-01"],
     2:  ["小寒",       "2026-01-05"],
@@ -48,13 +49,13 @@ var tlist = {
     47: ["元旦",       "2027-01-01"] // 跨年延伸
 };
 
-
+// ==================== 获取今天日期 ====================
 let tnow = new Date();
 let tnowf = tnow.getFullYear() + "-" +
             String(tnow.getMonth() + 1).padStart(2, '0') + "-" +
             String(tnow.getDate()).padStart(2, '0');
 
-// 计算日期差
+// ==================== 日期差函数 ====================
 function dateDiff(startDateString, endDateString) {
     let [y1,m1,d1] = startDateString.split("-").map(Number);
     let [y2,m2,d2] = endDateString.split("-").map(Number);
@@ -63,30 +64,34 @@ function dateDiff(startDateString, endDateString) {
     return Math.floor((endDate - startDate)/1000/60/60/24);
 }
 
-// 获取序号对应的天数差
+// ==================== 获取序号对应天数差 ====================
 function tnumcount(num) {
     return dateDiff(tnowf, tlist[num][1]);
 }
 
-// 获取最近节日序号
+// ==================== 获取最近节日序号 ====================
 function now() {
     for (let i=1; i<=Object.keys(tlist).length; i++) {
         if (tnumcount(i) >= 0) return i;
     }
-    return Object.keys(tlist).length; // 如果都过了，返回最后一个
+    return Object.keys(tlist).length;
 }
 
 let nowlist = now();
 
-// 当天提醒
+// ==================== 锁屏通知 ====================
 function datenotice() {
     if ($persistentStore.read("timecardpushed") != tlist[nowlist][1] && tnow.getHours() >= 6) {
         $persistentStore.write(tlist[nowlist][1], "timecardpushed");
-        $notification.post("节日提醒", "", "今天是" + tlist[nowlist][1] + "【" + tlist[nowlist][0] + "】，一个值得纪念的日子！");
+        $notification.post(
+            "节日提醒",
+            "",
+            "今天是" + tlist[nowlist][1] + "【" + tlist[nowlist][0] + "】，一个值得纪念的日子！"
+        );
     }
 }
 
-// 图标
+// ==================== 图标和颜色 ====================
 function icon_now(num) {
     if (num <= 7 && num > 3) return "hare.fill";
     if (num <= 3 && num > 0) return "hourglass";
@@ -94,7 +99,6 @@ function icon_now(num) {
     return "tortoise.fill";
 }
 
-// 图标颜色
 function icon_color(num) {
     if (num <= 7 && num > 3) return '#ff9800';
     if (num <= 3 && num > 0) return '#9978FF';
@@ -102,7 +106,7 @@ function icon_color(num) {
     return '#35C759';
 }
 
-// 随机标题
+// ==================== 随机标题 ====================
 function title_random(num) {
     const dic = {
         1: "距离放假，还要摸鱼多少天？🥱",
@@ -122,7 +126,7 @@ function title_random(num) {
     return dic[Math.floor(Math.random()*12)+1];
 }
 
-// 输出最近三个节日倒计时（防越界）
+// ==================== 获取最近三个节日倒计时 ====================
 function getNextThree() {
     let content = [];
     for (let i=0; i<3; i++) {
@@ -134,7 +138,7 @@ function getNextThree() {
     return content.join(" | ");
 }
 
-// 如果今天是节日，发送通知
+// ==================== 推送逻辑 ====================
 if (tnumcount(nowlist) == 0) datenotice();
 
 $done({
