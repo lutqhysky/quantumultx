@@ -1,24 +1,32 @@
 /**
- * Surge 网络信息面板 (修复报错版)
+ * Surge 网络信息面板 (节点追踪版)
+ * 注意：需在 Surge 开启 HTTP API 才能获取当前节点名称
  */
 
-const { wifi, v4, v6 } = $network;
+const { wifi, v4 } = $network;
 const IPv4 = v4.primaryAddress;
-const cellularData = $network["cellular-data"];
-const carrier = cellularData ? cellularData.carrier : '';
-const radio = cellularData ? cellularData.radio : '';
+
+// --- 配置区 ---
+const httpAPI_Key = "123456"; // 请在 Surge 设置 -> HTTP API 中查看
+const targetGroup = "Emby服务"; // 例如 "Proxy" 或 "🚀 节点选择"
 
 // 解锁检测函数
 async function checkUnlock(url) {
     return new Promise((resolve) => {
-        $httpClient.get({ url: url, timeout: 2500 }, (error, response, data) => {
-            if (response && response.status === 200) {
-                resolve("✅");
-            } else if (response && (response.status === 403 || response.status === 404)) {
-                resolve("❌");
-            } else {
-                resolve("⚠️");
-            }
+        $httpClient.get({ url: url, timeout: 2500 }, (error, response) => {
+            if (response && response.status === 200) resolve("✅");
+            else if (response && (response.status === 403 || response.status === 404)) resolve("❌");
+            else resolve("⚠️");
+        });
+    });
+}
+
+// 获取当前策略组选中的节点名称
+async function getActiveNode() {
+    return new Promise((resolve) => {
+        $httpAPI("GET", "/v1/policy_groups/select", { group_name: targetGroup }, (data) => {
+            if (data && data.policy) resolve(data.policy);
+            else resolve("未知节点");
         });
     });
 }
@@ -29,45 +37,38 @@ async function checkUnlock(url) {
         return;
     }
 
-    // 并行测试：获取外网IP + 4项解锁测试
-    const [extIPObj, unlockNF, unlockDP, unlockYT, unlockAI] = await Promise.all([
+    // 并行测试：获取外网IP + 解锁测试 + 获取当前节点名
+    const [extIPObj, unlockNF, unlockDP, unlockYT, unlockAI, currentNode] = await Promise.all([
         new Promise(r => getExternalIPv4(res => r(res))),
         checkUnlock("https://www.netflix.com/title/81215153"),
         checkUnlock("https://www.disneyplus.com"),
         checkUnlock("https://www.youtube.com/premium"),
-        checkUnlock("https://ios.chat.openai.com/public-api/mobile/config")
+        checkUnlock("https://ios.chat.openai.com/public-api/mobile/config"),
+        getActiveNode()
     ]);
 
-    const { externalIP, info } = extIPObj || { externalIP: "未知", info: "获取失败" };
+    const { externalIP, info } = extIPObj || { externalIP: "未知", info: "N/A" };
     
-    // 组装内容
     const body = {
-        title: wifi.ssid ? `WiFi: ${wifi.ssid}` : `蜂窝网络 | ${carrier || "运营商"}`,
-        content: `流媒体解锁: NF:${unlockNF} D+:${unlockDP} YT:${unlockYT} AI:${unlockAI}\n` + 
-                 `外部 IPv4: ${externalIP}\n` +
-                 `归属地: ${info}`,
-        icon: wifi.ssid ? "wifi" : "antenna.radiowaves.left.and.right",
-        "icon-color": wifi.ssid ? "#007AFE" : "#35C759"
+        title: wifi.ssid ? `WiFi: ${wifi.ssid}` : `蜂窝网络状态`,
+        content: `📍 当前节点: ${currentNode}\n` + 
+                 `📺 解锁: NF:${unlockNF} D+:${unlockDP} YT:${unlockYT} AI:${unlockAI}\n` + 
+                 `🌐 外部 IP: ${externalIP}\n` +
+                 `🗺️ 归属地: ${info}`,
+        icon: "location.fill.viewfinder",
+        "icon-color": "#AF52DE"
     };
 
     $done(body);
 })();
 
-// --- 基础 IP 获取函数 ---
 function getExternalIPv4(callback) {
-    // 强制使用默认的地理位置接口
     $httpClient.get("https://api.aapls.com/v1/geoip?lang=zh", (error, response, data) => {
-        if (error || !data) {
-            callback({ externalIP: "获取失败", info: "N/A" });
-            return;
-        }
         try {
             const json = JSON.parse(data);
-            const ip = json.ip || "未知";
-            const location = (json.region || "") + (json.city || "") + (json.isp || "");
-            callback({ externalIP: ip, info: location || "未知地区" });
+            callback({ externalIP: json.ip || "未知", info: (json.region || "") + (json.city || "") + (json.isp || "") });
         } catch (e) {
-            callback({ externalIP: "解析失败", info: "N/A" });
+            callback({ externalIP: "获取失败", info: "N/A" });
         }
     });
 }
