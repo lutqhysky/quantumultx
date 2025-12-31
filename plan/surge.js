@@ -8,7 +8,7 @@ const IPv4 = v4.primaryAddress;
 
 // --- 配置区 ---
 // 如果你设置了 HTTP API Key，请填入；如果没有设置，可以保持空字符串尝试，但部分 Surge 版本要求必须有 Key
-const httpAPI_Key = ""; 
+const httpAPI_Key = "123456"; 
 // 你指定的第二个策略组名称
 const secondaryGroup = "Emby服务";
 
