@@ -1,20 +1,17 @@
 /**
- * Surge 网络信息面板 (进阶版)
- * 功能：显示当前节点名称 + 详细 IP 信息 + 流媒体解锁检测
+ * Surge 网络信息面板 (修复报错版)
  */
 
 const { wifi, v4, v6 } = $network;
 const IPv4 = v4.primaryAddress;
 const cellularData = $network["cellular-data"];
-const radio = cellularData ? cellularData.radio : '';
 const carrier = cellularData ? cellularData.carrier : '';
-// 获取当前 Surge 选中的代理策略名称
-const currentNode = $session.proxy || "直连/本地";
+const radio = cellularData ? cellularData.radio : '';
 
 // 解锁检测函数
 async function checkUnlock(url) {
     return new Promise((resolve) => {
-        $httpClient.get({ url: url, timeout: 2000 }, (error, response, data) => {
+        $httpClient.get({ url: url, timeout: 2500 }, (error, response, data) => {
             if (response && response.status === 200) {
                 resolve("✅");
             } else if (response && (response.status === 403 || response.status === 404)) {
@@ -44,17 +41,13 @@ async function checkUnlock(url) {
     const { externalIP, info } = extIPObj || { externalIP: "未知", info: "获取失败" };
     
     // 组装内容
-    // 第一行显示当前节点
-    // 第二行显示解锁状态
-    // 第三三行显示IP和归属地
     const body = {
-        title: wifi.ssid ? `WiFi: ${wifi.ssid}` : `蜂窝网络 | ${carrier}`,
-        content: `当前节点：${currentNode}\n` +
-                 `流媒体解锁：NF:${unlockNF} D+:${unlockDP} YT:${unlockYT} AI:${unlockAI}\n` + 
-                 `外部 IPv4：${externalIP}\n` +
-                 `归属地：${info}`,
-        icon: "bolt.horizontal.circle.fill",
-        "icon-color": "#5856D6"
+        title: wifi.ssid ? `WiFi: ${wifi.ssid}` : `蜂窝网络 | ${carrier || "运营商"}`,
+        content: `流媒体解锁: NF:${unlockNF} D+:${unlockDP} YT:${unlockYT} AI:${unlockAI}\n` + 
+                 `外部 IPv4: ${externalIP}\n` +
+                 `归属地: ${info}`,
+        icon: wifi.ssid ? "wifi" : "antenna.radiowaves.left.and.right",
+        "icon-color": wifi.ssid ? "#007AFE" : "#35C759"
     };
 
     $done(body);
@@ -62,6 +55,7 @@ async function checkUnlock(url) {
 
 // --- 基础 IP 获取函数 ---
 function getExternalIPv4(callback) {
+    // 强制使用默认的地理位置接口
     $httpClient.get("https://api.aapls.com/v1/geoip?lang=zh", (error, response, data) => {
         if (error || !data) {
             callback({ externalIP: "获取失败", info: "N/A" });
