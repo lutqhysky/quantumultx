@@ -58,7 +58,7 @@ async function getGroupName(name) {
     const content = [
         `📍 节点: ${mainNode}`,
         `🎬 Emby: ${embyNode}`,
-        `🤖 选路: ${otherNode}`, // 这里显示第三个策略组
+        `🤖 智能: `�otherNode}`, // 这里显示第三个策略组
         `📺 解锁: NF:${unlockNF} | D+:${unlockDP} | YT:${unlockYT} | AI:${unlockAI}`,
         `🌐 外部 IP: ${ip}`,
         `🗺️ 归属地: ${info}`
