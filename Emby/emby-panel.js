@@ -1,79 +1,78 @@
 /**
- * Surge Panel: Emby 观影仪表盘
+ * Surge Panel: Emby 观影仪表盘 (API 深度解析版)
  */
 
-const targetPolicyGroup = "Emby服务"; // 👈 修改为你的策略组名字
+const targetRuleSet = "Emby.list"; // 👈 根据你提供的日志，匹配这个规则集名称
 const apiKey = "123456";
 const apiUrl = "http://127.0.0.1:6171/v1/requests/active";
 
-async function getEmbyStatus() {
-    return new Promise((resolve) => {
-        $httpClient.get({
-            url: apiUrl,
-            headers: { "X-Key": apiKey }
-        }, (error, response, data) => {
-            if (error || !data) {
-                resolve(null);
-                return;
-            }
-            const requests = JSON.parse(data).requests;
-            // 匹配策略组
-            const embyReq = requests.find(r => 
-                r.policyName === targetPolicyGroup || 
-                (r.rule && r.rule.includes(targetPolicyGroup))
-            );
-            resolve(embyReq);
-        });
-    });
-}
-
 (async () => {
-    const embyReq = await getEmbyStatus();
-    let totalData = parseFloat($persistentStore.read("Policy_Total_Data") || "0");
-    let isPlaying = $persistentStore.read("Policy_Is_Playing") === "true";
-
     let panelContent = {
         title: "🎬 Emby 观影状态",
         icon: "play.tv.fill",
         "icon-color": "#5271FF"
     };
 
-    if (embyReq && embyReq.speed > 0) {
-        // --- 正在播放状态 ---
-        const currentSpeed = embyReq.speed;
-        const speedMB = (currentSpeed / 1024 / 1024).toFixed(2);
+    try {
+        const response = await fetchActiveRequests();
+        const requests = response.requests || [];
         
-        // 只有在面板刷新时累加一点流量（近似值）
-        // 面板刷新间隔通常由 Surge 自动控制或根据 cron 定时
-        totalData += (currentSpeed * 3); // 假设面板刷新间隔约为3s，仅作趋势参考
-        $persistentStore.write(totalData.toString(), "Policy_Total_Data");
-        $persistentStore.write("true", "Policy_Is_Playing");
+        let totalData = parseFloat($persistentStore.read("Policy_Total_Data") || "0");
+        let isPlaying = $persistentStore.read("Policy_Is_Playing") === "true";
 
-        const totalGB = (totalData / 1024 / 1024 / 1024).toFixed(2);
-        const nodeName = embyReq.policyName;
+        // --- 核心优化：匹配 rule 字段中是否包含 Emby.list ---
+        const embyReq = requests.find(r => 
+            r.rule && r.rule.includes(targetRuleSet)
+        );
 
-        panelContent.content = `节点: ${nodeName}\n速度: ${speedMB} MB/s | 已耗: ${totalGB} GB`;
-        panelContent["icon-color"] = "#00C853"; // 播放时显示绿色图标
-    } else {
-        // --- 空闲状态 ---
-        if (isPlaying) {
-            // 如果刚刚结束播放，保留最后一次的统计数值供查看，显示“已结束”
-            const finalGB = (totalData / 1024 / 1024 / 1024).toFixed(2);
-            panelContent.content = `最近观影已结束\n累计消耗流量: ${finalGB} GB (点击重置)`;
-            panelContent["icon-color"] = "#FFAB00";
+        if (embyReq) {
+            // 抓取实时速度
+            const currentSpeed = embyReq.speed || 0;
+            const speedMB = (currentSpeed / 1024 / 1024).toFixed(2);
+            
+            // 流量累加 (Panel 刷新间隔 3s)
+            totalData += (currentSpeed * 3); 
+            $persistentStore.write(totalData.toString(), "Policy_Total_Data");
+            $persistentStore.write("true", "Policy_Is_Playing");
+
+            const totalGB = (totalData / 1024 / 1024 / 1024).toFixed(2);
+            
+            // 节点名称处理：优先显示 originalPolicyName (即你的节点名)
+            const activeNode = embyReq.originalPolicyName || embyReq.policyName;
+
+            panelContent.content = `节点: ${activeNode}\n速度: ${speedMB} MB/s | 已耗: ${totalGB} GB`;
+            panelContent["icon-color"] = "#00C853";
         } else {
-            panelContent.content = "当前无 Emby 流量";
-            panelContent["icon-color"] = "#9E9E9E";
+            if (isPlaying) {
+                const finalGB = (totalData / 1024 / 1024 / 1024).toFixed(2);
+                panelContent.content = `最近观影结束\n累计消耗流量: ${finalGB} GB`;
+                panelContent["icon-color"] = "#FFAB00";
+            } else {
+                panelContent.content = "未检测到 Emby 流量\n(等待规则 Emby.list 触发)";
+                panelContent["icon-color"] = "#9E9E9E";
+            }
         }
+    } catch (err) {
+        panelContent.content = "读取失败: " + err;
     }
 
-    // 点击面板可以重置流量统计
     if ($trigger === "button") {
         $persistentStore.write("0", "Policy_Total_Data");
         $persistentStore.write("false", "Policy_Is_Playing");
-        panelContent.content = "统计已重置";
-        $notification.post("Emby 统计", "", "已手动重置流量计数器");
+        $notification.post("Emby 统计", "", "数据已手动重置");
     }
 
     $done(panelContent);
 })();
+
+function fetchActiveRequests() {
+    return new Promise((resolve, reject) => {
+        $httpClient.get({
+            url: apiUrl,
+            headers: { "X-Key": apiKey }
+        }, (error, response, data) => {
+            if (error) reject(error);
+            else resolve(JSON.parse(data));
+        });
+    });
+}
