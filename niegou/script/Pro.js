@@ -30,8 +30,7 @@ const CONFIG = {
 // ==================================================
 
 const SUPPORTED_APPS = {
-    
-    // ========== 第一类：原始App（保留6个） ==========
+
     "com.loveyouchenapps.knockout": {
         name: "Knockout (抠图)",
         product_id: "com.knockout.7daysplus",
@@ -74,9 +73,6 @@ const SUPPORTED_APPS = {
         trial: false,
         notes: "涂色书"
     },
-    // 已删除: com.shazam.Shazam (Shazam音乐识别)
-
-    // ========== 第二类：新增加App ==========
     "com.jianili.Booka": {
         name: "Booka",
         product_id: "com.jianili.Booka.pro.monthly",
@@ -133,11 +129,6 @@ const SUPPORTED_APPS = {
         trial: false,
         notes: "音频播放器"
     },
-    // 已删除: com.qingcheng.seal.Seal (Seal印章工具)
-    // 已删除: me.clarityapp (克拉壁纸)
-    // 已删除: com.liangpin.seal (Seal 2)
-    // 已删除: com.ss.MakingSeal (Making Seal)
-    
     "com.duy.CasioFx": {
         name: "科学计算器",
         product_id: "calculator_premium_monthly",
