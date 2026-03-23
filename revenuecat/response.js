@@ -8,7 +8,7 @@
 
 const $ = new Env("RevenueCatUltraHybrid");
 const NOTIFY_INTERVAL_HOURS = 2; 
-const EXCLUDE_APPS = ['ReflixiOS', 'Pomodoro', 'Fileball', 'APTV']; 
+const EXCLUDE_APPS = ['ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
 if (typeof $response === "undefined") {
     // --- 1. 请求阶段：移除缓存指纹 ---
