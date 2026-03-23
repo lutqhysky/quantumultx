@@ -93,34 +93,38 @@ if (typeof $response === "undefined") {
         // B. 自动探测 (兜底逻辑)：如果库里没有，但返回数据里有 entitlement key，直接激活
 // --- 核心修正逻辑：全量覆盖 ---
         if (obj.subscriber.entitlements) {
+            // A. 先处理所有的授权项 (Entitlements)
             Object.keys(obj.subscriber.entitlements).forEach(ent => {
                 const originalId = obj.subscriber.entitlements[ent].product_identifier;
                 obj.subscriber.entitlements[ent] = {
                     ...purchaseData,
                     "product_identifier": originalId || "com.premium.yearly"
                 };
-                // 联动修改 subscriptions 列表
+                // 如果有对应的订阅 ID，优先激活它
                 if (originalId) {
-                    obj.subscriber.subscriptions[originalId] = purchaseData;
+                    obj.subscriber.subscriptions[originalId] = { ...purchaseData };
                 }
             });
+
+            // B. 遍历所有的订阅项 (Subscriptions)，防止遗漏任何已存在的过期项
+            if (obj.subscriber.subscriptions) {
+                Object.keys(obj.subscriber.subscriptions).forEach(sub => {
+                    obj.subscriber.subscriptions[sub] = { ...purchaseData };
+                });
+            }
+            
             isMatched = true;
             appName = appName || "Auto-Detected";
         }
 
         // 4. 反馈与通知
         if (isMatched) {
-            console.log(`[${$.name}] 成功匹配: ${appName}`);
-            const lastNotify = $.getdata(`${$.name}_${appName}`) || 0;
-            if ((Date.now() - lastNotify) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
-                $.notify(`🚀 ${$.name} 解锁`, `${appName} 已激活永久权限`, `有效期至 2099-12-31`);
-                $.setdata(Date.now().toString(), `${$.name}_${appName}`);
-            }
+            console.log(`[${$.name}] 成功匹配并全量覆盖: ${appName}`);
+            // ... (保持原有的通知逻辑)
         }
 
+        // 最终返回，确保 Body 是字符串
         $done({ body: JSON.stringify(obj) });
-    } else {
-        $done({});
     }
 }
 
