@@ -1,17 +1,17 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (Ultra Hybrid 2026)
-更新内容：
-1. [强力] Header 抹除：彻底干掉 ETag，解决 Gentler 等 304 缓存问题。
-2. [全量] 暴力覆盖：遍历 entitlements 和 subscriptions 每一个角落。
-3. [兼容] 鲁棒性：加入空值检查，防止脚本崩溃导致 App 无法联网。
+修复说明：
+1. 修复全局 return 导致的 SyntaxError 报错。
+2. 整合强力 Header 抹除，彻底干掉 ETag 缓存。
+3. 修正逻辑分支嵌套，确保请求和响应都能正确 $done。
 **************************************/
 
 const $ = new Env("RevenueCatUltraHybrid");
-const NOTIFY_INTERVAL_HOURS = 2; // 通知频率
-const EXCLUDE_APPS = ['ReflixiOS', 'Pomodoro', 'Fileball', 'APTV']; // 排除列表
+const NOTIFY_INTERVAL_HOURS = 2; 
+const EXCLUDE_APPS = ['ReflixiOS', 'Pomodoro', 'Fileball', 'APTV']; 
 
 if (typeof $response === "undefined") {
-    // --- 请求阶段：移除缓存校验，强制服务器返回新数据 ---
+    // --- 1. 请求阶段：移除缓存校验 ---
     const headers = $request.headers;
     const deleteHeaders = [
         'x-revenuecat-etag', 'X-RevenueCat-ETag', 
@@ -25,13 +25,15 @@ if (typeof $response === "undefined") {
     
     $done({ headers });
 } else {
-    // --- 响应阶段：修改订阅数据 ---
+    // --- 2. 响应阶段：修改订阅数据 ---
     const headers = $request.headers;
     const UA = (headers['User-Agent'] || headers['user-agent'] || "").toLowerCase();
     const BID = (headers['X-Client-Bundle-ID'] || headers['x-client-bundle-id'] || "");
 
-    // 1. 排除检查
-    if (EXCLUDE_APPS.some(key => UA.includes(key.toLowerCase()) || BID.includes(key))) {
+    // 检查排除列表
+    const isExcluded = EXCLUDE_APPS.some(key => UA.includes(key.toLowerCase()) || BID.includes(key));
+
+    if (isExcluded) {
         console.log(`[${$.name}] 跳过排除列表中的应用`);
         $done({});
     } else {
@@ -39,8 +41,8 @@ if (typeof $response === "undefined") {
         try {
             obj = JSON.parse($response.body || '{}');
         } catch (e) {
+            console.log(`[${$.name}] JSON解析失败`);
             $done({});
-            return;
         }
 
         if (obj && obj.subscriber) {
@@ -58,7 +60,7 @@ if (typeof $response === "undefined") {
                 "will_renew": true
             };
 
-            // 3. 应用数据库 (预设匹配)
+            // 应用预设数据库
             const UAMappings = {
                 'Structured': { name: 'pro', id: 'today.structured.pro' },
                 'Anybox': { name: 'pro', id: 'cc.anybox.Anybox.annual' },
@@ -79,7 +81,7 @@ if (typeof $response === "undefined") {
             let isMatched = false;
             let appName = "";
 
-            // A. 预设库匹配逻辑
+            // A. 预设库匹配
             for (const key in UAMappings) {
                 if (new RegExp(key, 'i').test(UA) || new RegExp(key, 'i').test(BID)) {
                     const { name, id } = UAMappings[key];
@@ -93,8 +95,8 @@ if (typeof $response === "undefined") {
                 }
             }
 
-            // B. 核心修正逻辑：全量自动探测与覆盖
-            if (obj.subscriber.entitlements && Object.keys(obj.subscriber.entitlements).length > 0) {
+            // B. 全量自动探测覆盖
+            if (obj.subscriber.entitlements) {
                 Object.keys(obj.subscriber.entitlements).forEach(ent => {
                     const originalId = obj.subscriber.entitlements[ent].product_identifier;
                     obj.subscriber.entitlements[ent] = {
@@ -110,16 +112,16 @@ if (typeof $response === "undefined") {
                 appName = appName || "Auto-Detected";
             }
 
-            // 对所有现存订阅进行延期（防止遗漏过期项）
+            // C. 强力刷新所有已存订阅
             if (obj.subscriber.subscriptions) {
                 Object.keys(obj.subscriber.subscriptions).forEach(sub => {
                     obj.subscriber.subscriptions[sub] = { ...purchaseData };
                 });
             }
 
-            // 4. 反馈与通知
+            // 3. 通知逻辑
             if (isMatched) {
-                console.log(`[${$.name}] 成功匹配并全量覆盖: ${appName}`);
+                console.log(`[${$.name}] 成功激活: ${appName}`);
                 const lastNotify = $.getdata(`${$.name}_${appName}`) || 0;
                 if ((Date.now() - lastNotify) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
                     $.notify(`🚀 ${$.name} 解锁`, `${appName} 已激活永久权限`, `有效期至 2099-12-31`);
@@ -134,7 +136,7 @@ if (typeof $response === "undefined") {
     }
 }
 
-// 兼容性环境 (简易版)
+// 兼容性环境
 function Env(name) {
     this.name = name;
     this.notify = (t, s, c) => {
