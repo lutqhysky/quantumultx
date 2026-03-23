@@ -15,11 +15,25 @@ const EXCLUDE_APPS = ['ReflixiOS', 'Pomodoro', 'Fileball', 'APTV']; // 排除列
 
 // --- 脚本逻辑开始 ---
 if (typeof $response === "undefined") {
-    // 请求阶段：移除缓存校验，强制服务器返回新数据
     const headers = $request.headers;
-    const deleteHeaders = ['x-revenuecat-etag', 'X-RevenueCat-ETag', 'if-none-match', 'If-None-Match'];
-    deleteHeaders.forEach(h => delete headers[h]);
+    // 抹除所有缓存指纹，强制服务器吐出 200 OK 和完整 JSON Body
+    const deleteHeaders = [
+        'x-revenuecat-etag', 
+        'X-RevenueCat-ETag', 
+        'if-none-match', 
+        'If-None-Match',
+        'x-revenuecat-last-receive-time'
+    ];
+    deleteHeaders.forEach(h => {
+        if (headers[h]) delete headers[h];
+    });
+    
+    // 额外保险：修改请求头以确保不走本地缓存
+    headers['Cache-Control'] = 'no-cache';
+    headers['Pragma'] = 'no-cache';
+    
     $done({ headers });
+}
 } else {
     const headers = $request.headers;
     const UA = (headers['User-Agent'] || headers['user-agent'] || "").toLowerCase();
