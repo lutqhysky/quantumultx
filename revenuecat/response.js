@@ -1,17 +1,18 @@
 /*************************************
-项目名称：RevenueCat 全能解锁 (Ultra Hybrid 2026)
+项目名称：RevenueCat 全能解锁 (Ultra Hybrid 2026 Fix)
 修复说明：
-1. 修复全局 return 导致的 SyntaxError 报错。
-2. 整合强力 Header 抹除，彻底干掉 ETag 缓存。
-3. 修正逻辑分支嵌套，确保请求和响应都能正确 $done。
+1. 彻底移除全局作用域下的 return 语句，改为逻辑分支控制。
+2. 强化 Header 抹除逻辑，确保绕过 ETag 缓存。
+3. 增加空值保护，防止 JSON 解析异常导致脚本中断。
 **************************************/
 
 const $ = new Env("RevenueCatUltraHybrid");
 const NOTIFY_INTERVAL_HOURS = 2; 
 const EXCLUDE_APPS = ['ReflixiOS', 'Pomodoro', 'Fileball', 'APTV']; 
 
+// --- 逻辑主入口 ---
 if (typeof $response === "undefined") {
-    // --- 1. 请求阶段：移除缓存校验 ---
+    // 1. 请求阶段：移除缓存校验，强制服务器返回新数据
     const headers = $request.headers;
     const deleteHeaders = [
         'x-revenuecat-etag', 'X-RevenueCat-ETag', 
@@ -25,24 +26,23 @@ if (typeof $response === "undefined") {
     
     $done({ headers });
 } else {
-    // --- 2. 响应阶段：修改订阅数据 ---
+    // 2. 响应阶段：修改订阅数据
     const headers = $request.headers;
     const UA = (headers['User-Agent'] || headers['user-agent'] || "").toLowerCase();
     const BID = (headers['X-Client-Bundle-ID'] || headers['x-client-bundle-id'] || "");
 
-    // 检查排除列表
+    // 排除列表检查
     const isExcluded = EXCLUDE_APPS.some(key => UA.includes(key.toLowerCase()) || BID.includes(key));
 
     if (isExcluded) {
         console.log(`[${$.name}] 跳过排除列表中的应用`);
         $done({});
     } else {
-        let obj;
+        let obj = null;
         try {
             obj = JSON.parse($response.body || '{}');
         } catch (e) {
             console.log(`[${$.name}] JSON解析失败`);
-            $done({});
         }
 
         if (obj && obj.subscriber) {
@@ -60,7 +60,7 @@ if (typeof $response === "undefined") {
                 "will_renew": true
             };
 
-            // 应用预设数据库
+            // 应用数据库 (预设匹配)
             const UAMappings = {
                 'Structured': { name: 'pro', id: 'today.structured.pro' },
                 'Anybox': { name: 'pro', id: 'cc.anybox.Anybox.annual' },
@@ -81,7 +81,7 @@ if (typeof $response === "undefined") {
             let isMatched = false;
             let appName = "";
 
-            // A. 预设库匹配
+            // A. 遍历预设库
             for (const key in UAMappings) {
                 if (new RegExp(key, 'i').test(UA) || new RegExp(key, 'i').test(BID)) {
                     const { name, id } = UAMappings[key];
@@ -95,7 +95,7 @@ if (typeof $response === "undefined") {
                 }
             }
 
-            // B. 全量自动探测覆盖
+            // B. 自动探测 (兜底覆盖)
             if (obj.subscriber.entitlements) {
                 Object.keys(obj.subscriber.entitlements).forEach(ent => {
                     const originalId = obj.subscriber.entitlements[ent].product_identifier;
@@ -112,16 +112,16 @@ if (typeof $response === "undefined") {
                 appName = appName || "Auto-Detected";
             }
 
-            // C. 强力刷新所有已存订阅
+            // C. 暴力刷新所有已有项
             if (obj.subscriber.subscriptions) {
                 Object.keys(obj.subscriber.subscriptions).forEach(sub => {
                     obj.subscriber.subscriptions[sub] = { ...purchaseData };
                 });
             }
 
-            // 3. 通知逻辑
+            // 3. 反馈通知
             if (isMatched) {
-                console.log(`[${$.name}] 成功激活: ${appName}`);
+                console.log(`[${$.name}] 成功匹配并全量覆盖: ${appName}`);
                 const lastNotify = $.getdata(`${$.name}_${appName}`) || 0;
                 if ((Date.now() - lastNotify) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
                     $.notify(`🚀 ${$.name} 解锁`, `${appName} 已激活永久权限`, `有效期至 2099-12-31`);
@@ -131,12 +131,13 @@ if (typeof $response === "undefined") {
 
             $done({ body: JSON.stringify(obj) });
         } else {
+            // 没有找到 subscriber 节点，直接放行
             $done({});
         }
     }
 }
 
-// 兼容性环境
+// --- 兼容性环境 ---
 function Env(name) {
     this.name = name;
     this.notify = (t, s, c) => {
