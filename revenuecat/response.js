@@ -69,7 +69,8 @@ if (typeof $response === "undefined") {
             'AdGuard%20Home': { name: 'aghrpro', id: 'adguard.home.remote.pro' },
             'Leica%20LUX': { name: 'pro', id: 'annual_subscribers_first_cohort' },
             'SleepSounds': { name: 'vip', id: 'VIPOneMonth' },
-            'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' }
+            'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
+            'Gentler': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' }
             // ... 此处可根据需要继续补充 ddm1023 列表中的几百个条目
         };
 
