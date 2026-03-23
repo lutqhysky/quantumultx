@@ -117,24 +117,19 @@ if (typeof $response === "undefined") {
             appName = appName || "Auto-Detected";
         }
 
-        // 4. 反馈与通知
+// 4. 反馈与通知
         if (isMatched) {
             console.log(`[${$.name}] 成功匹配并全量覆盖: ${appName}`);
-            // ... (保持原有的通知逻辑)
+            const lastNotify = $.getdata(`${$.name}_${appName}`) || 0;
+            if ((Date.now() - lastNotify) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
+                $.notify(`🚀 ${$.name} 解锁`, `${appName} 已激活永久权限`, `有效期至 2099-12-31`);
+                $.setdata(Date.now().toString(), `${$.name}_${appName}`);
+            }
         }
 
-        // 最终返回，确保 Body 是字符串
         $done({ body: JSON.stringify(obj) });
+    } else {
+        // 如果不是预期的订阅者数据结构，原样返回
+        $done({});
     }
-}
-
-// 兼容性环境 (简易版)
-function Env(name) {
-    this.name = name;
-    this.notify = (t, s, c) => {
-        if (typeof $notification !== "undefined") $notification.post(t, s, c);
-        else if (typeof $notify !== "undefined") $notify(t, s, c);
-    };
-    this.getdata = (k) => (typeof $persistentStore !== "undefined" ? $persistentStore.read(k) : (typeof $prefs !== "undefined" ? $prefs.valueForKey(k) : null));
-    this.setdata = (v, k) => (typeof $persistentStore !== "undefined" ? $persistentStore.write(v, k) : (typeof $prefs !== "undefined" ? $prefs.setValueForKey(v, k) : false));
 }
