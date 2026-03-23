@@ -70,7 +70,8 @@ if (typeof $response === "undefined") {
             'Leica%20LUX': { name: 'pro', id: 'annual_subscribers_first_cohort' },
             'SleepSounds': { name: 'vip', id: 'VIPOneMonth' },
             'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
-            'Gentler': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' }
+            'Gentler': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' },
+            'GentlerStreak': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' },
             // ... 此处可根据需要继续补充 ddm1023 列表中的几百个条目
         };
 
@@ -90,19 +91,21 @@ if (typeof $response === "undefined") {
         }
 
         // B. 自动探测 (兜底逻辑)：如果库里没有，但返回数据里有 entitlement key，直接激活
-        if (!isMatched && obj.subscriber.entitlements) {
-            for (const ent in obj.subscriber.entitlements) {
-                obj.subscriber.entitlements[ent] = { 
-                    ...purchaseData, 
-                    "product_identifier": obj.subscriber.entitlements[ent].product_identifier || "com.premium.yearly" 
+// --- 核心修正逻辑：全量覆盖 ---
+        if (obj.subscriber.entitlements) {
+            Object.keys(obj.subscriber.entitlements).forEach(ent => {
+                const originalId = obj.subscriber.entitlements[ent].product_identifier;
+                obj.subscriber.entitlements[ent] = {
+                    ...purchaseData,
+                    "product_identifier": originalId || "com.premium.yearly"
                 };
-                isMatched = true;
-                appName = "Auto-Detected";
-            }
-            // 同时激活对应的订阅项
-            for (const sub in obj.subscriber.subscriptions) {
-                obj.subscriber.subscriptions[sub] = purchaseData;
-            }
+                // 联动修改 subscriptions 列表
+                if (originalId) {
+                    obj.subscriber.subscriptions[originalId] = purchaseData;
+                }
+            });
+            isMatched = true;
+            appName = appName || "Auto-Detected";
         }
 
         // 4. 反馈与通知
