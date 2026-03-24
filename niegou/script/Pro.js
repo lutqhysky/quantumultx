@@ -1,5 +1,5 @@
 /*
- * iTunes 订阅破解脚本 - 2026 终极增强版
+ * iTunes 订阅破解脚本 - 2026 自动兜底增强版
  */
 
 const CONFIG = {
@@ -12,141 +12,33 @@ const CONFIG = {
 };
 
 const SUPPORTED_APPS = {
-    "com.qingniaofly.chineseLaw": {
-        name: "中国法律",
-        product_id: "Chineselaw_Year_Int0",
-        type: "subscription"
-    },
-    "com.loveyouchenapps.knockout": {
-        name: "Knockout (抠图)",
-        product_id: "com.knockout.7daysplus",
-        type: "subscription"
-    },
-    "com.icandiapps.nightsky": {
-        name: "Night Sky (天文)",
-        product_id: "com.icandiapps.ns4.monthly",
-        type: "subscription"
-    },
-    "com.speed.test.internet": {
-        name: "Speed Test (网速)",
-        product_id: "com.speed.test.internet.subscription.year",
-        type: "subscription"
-    },
-    "co.bazaart.app": {
-        name: "Bazaart (编辑)",
-        product_id: "Bazaart_Premium_Monthly_v10",
-        type: "subscription"
-    },
-    "com.unfold.app": {
-        name: "Unfold (故事)",
-        product_id: "com.unfold.app.yearly",
-        type: "subscription"
-    },
-    "com.pixite.pigment": {
-        name: "Pigment (涂色)",
-        product_id: "com.pixite.pigment.premium.yearly",
-        type: "subscription"
-    },
-    "com.jianili.Booka": {
-        name: "Booka",
-        product_id: "com.jianili.Booka.pro.monthly",
-        type: "subscription"
-    },
-    "com.tapuniverse.texteditor": {
-        name: "Text Editor",
-        product_id: "com.tapuniverse.texteditor.w",
-        type: "subscription"
-    },
-    "com.vgfit.waterreminder": {
-        name: "Water Reminder",
-        product_id: "com.vgfit.waterreminder.year",
-        type: "subscription"
-    },
-    "com.resonantcavity.Voloco": {
-        name: "Voloco",
-        product_id: "jean_laroche",
-        type: "subscription"
-    },
-    "com.teadoku.flashnote": {
-        name: "Flashnote",
-        product_id: "pro_ios_ipad_mac",
-        type: "non-consumable"
-    },
-    "com.mirmay.DownloaderFREE": {
-        name: "Downloader FREE",
-        product_id: "com.mirmay.DownloaderFree.subs.monthly_trial",
-        type: "subscription"
-    },
-    "com.ilbsoft.irelax": {
-        name: "BetterSleep",
-        product_id: "com.ipnossoft.rm.subscription.year.7daystrial.60usd",
-        type: "subscription"
-    },
-    "com.zhangchao.AudioPlayer": {
-        name: "Ever Play",
-        product_id: "om.zhangchao.AudioPlayer.subscription.oneWeek",
-        type: "subscription"
-    },
-    "com.duy.CasioFx": {
-        name: "科学计算器",
-        product_id: "calculator_premium_monthly",
-        type: "subscription"
-    },
-    "me.imgbase.videoday": {
-        name: "Videoday",
-        product_id: "me.imgbase.videoday.profeaturesYearly",
-        type: "subscription"
-    },
-    "health.sleep.sounds.tracker.alarm.calm": {
-        name: "星空睡眠",
-        product_id: "shuteye.all.premium.year.tier1",
-        type: "subscription"
-    },
-    "com.risingcabbage.pro.camera": {
-        name: "ReLens",
-        product_id: "com.risingcabbage.pro.camera.yearlysubscription",
-        type: "subscription"
-    },
-    "com.mematom.ios": {
-        name: "Mematom",
-        product_id: "MMYear",
-        type: "subscription"
-    },
-    "app.feelsy": {
-        name: "Feelsy",
-        product_id: "com.feelsy.weekly.b",
-        type: "subscription"
-    },
-    "com.shapr3d.shapr": {
-        name: "Shapr3D",
-        product_id: "com.shapr3d.shapr.iap.lite2.renewing.yearly",
-        type: "subscription"
-    },
-    "com.CADraw.zc": {
-        name: "CAD绘图",
-        product_id: "com.CADraw.zc.30",
-        type: "subscription"
-    },
-    "com.magicmoon.chatai": {
-        name: "Chat AI",
-        product_id: "aichat_iap_yearly_autorenewable",
-        type: "subscription"
-    },
-    "com.ewa.ewaapp": {
-        name: "EWA英语",
-        product_id: "com.ewa.renewable.subscription.year8",
-        type: "subscription"
-    },
-    "com.dream4today.HeartRate.Free": {
-        name: "心率检测",
-        product_id: "com.zane.premium.yearly333",
-        type: "subscription"
-    },
-    "com.byteapp.tubepod": {
-        name: "Tubepod",
-        product_id: "com.byteapp.tubepod.year",
-        type: "subscription"
-    }
+    "com.qingniaofly.chineseLaw": { name: "中国法律", product_id: "Chineselaw_Year_Int0", type: "subscription" },
+    "com.loveyouchenapps.knockout": { name: "Knockout (抠图)", product_id: "com.knockout.7daysplus", type: "subscription" },
+    "com.icandiapps.nightsky": { name: "Night Sky (天文)", product_id: "com.icandiapps.ns4.monthly", type: "subscription" },
+    "com.speed.test.internet": { name: "Speed Test (网速)", product_id: "com.speed.test.internet.subscription.year", type: "subscription" },
+    "co.bazaart.app": { name: "Bazaart (编辑)", product_id: "Bazaart_Premium_Monthly_v10", type: "subscription" },
+    "com.unfold.app": { name: "Unfold (故事)", product_id: "com.unfold.app.yearly", type: "subscription" },
+    "com.pixite.pigment": { name: "Pigment (涂色)", product_id: "com.pixite.pigment.premium.yearly", type: "subscription" },
+    "com.jianili.Booka": { name: "Booka", product_id: "com.jianili.Booka.pro.monthly", type: "subscription" },
+    "com.tapuniverse.texteditor": { name: "Text Editor", product_id: "com.tapuniverse.texteditor.w", type: "subscription" },
+    "com.vgfit.waterreminder": { name: "Water Reminder", product_id: "com.vgfit.waterreminder.year", type: "subscription" },
+    "com.resonantcavity.Voloco": { name: "Voloco", product_id: "jean_laroche", type: "subscription" },
+    "com.teadoku.flashnote": { name: "Flashnote", product_id: "pro_ios_ipad_mac", type: "non-consumable" },
+    "com.mirmay.DownloaderFREE": { name: "Downloader FREE", product_id: "com.mirmay.DownloaderFree.subs.monthly_trial", type: "subscription" },
+    "com.ilbsoft.irelax": { name: "BetterSleep", product_id: "com.ipnossoft.rm.subscription.year.7daystrial.60usd", type: "subscription" },
+    "com.zhangchao.AudioPlayer": { name: "Ever Play", product_id: "om.zhangchao.AudioPlayer.subscription.oneWeek", type: "subscription" },
+    "com.duy.CasioFx": { name: "科学计算器", product_id: "calculator_premium_monthly", type: "subscription" },
+    "me.imgbase.videoday": { name: "Videoday", product_id: "me.imgbase.videoday.profeaturesYearly", type: "subscription" },
+    "health.sleep.sounds.tracker.alarm.calm": { name: "星空睡眠", product_id: "shuteye.all.premium.year.tier1", type: "subscription" },
+    "com.risingcabbage.pro.camera": { name: "ReLens", product_id: "com.risingcabbage.pro.camera.yearlysubscription", type: "subscription" },
+    "com.mematom.ios": { name: "Mematom", product_id: "MMYear", type: "subscription" },
+    "app.feelsy": { name: "Feelsy", product_id: "com.feelsy.weekly.b", type: "subscription" },
+    "com.shapr3d.shapr": { name: "Shapr3D", product_id: "com.shapr3d.shapr.iap.lite2.renewing.yearly", type: "subscription" },
+    "com.CADraw.zc": { name: "CAD绘图", product_id: "com.CADraw.zc.30", type: "subscription" },
+    "com.magicmoon.chatai": { name: "Chat AI", product_id: "aichat_iap_yearly_autorenewable", type: "subscription" },
+    "com.ewa.ewaapp": { name: "EWA英语", product_id: "com.ewa.renewable.subscription.year8", type: "subscription" },
+    "com.dream4today.HeartRate.Free": { name: "心率检测", product_id: "com.zane.premium.yearly333", type: "subscription" },
+    "com.byteapp.tubepod": { name: "Tubepod", product_id: "com.byteapp.tubepod.year", type: "subscription" }
 };
 
 // ==================== 工具函数 ====================
@@ -172,13 +64,30 @@ function getFutureDate() {
 function processReceipt(body) {
     try {
         let obj = JSON.parse(body);
-        
         const bundleId = obj.receipt?.bundle_id || obj.bundle_id;
-        const appConfig = SUPPORTED_APPS[bundleId];
+        if (!bundleId) return body;
 
-        if (!appConfig) return body;
+        let appConfig = SUPPORTED_APPS[bundleId];
+        let isFallback = false;
 
-        if (CONFIG.DEBUG) console.log(`[破解命中] ${appConfig.name} (${bundleId})`);
+        // 🛡️ 核心改动：兜底逻辑
+        if (!appConfig) {
+            isFallback = true;
+            // 尝试获取 App 本身正在请求的 ID，如果获取不到则根据 Bundle ID 生成
+            const originalProductId = obj.receipt?.in_app?.[0]?.product_id || 
+                                     obj.latest_receipt_info?.[0]?.product_id || 
+                                     `${bundleId}.pro`;
+            
+            appConfig = {
+                name: "未知应用 (自动兜底)",
+                product_id: originalProductId,
+                type: "subscription" // 默认按订阅处理，兼容性最高
+            };
+        }
+
+        if (CONFIG.DEBUG) {
+            console.log(`[${isFallback ? "自动兜底" : "破解命中"}] ${appConfig.name} (${bundleId}) -> ID: ${appConfig.product_id}`);
+        }
 
         const futureDate = getFutureDate();
         const pId = appConfig.product_id;
