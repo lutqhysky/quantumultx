@@ -72,8 +72,8 @@ if (typeof $response === "undefined") {
                 'Leica%20LUX': { name: 'pro', id: 'annual_subscribers_first_cohort' },
                 'SleepSounds': { name: 'vip', id: 'VIPOneMonth' },
                 'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
-                'Gentler': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' },
-                'GentlerStreak': { name: 'premium', id: 'app.gentler.activity.subscription.monthly1' }
+                'Gentler': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
+                'GentlerStreak': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' }
             };
 
             let isMatched = false;
