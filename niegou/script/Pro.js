@@ -12,6 +12,7 @@ const CONFIG = {
 };
 
 const SUPPORTED_APPS = {
+    "com.huaye.Drinking": { name: "喝水时间", product_id: "com.huaye.Drinking.Yearly", type: "subscription" },
     "com.qingniaofly.chineseLaw": { name: "中国法律", product_id: "Chineselaw_Year_Int0", type: "subscription" },
     "com.loveyouchenapps.knockout": { name: "Knockout (抠图)", product_id: "com.knockout.7daysplus", type: "subscription" },
     "com.icandiapps.nightsky": { name: "Night Sky (天文)", product_id: "com.icandiapps.ns4.monthly", type: "subscription" },
