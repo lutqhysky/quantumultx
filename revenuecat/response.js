@@ -52,6 +52,7 @@ if (typeof $response === "undefined") {
             };
 
             const UAMappings = {
+                'Charger': { name: 'pro', id: 'com.charginglite.weekly' },
                 'Halo': { name: 'premium', id: 'halo_5999_1y_1w0' },
                 'Structured': { name: 'pro', id: 'today.structured.pro' },
                 'Anybox': { name: 'pro', id: 'cc.anybox.Anybox.annual' },
