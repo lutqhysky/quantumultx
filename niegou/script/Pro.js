@@ -17,216 +17,173 @@ const SUPPORTED_APPS = {
         product_id: "Chineselaw_Year_Int0",
         type: "subscription"
     },
-    // ... 这里保留你之前的其他 App 配置
     "com.loveyouchenapps.knockout": {
         name: "Knockout (抠图)",
         product_id: "com.knockout.7daysplus",
-        type: "subscription",
-        trial: false,
-        notes: "照片背景去除"
-    },
-"com.qingniaofly.chineseLaw": {
-        name: "中国法律",
-        product_id: "Chineselaw_Year_Int0",
-        type: "subscription", // 必须是这个字符串
-        trial: false,
-        notes: "修正后的配置"
+        type: "subscription"
     },
     "com.icandiapps.nightsky": {
         name: "Night Sky (天文)",
         product_id: "com.icandiapps.ns4.monthly",
-        type: "subscription",
-        trial: false,
-        notes: "天文观测"
+        type: "subscription"
     },
     "com.speed.test.internet": {
         name: "Speed Test (网速)",
         product_id: "com.speed.test.internet.subscription.year",
-        type: "subscription",
-        trial: false,
-        notes: "网速测试"
+        type: "subscription"
     },
     "co.bazaart.app": {
         name: "Bazaart (编辑)",
         product_id: "Bazaart_Premium_Monthly_v10",
-        type: "subscription",
-        trial: false,
-        notes: "照片编辑"
+        type: "subscription"
     },
     "com.unfold.app": {
         name: "Unfold (故事)",
         product_id: "com.unfold.app.yearly",
-        type: "subscription",
-        trial: false,
-        notes: "故事制作"
+        type: "subscription"
     },
     "com.pixite.pigment": {
         name: "Pigment (涂色)",
         product_id: "com.pixite.pigment.premium.yearly",
-        type: "subscription",
-        trial: false,
-        notes: "涂色书"
+        type: "subscription"
     },
     "com.jianili.Booka": {
         name: "Booka",
         product_id: "com.jianili.Booka.pro.monthly",
-        type: "subscription",
-        trial: false,
-        notes: "电子书"
+        type: "subscription"
     },
     "com.tapuniverse.texteditor": {
         name: "Text Editor",
         product_id: "com.tapuniverse.texteditor.w",
-        type: "subscription",
-        trial: false,
-        notes: "文本编辑器"
+        type: "subscription"
     },
     "com.vgfit.waterreminder": {
         name: "Water Reminder",
         product_id: "com.vgfit.waterreminder.year",
-        type: "subscription",
-        trial: true,
-        notes: "喝水提醒"
+        type: "subscription"
     },
     "com.resonantcavity.Voloco": {
         name: "Voloco",
         product_id: "jean_laroche",
-        type: "subscription",
-        trial: false,
-        notes: "音频处理"
+        type: "subscription"
     },
     "com.teadoku.flashnote": {
         name: "Flashnote",
         product_id: "pro_ios_ipad_mac",
-        type: "non-consumable",
-        trial: false,
-        notes: "笔记应用"
+        type: "non-consumable"
     },
     "com.mirmay.DownloaderFREE": {
         name: "Downloader FREE",
         product_id: "com.mirmay.DownloaderFree.subs.monthly_trial",
-        type: "subscription",
-        trial: true,
-        notes: "下载器"
+        type: "subscription"
     },
     "com.ilbsoft.irelax": {
         name: "BetterSleep",
         product_id: "com.ipnossoft.rm.subscription.year.7daystrial.60usd",
-        type: "subscription",
-        trial: true,
-        notes: "睡眠助手"
+        type: "subscription"
     },
     "com.zhangchao.AudioPlayer": {
         name: "Ever Play",
         product_id: "om.zhangchao.AudioPlayer.subscription.oneWeek",
-        type: "subscription",
-        trial: false,
-        notes: "音频播放器"
+        type: "subscription"
     },
     "com.duy.CasioFx": {
         name: "科学计算器",
         product_id: "calculator_premium_monthly",
-        type: "subscription",
-        trial: false,
-        notes: "卡西欧计算器"
+        type: "subscription"
     },
     "me.imgbase.videoday": {
         name: "Videoday",
         product_id: "me.imgbase.videoday.profeaturesYearly",
-        type: "subscription",
-        trial: true,
-        notes: "视频处理"
+        type: "subscription"
     },
     "health.sleep.sounds.tracker.alarm.calm": {
         name: "星空睡眠",
         product_id: "shuteye.all.premium.year.tier1",
-        type: "subscription",
-        trial: true,
-        notes: "睡眠监测"
+        type: "subscription"
     },
     "com.risingcabbage.pro.camera": {
         name: "ReLens",
         product_id: "com.risingcabbage.pro.camera.yearlysubscription",
-        type: "subscription",
-        trial: true,
-        notes: "专业相机"
+        type: "subscription"
     },
     "com.mematom.ios": {
         name: "Mematom",
         product_id: "MMYear",
-        type: "subscription",
-        trial: false,
-        notes: "健康应用"
+        type: "subscription"
     },
     "app.feelsy": {
         name: "Feelsy",
         product_id: "com.feelsy.weekly.b",
-        type: "subscription",
-        trial: true,
-        notes: "心情记录"
+        type: "subscription"
     },
     "com.shapr3d.shapr": {
         name: "Shapr3D",
         product_id: "com.shapr3d.shapr.iap.lite2.renewing.yearly",
-        type: "subscription",
-        trial: true,
-        notes: "3D建模"
+        type: "subscription"
     },
     "com.CADraw.zc": {
         name: "CAD绘图",
         product_id: "com.CADraw.zc.30",
-        type: "subscription",
-        trial: false,
-        notes: "CAD工具"
+        type: "subscription"
     },
     "com.magicmoon.chatai": {
         name: "Chat AI",
         product_id: "aichat_iap_yearly_autorenewable",
-        type: "subscription",
-        trial: true,
-        notes: "AI对话"
+        type: "subscription"
     },
-    // 已删除: com.firecore.infuse (Infuse)
     "com.ewa.ewaapp": {
         name: "EWA英语",
         product_id: "com.ewa.renewable.subscription.year8",
-        type: "subscription",
-        trial: true,
-        notes: "英语学习"
+        type: "subscription"
     },
     "com.dream4today.HeartRate.Free": {
         name: "心率检测",
         product_id: "com.zane.premium.yearly333",
-        type: "subscription",
-        trial: true,
-        notes: "心率监测"
+        type: "subscription"
     },
     "com.byteapp.tubepod": {
         name: "Tubepod",
         product_id: "com.byteapp.tubepod.year",
-        type: "subscription",
-        trial: true,
-        notes: "播客应用"
+        type: "subscription"
     }
 };
 
+// ==================== 工具函数 ====================
+function getFutureDate() {
+    const now = new Date();
+    const future = new Date(now);
+    future.setFullYear(now.getFullYear() + CONFIG.EXPIRE_YEARS);
+    
+    const year = future.getFullYear();
+    const month = String(future.getMonth() + 1).padStart(2, '0');
+    const day = String(future.getDate()).padStart(2, '0');
+    const hours = String(future.getHours()).padStart(2, '0');
+    const minutes = String(future.getMinutes()).padStart(2, '0');
+    const seconds = String(future.getSeconds()).padStart(2, '0');
+    
+    return {
+        date_str: `${year}-${month}-${day} ${hours}:${minutes}:${seconds} Etc/GMT`,
+        ms: future.getTime().toString()
+    };
+}
+
+// ==================== 主处理函数 ====================
 function processReceipt(body) {
     try {
         let obj = JSON.parse(body);
         
-        // 1. 自动定位 Bundle ID (增加容错，有些 App 的 ID 在外层)
         const bundleId = obj.receipt?.bundle_id || obj.bundle_id;
         const appConfig = SUPPORTED_APPS[bundleId];
 
         if (!appConfig) return body;
 
-        if (CONFIG.DEBUG) console.log(`[破解成功] 正在处理: ${appConfig.name}`);
+        if (CONFIG.DEBUG) console.log(`[破解命中] ${appConfig.name} (${bundleId})`);
 
         const futureDate = getFutureDate();
         const pId = appConfig.product_id;
         const tId = CONFIG.TRANSACTION_ID;
 
-        // 2. 构造通用的订阅条目
         const subInfo = {
             "quantity": "1",
             "product_id": pId,
@@ -249,22 +206,17 @@ function processReceipt(body) {
             subInfo.expires_date_pst = `${futureDate.date_str.replace("Etc/GMT", "America/Los_Angeles")}`;
         }
 
-        // 3. 多重覆盖：根目录、receipt 内部、latest 数组
         obj.status = 0;
         obj.environment = "Production";
         
-        // 修改 receipt 内部数据
         if (obj.receipt) {
             obj.receipt.in_app = [subInfo];
             obj.receipt.bundle_id = bundleId;
-            // 某些 App 校验原始版本号
             obj.receipt.original_application_version = "1.0"; 
         }
 
-        // 修改服务端最新的 receipt 记录（最关键）
         obj.latest_receipt_info = [subInfo];
         
-        // 修改续订状态
         if (appConfig.type === "subscription") {
             obj.pending_renewal_info = [{
                 "product_id": pId,
@@ -280,4 +232,14 @@ function processReceipt(body) {
     }
 }
 
-
+// ==================== 平台适配 ====================
+try {
+    let body = $response.body;
+    if (!body) {
+        $done({});
+    } else {
+        $done({ body: processReceipt(body) });
+    }
+} catch (e) {
+    $done({});
+}
