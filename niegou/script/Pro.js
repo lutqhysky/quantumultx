@@ -1,36 +1,23 @@
 /*
- * iTunes 订阅破解脚本 - 增强维护版
- * 适用平台：Surge, Loon, Quantumult X
- * 特点：模块化配置，易于维护，自动计算过期时间
- * 
- * 维护说明：
- * 1. 所有App配置都在 SUPPORTED_APPS 对象中
- * 2. 格式统一，复制粘贴即可添加新App
- * 3. 注释清楚，方便查找和修改
+ * iTunes 订阅破解脚本 - 2026 终极增强版
  */
 
-// ==================== 全局配置 ====================
 const CONFIG = {
-    DEBUG: false,                    // 调试模式开关
-    EXPIRE_YEARS: 5,                  // 过期年限（从当前时间算起）
-    AUTO_RENEW: true,                 // 自动续订状态
-    TRANSACTION_ID: "100000000000000", // 固定交易ID（节省资源）
-    PURCHASE_DATE: "2023-01-01 00:00:00 Etc/GMT",  // 固定购买日期
-    PURCHASE_DATE_MS: "1672531200000"               // 对应的时间戳
+    DEBUG: true,
+    EXPIRE_YEARS: 10,
+    AUTO_RENEW: true,
+    TRANSACTION_ID: "400000000000000",
+    PURCHASE_DATE: "2024-01-01 00:00:00 Etc/GMT",
+    PURCHASE_DATE_MS: "1704067200000"
 };
 
-// ==================== App 配置大全 ====================
-// 格式: "bundle_id": { 
-//   name: "App名称",                    // 便于识别的名称
-//   product_id: "订阅产品ID",            // 必须正确
-//   type: "subscription",                // subscription 或 non-consumable
-//   trial: false,                        // 是否为试用期
-//   notes: "备注信息"                     // 可选，方便记录
-// }
-// ==================================================
-
 const SUPPORTED_APPS = {
-
+    "com.qingniaofly.chineseLaw": {
+        name: "中国法律",
+        product_id: "Chineselaw_Year_Int0",
+        type: "subscription"
+    },
+    // ... 这里保留你之前的其他 App 配置
     "com.loveyouchenapps.knockout": {
         name: "Knockout (抠图)",
         product_id: "com.knockout.7daysplus",
@@ -223,111 +210,74 @@ const SUPPORTED_APPS = {
     }
 };
 
-// ==================== 工具函数 ====================
-
-// 计算未来日期
-function getFutureDate() {
-    const now = new Date();
-    const future = new Date(now);
-    future.setFullYear(now.getFullYear() + CONFIG.EXPIRE_YEARS);
-    
-    const year = future.getFullYear();
-    const month = String(future.getMonth() + 1).padStart(2, '0');
-    const day = String(future.getDate()).padStart(2, '0');
-    const hours = String(future.getHours()).padStart(2, '0');
-    const minutes = String(future.getMinutes()).padStart(2, '0');
-    const seconds = String(future.getSeconds()).padStart(2, '0');
-    
-    return {
-        date_str: `${year}-${month}-${day} ${hours}:${minutes}:${seconds} Etc/GMT`,
-        ms: future.getTime().toString()
-    };
-}
-
-// ==================== 主处理函数 ====================
-
 function processReceipt(body) {
     try {
-        const obj = JSON.parse(body);
+        let obj = JSON.parse(body);
         
-        // 安全检查
-        if (!obj || typeof obj !== 'object' || !obj.receipt || !obj.receipt.bundle_id) {
-            return body;
-        }
-
-        const bundleId = obj.receipt.bundle_id;
+        // 1. 自动定位 Bundle ID (增加容错，有些 App 的 ID 在外层)
+        const bundleId = obj.receipt?.bundle_id || obj.bundle_id;
         const appConfig = SUPPORTED_APPS[bundleId];
-        
-        // 如果不支持此App，直接返回
-        if (!appConfig) {
-            return body;
-        }
 
-        // 调试信息（仅在开启DEBUG时输出）
-        if (CONFIG.DEBUG) {
-            console.log(`[破解] 命中: ${appConfig.name} (${bundleId})`);
-        }
+        if (!appConfig) return body;
+
+        if (CONFIG.DEBUG) console.log(`[破解成功] 正在处理: ${appConfig.name}`);
 
         const futureDate = getFutureDate();
-        const productId = appConfig.product_id;
-        const transactionId = CONFIG.TRANSACTION_ID;
-        
-        // 确保数组存在
-        if (!Array.isArray(obj.receipt.in_app)) {
-            obj.receipt.in_app = [];
-        }
-        
-        // 构建基础订阅信息
+        const pId = appConfig.product_id;
+        const tId = CONFIG.TRANSACTION_ID;
+
+        // 2. 构造通用的订阅条目
         const subInfo = {
-            "product_id": productId,
-            "transaction_id": transactionId,
-            "original_transaction_id": transactionId,
+            "quantity": "1",
+            "product_id": pId,
+            "transaction_id": tId,
+            "original_transaction_id": tId,
             "purchase_date": CONFIG.PURCHASE_DATE,
             "purchase_date_ms": CONFIG.PURCHASE_DATE_MS,
-            "is_trial_period": appConfig.trial ? "true" : "false",
-            "in_app_ownership_type": "PURCHASED"
+            "purchase_date_pst": "2024-01-01 00:00:00 America/Los_Angeles",
+            "original_purchase_date": CONFIG.PURCHASE_DATE,
+            "original_purchase_date_ms": CONFIG.PURCHASE_DATE_MS,
+            "original_purchase_date_pst": "2024-01-01 00:00:00 America/Los_Angeles",
+            "is_trial_period": "false",
+            "in_app_ownership_type": "PURCHASED",
+            "web_order_line_item_id": tId
         };
-        
-        // 订阅类型添加过期时间
+
         if (appConfig.type === "subscription") {
             subInfo.expires_date = futureDate.date_str;
             subInfo.expires_date_ms = futureDate.ms;
-            subInfo.original_purchase_date = CONFIG.PURCHASE_DATE;
-            subInfo.original_purchase_date_ms = CONFIG.PURCHASE_DATE_MS;
+            subInfo.expires_date_pst = `${futureDate.date_str.replace("Etc/GMT", "America/Los_Angeles")}`;
         }
-        
-        // 构建响应数据
+
+        // 3. 多重覆盖：根目录、receipt 内部、latest 数组
         obj.status = 0;
         obj.environment = "Production";
-        obj.receipt.in_app = [subInfo];
+        
+        // 修改 receipt 内部数据
+        if (obj.receipt) {
+            obj.receipt.in_app = [subInfo];
+            obj.receipt.bundle_id = bundleId;
+            // 某些 App 校验原始版本号
+            obj.receipt.original_application_version = "1.0"; 
+        }
+
+        // 修改服务端最新的 receipt 记录（最关键）
         obj.latest_receipt_info = [subInfo];
         
-        // 订阅类型添加续订信息
+        // 修改续订状态
         if (appConfig.type === "subscription") {
             obj.pending_renewal_info = [{
-                "product_id": productId,
-                "auto_renew_status": CONFIG.AUTO_RENEW ? "1" : "0",
-                "original_transaction_id": transactionId
+                "product_id": pId,
+                "auto_renew_status": "1",
+                "original_transaction_id": tId,
+                "auto_renew_product_id": pId
             }];
         }
-        
+
         return JSON.stringify(obj);
-        
     } catch (e) {
-        // 静默失败，不影响正常使用
         return body;
     }
 }
 
-// ==================== Surge 入口 ====================
-try {
-    let body = $response.body;
-    if (!body) {
-        $done({});
-    } else {
-        let modifiedBody = processReceipt(body);
-        $done({ body: modifiedBody });
-    }
-} catch (e) {
-    $done({});
-}
+
