@@ -1,11 +1,3 @@
-/*************************************
-项目名称：RevenueCat 全能解锁 (Ultra Hybrid 2026 Final)
-修复内容：
-1. 修复 headers 未定义导致的 TypeError。
-2. 修复全局 return 导致的 SyntaxError。
-3. 增强对 Gentler Streak (api.rc-backup.com) 的兼容性0。
-**************************************/
-
 const $ = new Env("RevenueCatUltraHybrid");
 const NOTIFY_INTERVAL_HOURS = 2; 
 const EXCLUDE_APPS = ['ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
