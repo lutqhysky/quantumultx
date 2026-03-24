@@ -38,12 +38,12 @@ const SUPPORTED_APPS = {
         trial: false,
         notes: "照片背景去除"
     },
-     "com.dream4today.HeartRate.Free": {
-        name: "Avocado",
-        product_id: "com.qingniaofly.chineseLaw",
-        type: "Chineselaw_Year_Int0",
-        trial: true,
-        notes: "中国法律"
+"com.qingniaofly.chineseLaw": {
+        name: "中国法律",
+        product_id: "Chineselaw_Year_Int0",
+        type: "subscription", // 必须是这个字符串
+        trial: false,
+        notes: "修正后的配置"
     },
     "com.icandiapps.nightsky": {
         name: "Night Sky (天文)",
