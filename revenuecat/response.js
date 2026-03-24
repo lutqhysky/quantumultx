@@ -52,6 +52,7 @@ if (typeof $response === "undefined") {
             };
 
             const UAMappings = {
+                'Halo': { name: 'premium', id: 'halo_5999_1y_1w0' },
                 'Structured': { name: 'pro', id: 'today.structured.pro' },
                 'Anybox': { name: 'pro', id: 'cc.anybox.Anybox.annual' },
                 'MoneyThings': { name: 'Premium', id: 'com.lishaohui.cashflow.lifetime' },
