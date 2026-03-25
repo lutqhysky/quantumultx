@@ -12,6 +12,7 @@ const CONFIG = {
 };
 
 const SUPPORTED_APPS = {
+    "com.sheldon.JumRop.JumRop": { name: "JumRop (跳绳助手)", product_id: "com.sheldon.subscription", type: "subscription" },
     "com.pacer.pacerapp": { name: "Pacer (步数全能王)",product_id: "com.pacer.inapp.autoyearly.trial.ab4",type: "subscription" },
     "com.huaye.Drinking": { name: "喝水时间", product_id: "com.huaye.Drinking.Yearly", type: "subscription" },
     "com.qingniaofly.chineseLaw": { name: "中国法律", product_id: "Chineselaw_Year_Int0", type: "subscription" },
