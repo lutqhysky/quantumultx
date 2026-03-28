@@ -253,7 +253,8 @@ async function sendTelegram(cfg, text) {
       shouldNotify = true;
       pushContent = newItems;
     }
-
+shouldNotify = true; pushContent = notices.slice(0, 1); // 强制开启：只要运行就推送第一条
+    
     // 调试开关：如果你现在就在调试推送，请取消下面这行的注释
     // shouldNotify = true; pushContent = notices.slice(0,1);
 
