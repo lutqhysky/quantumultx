@@ -118,7 +118,6 @@ function getNum(val, fallback) {
 }
 
 function pickValue(arg, name, storeKey) {
-  // 核心逻辑：确保空值会被 fallback 到默认值
   if (arg[name] !== undefined && arg[name] !== null && arg[name] !== "") return arg[name];
   const storeVal = $.read(storeKey);
   if (storeVal !== undefined && storeVal !== null && storeVal !== "") return storeVal;
@@ -154,17 +153,65 @@ function getConfig() {
   return cfg;
 }
 
-// (解析工具函数 decodeHtml, stripTags, cleanText, normalizeUrl, parseDate, diffDays, getTimeMarker, getKeywordTag, safeJSONParse, makeId, extractNotices 保持不变...)
-function decodeHtml(str) { str = str || ""; return str.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">"); }
-function stripTags(str) { str = str || ""; return str.replace(/<[^>]*>/g, ""); }
-function cleanText(str) { return decodeHtml(stripTags(str)).replace(/\s+/g, " ").trim(); }
-function normalizeUrl(link) { link = (link || "").trim(); if (!link) return ""; if (link.indexOf("http") === 0) return link; return "http://www.cpta.com.cn/" + link.replace(/^\//, ""); }
-function parseDate(dateStr) { dateStr = (dateStr || "").replace(/\./g, "-").replace(/\//g, "-"); const d = new Date(dateStr); return isNaN(d.getTime()) ? null : d; }
-function diffDays(dateObj) { if (!dateObj) return 9999; const now = new Date(); return Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24)); }
-function getTimeMarker(dateStr, cfg) { const days = diffDays(parseDate(dateStr)); if (days <= cfg.recentDaysRed) return "🔴"; if (days <= cfg.recentDaysOrange) return "🟠"; return "⚪"; }
-function getKeywordTag(title) { title = title || ""; if (title.indexOf("监理") !== -1) return "🏗️"; if (title.indexOf("造价") !== -1) return "💰"; if (title.indexOf("建造师") !== -1) return "👷"; return "📌"; }
-function safeJSONParse(str, fallback) { try { return JSON.parse(str); } catch (e) { return fallback; } }
-function makeId(item) { return item.date + "__" + item.title; }
+function decodeHtml(str) { 
+  str = str || ""; 
+  return str.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">"); 
+}
+
+function stripTags(str) { 
+  str = str || ""; 
+  return str.replace(/<[^>]*>/g, ""); 
+}
+
+function cleanText(str) { 
+  return decodeHtml(stripTags(str)).replace(/\s+/g, " ").trim(); 
+}
+
+function normalizeUrl(link) { 
+  link = (link || "").trim(); 
+  if (!link) return ""; 
+  if (link.indexOf("http") === 0) return link; 
+  return "http://www.cpta.com.cn/" + link.replace(/^\//, ""); 
+}
+
+function parseDate(dateStr) { 
+  dateStr = (dateStr || "").replace(/\./g, "-").replace(/\//g, "-"); 
+  const d = new Date(dateStr); 
+  return isNaN(d.getTime()) ? null : d; 
+}
+
+function diffDays(dateObj) { 
+  if (!dateObj) return 9999; 
+  const now = new Date(); 
+  return Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24)); 
+}
+
+function getTimeMarker(dateStr, cfg) { 
+  const days = diffDays(parseDate(dateStr)); 
+  if (days <= cfg.recentDaysRed) return "🔴"; 
+  if (days <= cfg.recentDaysOrange) return "🟠"; 
+  return "⚪"; 
+}
+
+function getKeywordTag(title) { 
+  title = title || ""; 
+  if (title.indexOf("监理") !== -1) return "🏗️"; 
+  if (title.indexOf("造价") !== -1) return "💰"; 
+  if (title.indexOf("建造师") !== -1) return "👷"; 
+  return "📌"; 
+}
+
+function safeJSONParse(str, fallback) { 
+  try { 
+    return JSON.parse(str); 
+  } catch (e) { 
+    return fallback; 
+  } 
+}
+
+function makeId(item) { 
+  return item.date + "__" + item.title; 
+}
 
 function extractNotices(html) {
   const results = [];
@@ -178,71 +225,190 @@ function extractNotices(html) {
 
 // ========== 推送增强版 ==========
 async function sendBark(cfg, title, body, url) {
-  if (!cfg.barkEnable || !cfg.barkUrl) return;
+  if (!cfg.barkEnable) {
+    $.log("Bark未启用");
+    return;
+  }
+  
+  if (!cfg.barkUrl || cfg.barkUrl === "") {
+    $.log("Bark URL为空，跳过推送");
+    return;
+  }
+  
   try {
-    const fullUrl = cfg.barkUrl.endsWith('/') ? cfg.barkUrl : cfg.barkUrl + '/';
-    const requestUrl = `${fullUrl}${encodeURIComponent(title)}/${encodeURIComponent(body)}?group=${encodeURIComponent(cfg.barkGroup || "CPTA")}${url ? `&url=${encodeURIComponent(url)}` : ""}`;
-    await $.get({ url: requestUrl });
-    $.log("Bark 推送成功");
-  } catch (e) { $.log("Bark 推送异常: " + e.message); }
+    // 处理 Bark URL
+    let baseUrl = cfg.barkUrl;
+    if (!baseUrl.includes("https://") && !baseUrl.includes("http://")) {
+      baseUrl = "https://" + baseUrl;
+    }
+    baseUrl = baseUrl.replace(/\/$/, "");
+    
+    // 构建推送 URL
+    const fullUrl = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
+    
+    // 添加可选参数
+    const params = [];
+    if (cfg.barkGroup && cfg.barkGroup !== "") {
+      params.push(`group=${encodeURIComponent(cfg.barkGroup)}`);
+    }
+    if (cfg.barkSound && cfg.barkSound !== "") {
+      params.push(`sound=${encodeURIComponent(cfg.barkSound)}`);
+    }
+    if (cfg.barkAutoCopy) {
+      params.push(`automaticallyCopy=1`);
+    }
+    if (url && url !== "") {
+      params.push(`url=${encodeURIComponent(url)}`);
+    }
+    
+    const finalUrl = params.length ? `${fullUrl}?${params.join("&")}` : fullUrl;
+    $.log(`Bark推送地址: ${finalUrl.substring(0, 100)}...`);
+    
+    const response = await $.get({ url: finalUrl, timeout: 10000 });
+    $.log(`Bark响应: ${response.data || "成功"}`);
+    $.log("✅ Bark推送成功");
+    
+  } catch (e) {
+    $.log(`❌ Bark推送失败: ${e.message}`);
+  }
 }
 
 async function sendTelegram(cfg, text) {
-  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) return;
+  if (!cfg.tgEnable) {
+    $.log("Telegram未启用");
+    return;
+  }
+  
+  if (!cfg.tgBotToken || cfg.tgBotToken === "" || !cfg.tgChatId || cfg.tgChatId === "") {
+    $.log(`TG配置缺失 - Token: ${cfg.tgBotToken ? "已设置" : "未设置"}, ChatID: ${cfg.tgChatId ? "已设置" : "未设置"}`);
+    return;
+  }
+  
   try {
-    const url = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
-    const body = {
-      chat_id: Number(cfg.tgChatId), // 确保是数字
+    const apiUrl = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
+    
+    const payload = {
+      chat_id: cfg.tgChatId,
       text: text,
-      disable_web_page_preview: cfg.tgDisableWebPagePreview
+      disable_web_page_preview: cfg.tgDisableWebPagePreview,
+      parse_mode: "HTML"
     };
-    const res = await $.post({
-      url: url,
+    
+    $.log(`TG推送地址: ${apiUrl}`);
+    $.log(`TG消息长度: ${text.length} 字符`);
+    
+    const response = await $.post({
+      url: apiUrl,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
       timeout: 10000
     });
-    const resp = safeJSONParse(res.data, {});
-    if (resp.ok) $.log("Telegram 推送成功");
-    else $.log("Telegram 报错: " + JSON.stringify(resp));
-  } catch (e) { $.log("Telegram 网络异常: " + e.message); }
+    
+    const result = safeJSONParse(response.data, {});
+    
+    if (result.ok) {
+      $.log("✅ Telegram推送成功");
+    } else {
+      $.log(`❌ Telegram API错误: ${result.description || "未知错误"}`);
+    }
+    
+  } catch (e) {
+    $.log(`❌ Telegram推送异常: ${e.message}`);
+  }
 }
 
 // ========== 主流程 ==========
-// ========== 主流程 (调试版) ==========
 (async () => {
   const cfg = getConfig();
-  $.log(`[Debug] 关键词: ${cfg.keywords.join("|")}, Bark: ${cfg.barkEnable}, TG: ${cfg.tgEnable}`);
-
+  
+  // 详细配置日志
+  $.log("=== 📋 配置信息 ===");
+  $.log(`关键词: ${cfg.keywords.join(" | ")}`);
+  $.log(`Bark状态: ${cfg.barkEnable ? "✅ 启用" : "❌ 禁用"}`);
+  if (cfg.barkEnable) {
+    $.log(`Bark URL: ${cfg.barkUrl || "未设置"}`);
+    $.log(`Bark分组: ${cfg.barkGroup}`);
+  }
+  $.log(`TG状态: ${cfg.tgEnable ? "✅ 启用" : "❌ 禁用"}`);
+  if (cfg.tgEnable) {
+    $.log(`TG Token: ${cfg.tgBotToken ? cfg.tgBotToken.substring(0, 15) + "..." : "未设置"}`);
+    $.log(`TG ChatID: ${cfg.tgChatId || "未设置"}`);
+  }
+  $.log("==================");
+  
   try {
+    $.log("正在获取公告页面...");
     const res = await $.get({ url: cfg.url });
+    $.log(`页面获取成功，大小: ${res.data.length} 字符`);
+    
     let notices = extractNotices(res.data).filter(item => 
       cfg.keywords.some(k => item.title.indexOf(k) !== -1)
     );
-
-    if (!notices.length) return $.done({ title: SCRIPT_NAME, content: "未匹配到公告" });
-
-    // --- 强制推送测试开始 ---
-    let shouldNotify = true; 
-    let pushContent = notices.slice(0, 1); 
-    // --- 强制推送测试结束 ---
-
-    const title = `测试推送 - ${notices[0].title}`;
-    const body = `📅 日期: ${notices[0].date}\n这是一条强制测试推送`;
-
-    $.log("--- 准备触发推送流程 ---");
-    await $.notify(title, "", body);
-    if (cfg.barkEnable) await sendBark(cfg, title, body, notices[0].link);
-    if (cfg.tgEnable) await sendTelegram(cfg, title + "\n" + body);
-    $.log("--- 推送流程尝试结束 ---");
-
+    
+    $.log(`匹配到 ${notices.length} 条相关公告`);
+    
+    if (!notices.length) {
+      $.log("没有匹配的公告");
+      $.done({ 
+        title: SCRIPT_NAME, 
+        content: "未匹配到公告",
+        icon: "📭"
+      });
+      return;
+    }
+    
+    // 显示前3条公告
+    notices.slice(0, 3).forEach((item, idx) => {
+      $.log(`  ${idx+1}. ${item.title} (${item.date})`);
+    });
+    
+    // 测试推送第一条公告
+    const testNotice = notices[0];
+    const title = `【${SCRIPT_NAME}】${testNotice.title}`;
+    const body = `📅 日期: ${testNotice.date}\n🔗 链接: ${testNotice.link}\n\n💡 这是一条测试推送`;
+    
+    $.log("=== 📢 开始推送测试 ===");
+    
+    // 1. Surge 本地通知
+    if (cfg.enableNotification) {
+      $.notify(title, "", body);
+      $.log("✅ Surge通知已发送");
+    } else {
+      $.log("⏭️ Surge通知已禁用");
+    }
+    
+    // 2. Bark 推送
+    if (cfg.barkEnable && cfg.barkUrl && cfg.barkUrl !== "") {
+      $.log("发送Bark推送...");
+      await sendBark(cfg, title, body, testNotice.link);
+    } else {
+      $.log("⏭️ 跳过Bark推送: 未启用或URL为空");
+    }
+    
+    // 3. Telegram 推送
+    if (cfg.tgEnable && cfg.tgBotToken && cfg.tgChatId) {
+      $.log("发送Telegram推送...");
+      const tgMessage = `<b>${title}</b>\n\n📅 ${testNotice.date}\n\n🔗 <a href="${testNotice.link}">点击查看详情</a>\n\n💡 这是一条测试推送`;
+      await sendTelegram(cfg, tgMessage);
+    } else {
+      $.log("⏭️ 跳过Telegram推送: 未启用或配置不完整");
+    }
+    
+    $.log("=== ✅ 推送测试完成 ===");
+    
     $.done({
       title: SCRIPT_NAME,
-      content: `测试模式运行中\n匹配到 ${notices.length} 条公告`
+      content: `✅ 测试完成\n匹配到 ${notices.length} 条公告\n已完成推送测试\n\n最新公告:\n${notices.slice(0, 3).map(n => `• ${n.title}`).join("\n")}`,
+      icon: "📢"
     });
-
+    
   } catch (e) {
-    $.log("脚本运行报错: " + e.message);
-    $.done({ title: SCRIPT_NAME, content: "报错: " + e.message });
+    $.log(`❌ 脚本错误: ${e.message}`);
+    if (e.stack) $.log(`错误堆栈: ${e.stack}`);
+    $.done({ 
+      title: SCRIPT_NAME, 
+      content: `❌ 错误: ${e.message}`,
+      icon: "⚠️"
+    });
   }
 })();
