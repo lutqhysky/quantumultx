@@ -302,30 +302,22 @@ function extractNotices(html) {
 
 // ========== 推送 ==========
 async function sendBark(cfg, title, body, url) {
-  if (!cfg.barkEnable || !cfg.barkUrl) return;
+  $.log(`[Debug] 进入 Bark 推送，Enable: ${cfg.barkEnable}, URL: ${cfg.barkUrl}`);
+  if (!cfg.barkEnable || !cfg.barkUrl) {
+    $.log("[Debug] Bark 推送被跳过：未开启或 URL 为空");
+    return;
+  }
 
   try {
-    const barkBody = {
-      title: title,
-      body: body,
-      group: cfg.barkGroup || "人事考试网公告"
-    };
-
-    if (url) barkBody.url = url;
-    if (cfg.barkAutoCopy) barkBody.automaticallyCopy = "1";
-    if (cfg.barkSound) barkBody.sound = cfg.barkSound;
-
-    await $.post({
-      url: cfg.barkUrl,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8"
-      },
-      body: JSON.stringify(barkBody)
-    });
-
+    const fullUrl = cfg.barkUrl.endsWith('/') ? cfg.barkUrl : cfg.barkUrl + '/';
+    const requestUrl = `${fullUrl}${encodeURIComponent(title)}/${encodeURIComponent(body)}?group=${encodeURIComponent(cfg.barkGroup)}`;
+    
+    $.log(`[Debug] 正在请求 Bark: ${requestUrl}`);
+    
+    await $.get({ url: requestUrl }); // 大部分 Bark 用户习惯使用 GET 方式，更稳
     $.log("Bark 推送成功");
   } catch (e) {
-    $.log("Bark 推送失败：", e.message);
+    $.log("Bark 推送详细失败原因：" + JSON.stringify(e));
   }
 }
 
