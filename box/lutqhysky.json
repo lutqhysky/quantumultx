@@ -127,16 +127,16 @@
         {
           "id": "@cpta.barkEnable",
           "name": "启用 Bark 推送",
-          "val": false,
+          "val": true,
           "type": "boolean",
           "desc": "开启后，有新增时推送 Bark。"
         },
         {
           "id": "@cpta.barkUrl",
           "name": "Bark 地址",
-          "val": "",
+          "val": "https://api.day.app/你的Bark密钥",
           "type": "text",
-          "desc": "填写你的 Bark 推送地址，例如 https://你的bark地址/你的key"
+          "desc": "填写你的 Bark 推送地址，例如 https://api.day.app/你的key"
         },
         {
           "id": "@cpta.barkAutoCopy",
@@ -162,21 +162,21 @@
         {
           "id": "@cpta.tgEnable",
           "name": "启用 Telegram 推送",
-          "val": false,
+          "val": true,
           "type": "boolean",
           "desc": "开启后，有新增时推送到 Telegram。"
         },
         {
           "id": "@cpta.tgBotToken",
           "name": "Telegram Bot Token",
-          "val": "",
+          "val": "你的BotToken",
           "type": "text",
           "desc": "填写你的 Telegram 机器人 Token。"
         },
         {
           "id": "@cpta.tgChatId",
           "name": "Telegram Chat ID",
-          "val": "",
+          "val": "你的ChatID",
           "type": "text",
           "desc": "填写接收消息的 chat_id。"
         },
