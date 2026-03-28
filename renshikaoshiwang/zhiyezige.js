@@ -1,36 +1,9 @@
 /*************************************
-项目名称：人事考试网关键公告监控 V4 Stable (Optimized)
-适用平台：Surge
+项目名称：人事考试网关键公告监控 V4 Stable
+适用平台：Surge 2026-03-28
 *************************************/
 
 const SCRIPT_NAME = "人事考试网关键公告";
-
-// ========== 默认配置 ==========
-const DEFAULTS = {
-  url: "http://www.cpta.com.cn/notice.html",
-  keywords: "监理|造价|建造师",
-  maxCount: "10",
-  onlyNew: "true",
-  showLink: "false",
-  enableNotification: "true",
-  firstRunNotify: "false",
-  recentDaysRed: "7",
-  recentDaysOrange: "30",
-  maxAgeDays: "90",
-  saveLimit: "100",
-  clearCache: "false",
-
-  barkEnable: "false",
-  barkUrl: "",
-  barkAutoCopy: "false",
-  barkSound: "",
-  barkGroup: "人事考试网公告",
-
-  tgEnable: "false",
-  tgBotToken: "",
-  tgChatId: "",
-  tgDisableWebPagePreview: "true"
-};
 
 // ========== 存储键 ==========
 const STORE_KEYS = {
@@ -55,8 +28,7 @@ const STORE_KEYS = {
   tgBotToken: "@cpta.tgBotToken",
   tgChatId: "@cpta.tgChatId",
   tgDisableWebPagePreview: "@cpta.tgDisableWebPagePreview",
-  latestIds: "@cpta.latestIds",
-  inited: "@cpta.inited"
+  latestIds: "@cpta.latestIds"
 };
 
 class Env {
@@ -65,27 +37,34 @@ class Env {
     this.startTime = Date.now();
   }
   log() {
-    const args = Array.prototype.slice.call(arguments);
-    console.log("[" + this.name + "]", ...args);
+    console.log("[" + this.name + "]", ...arguments);
   }
-  read(key) { return $persistentStore.read(key); }
-  write(value, key) { return $persistentStore.write(String(value), key); }
+  read(key) { 
+    return $persistentStore.read(key); 
+  }
+  write(value, key) { 
+    return $persistentStore.write(String(value), key); 
+  }
   get(opts) {
     return new Promise((resolve, reject) => {
       $httpClient.get(opts, (err, resp, data) => {
-        if (err) reject(err); else resolve({ resp, data });
+        if (err) reject(err);
+        else resolve({ resp, data });
       });
     });
   }
   post(opts) {
     return new Promise((resolve, reject) => {
       $httpClient.post(opts, (err, resp, data) => {
-        if (err) reject(err); else resolve({ resp, data });
+        if (err) reject(err);
+        else resolve({ resp, data });
       });
     });
   }
   notify(title, subtitle, body) {
-    if (typeof $notification !== "undefined") $notification.post(title || "", subtitle || "", body || "");
+    if (typeof $notification !== "undefined") {
+      $notification.post(title || "", subtitle || "", body || "");
+    }
   }
   done(payload) {
     const cost = ((Date.now() - this.startTime) / 1000).toFixed(2);
@@ -97,18 +76,8 @@ class Env {
 const $ = new Env(SCRIPT_NAME);
 
 // ========== 工具函数 ==========
-function parseArgument(str) {
-  const obj = {};
-  if (!str) return obj;
-  str.split("&").forEach(pair => {
-    const idx = pair.indexOf("=");
-    if (idx !== -1) obj[pair.slice(0, idx).trim()] = decodeURIComponent(pair.slice(idx + 1).trim());
-  });
-  return obj;
-}
-
-function getBool(val, fallback) {
-  if (val === undefined || val === null || val === "") return fallback;
+function getBool(val) {
+  if (val === undefined || val === null || val === "") return false;
   return String(val).toLowerCase() === "true";
 }
 
@@ -117,39 +86,36 @@ function getNum(val, fallback) {
   return isNaN(n) || n <= 0 ? fallback : n;
 }
 
-function pickValue(arg, name, storeKey) {
-  if (arg[name] !== undefined && arg[name] !== null && arg[name] !== "") return arg[name];
-  const storeVal = $.read(storeKey);
-  if (storeVal !== undefined && storeVal !== null && storeVal !== "") return storeVal;
-  return DEFAULTS[name];
-}
-
 function getConfig() {
-  const arg = typeof $argument !== "undefined" ? parseArgument($argument) : {};
+  // 直接从存储读取配置
   const cfg = {
-    url: pickValue(arg, "url", STORE_KEYS.url),
-    keywordsRaw: pickValue(arg, "keywords", STORE_KEYS.keywords),
-    maxCount: getNum(pickValue(arg, "maxCount", STORE_KEYS.maxCount), 10),
-    onlyNew: getBool(pickValue(arg, "onlyNew", STORE_KEYS.onlyNew), true),
-    showLink: getBool(pickValue(arg, "showLink", STORE_KEYS.showLink), false),
-    enableNotification: getBool(pickValue(arg, "enableNotification", STORE_KEYS.enableNotification), true),
-    firstRunNotify: getBool(pickValue(arg, "firstRunNotify", STORE_KEYS.firstRunNotify), false),
-    recentDaysRed: getNum(pickValue(arg, "recentDaysRed", STORE_KEYS.recentDaysRed), 7),
-    recentDaysOrange: getNum(pickValue(arg, "recentDaysOrange", STORE_KEYS.recentDaysOrange), 30),
-    maxAgeDays: getNum(pickValue(arg, "maxAgeDays", STORE_KEYS.maxAgeDays), 90),
-    saveLimit: getNum(pickValue(arg, "saveLimit", STORE_KEYS.saveLimit), 100),
-    clearCache: getBool(pickValue(arg, "clearCache", STORE_KEYS.clearCache), false),
-    barkEnable: getBool(pickValue(arg, "barkEnable", STORE_KEYS.barkEnable), false),
-    barkUrl: pickValue(arg, "barkUrl", STORE_KEYS.barkUrl),
-    barkAutoCopy: getBool(pickValue(arg, "barkAutoCopy", STORE_KEYS.barkAutoCopy), false),
-    barkSound: pickValue(arg, "barkSound", STORE_KEYS.barkSound),
-    barkGroup: pickValue(arg, "barkGroup", STORE_KEYS.barkGroup),
-    tgEnable: getBool(pickValue(arg, "tgEnable", STORE_KEYS.tgEnable), false),
-    tgBotToken: pickValue(arg, "tgBotToken", STORE_KEYS.tgBotToken),
-    tgChatId: pickValue(arg, "tgChatId", STORE_KEYS.tgChatId),
-    tgDisableWebPagePreview: getBool(pickValue(arg, "tgDisableWebPagePreview", STORE_KEYS.tgDisableWebPagePreview), true)
+    url: $.read(STORE_KEYS.url) || "http://www.cpta.com.cn/notice.html",
+    keywordsRaw: $.read(STORE_KEYS.keywords) || "监理|造价|建造师",
+    maxCount: getNum($.read(STORE_KEYS.maxCount), 10),
+    onlyNew: getBool($.read(STORE_KEYS.onlyNew)),
+    showLink: getBool($.read(STORE_KEYS.showLink)),
+    enableNotification: getBool($.read(STORE_KEYS.enableNotification)),
+    firstRunNotify: getBool($.read(STORE_KEYS.firstRunNotify)),
+    recentDaysRed: getNum($.read(STORE_KEYS.recentDaysRed), 7),
+    recentDaysOrange: getNum($.read(STORE_KEYS.recentDaysOrange), 30),
+    maxAgeDays: getNum($.read(STORE_KEYS.maxAgeDays), 90),
+    saveLimit: getNum($.read(STORE_KEYS.saveLimit), 100),
+    clearCache: getBool($.read(STORE_KEYS.clearCache)),
+    
+    barkEnable: getBool($.read(STORE_KEYS.barkEnable)),
+    barkUrl: $.read(STORE_KEYS.barkUrl) || "",
+    barkAutoCopy: getBool($.read(STORE_KEYS.barkAutoCopy)),
+    barkSound: $.read(STORE_KEYS.barkSound) || "",
+    barkGroup: $.read(STORE_KEYS.barkGroup) || "人事考试网公告",
+    
+    tgEnable: getBool($.read(STORE_KEYS.tgEnable)),
+    tgBotToken: $.read(STORE_KEYS.tgBotToken) || "",
+    tgChatId: $.read(STORE_KEYS.tgChatId) || "",
+    tgDisableWebPagePreview: getBool($.read(STORE_KEYS.tgDisableWebPagePreview))
   };
+  
   cfg.keywords = cfg.keywordsRaw.split("|").map(s => s.trim()).filter(s => !!s);
+  
   return cfg;
 }
 
@@ -186,21 +152,6 @@ function diffDays(dateObj) {
   return Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24)); 
 }
 
-function getTimeMarker(dateStr, cfg) { 
-  const days = diffDays(parseDate(dateStr)); 
-  if (days <= cfg.recentDaysRed) return "🔴"; 
-  if (days <= cfg.recentDaysOrange) return "🟠"; 
-  return "⚪"; 
-}
-
-function getKeywordTag(title) { 
-  title = title || ""; 
-  if (title.indexOf("监理") !== -1) return "🏗️"; 
-  if (title.indexOf("造价") !== -1) return "💰"; 
-  if (title.indexOf("建造师") !== -1) return "👷"; 
-  return "📌"; 
-}
-
 function safeJSONParse(str, fallback) { 
   try { 
     return JSON.parse(str); 
@@ -218,7 +169,11 @@ function extractNotices(html) {
   const pattern = /<li[^>]*>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?(\d{4}[-\/.]\d{2}[-\/.]\d{2})/gi;
   let m;
   while ((m = pattern.exec(html)) !== null) {
-    results.push({ title: cleanText(m[2]), date: m[3].replace(/\./g, "-"), link: normalizeUrl(m[1]) });
+    results.push({ 
+      title: cleanText(m[2]), 
+      date: m[3].replace(/\./g, "-"), 
+      link: normalizeUrl(m[1]) 
+    });
   }
   return results;
 }
@@ -226,72 +181,89 @@ function extractNotices(html) {
 // ========== 推送函数 ==========
 async function sendBark(cfg, title, body, url) {
   if (!cfg.barkEnable || !cfg.barkUrl || cfg.barkUrl === "") {
-    return;
+    return false;
   }
   
-  try {
-    let baseUrl = cfg.barkUrl.trim();
-    if (!baseUrl.startsWith("http")) {
-      baseUrl = "https://" + baseUrl;
+  return new Promise((resolve) => {
+    try {
+      let baseUrl = cfg.barkUrl.trim();
+      if (!baseUrl.startsWith("http")) {
+        baseUrl = "https://" + baseUrl;
+      }
+      baseUrl = baseUrl.replace(/\/$/, "");
+      
+      const fullUrl = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
+      
+      const params = [];
+      if (cfg.barkGroup && cfg.barkGroup !== "") {
+        params.push(`group=${encodeURIComponent(cfg.barkGroup)}`);
+      }
+      if (cfg.barkSound && cfg.barkSound !== "") {
+        params.push(`sound=${encodeURIComponent(cfg.barkSound)}`);
+      }
+      if (cfg.barkAutoCopy) {
+        params.push(`automaticallyCopy=1`);
+      }
+      if (url && url !== "") {
+        params.push(`url=${encodeURIComponent(url)}`);
+      }
+      
+      const finalUrl = params.length ? `${fullUrl}?${params.join("&")}` : fullUrl;
+      
+      $httpClient.get(finalUrl, (err, resp, data) => {
+        if (err) {
+          $.log(`❌ Bark失败: ${err}`);
+          resolve(false);
+        } else {
+          $.log(`✅ Bark推送成功`);
+          resolve(true);
+        }
+      });
+    } catch (e) {
+      $.log(`❌ Bark异常: ${e.message}`);
+      resolve(false);
     }
-    baseUrl = baseUrl.replace(/\/$/, "");
-    
-    const fullUrl = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
-    
-    const params = [];
-    if (cfg.barkGroup && cfg.barkGroup !== "") {
-      params.push(`group=${encodeURIComponent(cfg.barkGroup)}`);
-    }
-    if (cfg.barkSound && cfg.barkSound !== "") {
-      params.push(`sound=${encodeURIComponent(cfg.barkSound)}`);
-    }
-    if (cfg.barkAutoCopy) {
-      params.push(`automaticallyCopy=1`);
-    }
-    if (url && url !== "") {
-      params.push(`url=${encodeURIComponent(url)}`);
-    }
-    
-    const finalUrl = params.length ? `${fullUrl}?${params.join("&")}` : fullUrl;
-    await $.get({ url: finalUrl, timeout: 10000 });
-    $.log("✅ Bark推送成功");
-    
-  } catch (e) {
-    $.log(`❌ Bark推送失败: ${e.message}`);
-  }
+  });
 }
 
 async function sendTelegram(cfg, text) {
   if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) {
-    return;
+    return false;
   }
   
-  try {
-    const apiUrl = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
-    const payload = {
-      chat_id: cfg.tgChatId,
-      text: text,
-      disable_web_page_preview: cfg.tgDisableWebPagePreview,
-      parse_mode: "HTML"
-    };
-    
-    const response = await $.post({
-      url: apiUrl,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      timeout: 10000
-    });
-    
-    const result = safeJSONParse(response.data, {});
-    if (result.ok) {
-      $.log("✅ Telegram推送成功");
-    } else {
-      $.log(`❌ Telegram失败: ${result.description}`);
+  return new Promise((resolve) => {
+    try {
+      const apiUrl = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
+      const payload = {
+        chat_id: cfg.tgChatId,
+        text: text,
+        disable_web_page_preview: cfg.tgDisableWebPagePreview
+      };
+      
+      $httpClient.post({
+        url: apiUrl,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }, (err, resp, data) => {
+        if (err) {
+          $.log(`❌ Telegram失败: ${err}`);
+          resolve(false);
+        } else {
+          const result = safeJSONParse(data, {});
+          if (result.ok) {
+            $.log(`✅ Telegram推送成功`);
+            resolve(true);
+          } else {
+            $.log(`❌ Telegram错误: ${result.description}`);
+            resolve(false);
+          }
+        }
+      });
+    } catch (e) {
+      $.log(`❌ Telegram异常: ${e.message}`);
+      resolve(false);
     }
-    
-  } catch (e) {
-    $.log(`❌ Telegram异常: ${e.message}`);
-  }
+  });
 }
 
 // ========== 主流程 ==========
@@ -300,10 +272,15 @@ async function sendTelegram(cfg, text) {
   
   $.log("=== 人事考试网公告监控 ===");
   $.log(`关键词: ${cfg.keywords.join(" | ")}`);
+  $.log(`Bark: ${cfg.barkEnable ? "启用" : "禁用"} | TG: ${cfg.tgEnable ? "启用" : "禁用"}`);
   
   try {
+    // 获取页面
     const res = await $.get({ url: cfg.url });
-    let notices = extractNotices(res.data).filter(item => 
+    let notices = extractNotices(res.data);
+    
+    // 过滤关键词
+    notices = notices.filter(item => 
       cfg.keywords.some(k => item.title.indexOf(k) !== -1)
     );
     
@@ -322,7 +299,7 @@ async function sendTelegram(cfg, text) {
     let cache = safeJSONParse($.read(STORE_KEYS.latestIds), []);
     let newNotices = [];
     
-    // 增量检测
+    // 检测新公告
     for (let notice of notices) {
       const id = makeId(notice);
       if (!cache.includes(id)) {
@@ -339,26 +316,28 @@ async function sendTelegram(cfg, text) {
     
     $.log(`新增公告: ${newNotices.length} 条`);
     
-    // 处理新增公告
+    // 处理新公告
     if (newNotices.length > 0) {
-      for (let notice of newNotices.slice(0, cfg.maxCount)) {
+      const notifyList = newNotices.slice(0, cfg.maxCount);
+      
+      for (let notice of notifyList) {
         const title = `【${SCRIPT_NAME}】${notice.title}`;
-        const body = `📅 日期: ${notice.date}\n🔗 链接: ${notice.link}`;
+        const body = `📅 日期: ${notice.date}\n🔗 ${notice.link}`;
         
-        // Surge 通知
+        // Surge 本地通知
         if (cfg.enableNotification) {
           $.notify(title, "", body);
         }
         
         // Bark 推送
-        if (cfg.barkEnable && cfg.barkUrl) {
+        if (cfg.barkEnable) {
           await sendBark(cfg, title, body, notice.link);
         }
         
         // Telegram 推送
         if (cfg.tgEnable) {
-          const tgMessage = `<b>${title}</b>\n\n📅 ${notice.date}\n\n🔗 <a href="${notice.link}">点击查看详情</a>`;
-          await sendTelegram(cfg, tgMessage);
+          const tgMsg = `【${SCRIPT_NAME}】\n\n${notice.title}\n\n📅 ${notice.date}\n\n🔗 ${notice.link}`;
+          await sendTelegram(cfg, tgMsg);
         }
         
         // 避免推送过快
@@ -367,7 +346,7 @@ async function sendTelegram(cfg, text) {
       
       $.done({
         title: SCRIPT_NAME,
-        content: `发现 ${newNotices.length} 条新公告\n\n${newNotices.slice(0, 5).map(n => `• ${n.title}`).join("\n")}`
+        content: `发现 ${newNotices.length} 条新公告\n\n${notifyList.map(n => `• ${n.title}`).join("\n")}`
       });
     } else {
       $.log("没有新公告");
@@ -378,7 +357,7 @@ async function sendTelegram(cfg, text) {
     }
     
   } catch (e) {
-    $.log(`脚本错误: ${e.message}`);
+    $.log(`❌ 错误: ${e.message}`);
     $.done({ 
       title: SCRIPT_NAME, 
       content: `错误: ${e.message}`
