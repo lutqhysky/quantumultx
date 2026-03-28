@@ -322,27 +322,36 @@ async function sendBark(cfg, title, body, url) {
 }
 
 async function sendTelegram(cfg, text) {
-  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) return;
+  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) {
+    $.log("TG 推送未开启或配置缺失");
+    return;
+  }
 
   try {
-    const url = "https://api.telegram.org/bot" + cfg.tgBotToken + "/sendMessage";
+    const url = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
     const body = {
-      chat_id: cfg.tgChatId,
+      chat_id: Number(cfg.tgChatId), // 核心修复：确保是数字
       text: text,
       disable_web_page_preview: cfg.tgDisableWebPagePreview
     };
 
-    await $.post({
+    // 增加超时设置，防止脚本挂起
+    const res = await $.post({
       url: url,
-      headers: {
-        "Content-Type": "application/json; charset=utf-8"
-      },
-      body: JSON.stringify(body)
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      timeout: 10000 
     });
 
-    $.log("Telegram 推送成功");
+    // 检查 TG 返回的真实结果
+    const respObj = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+    if (respObj && respObj.ok) {
+      $.log("Telegram 推送成功");
+    } else {
+      $.log("Telegram 推送失败，TG 报错：" + (res.data || "未知响应"));
+    }
   } catch (e) {
-    $.log("Telegram 推送失败：", e.message);
+    $.log("Telegram 推送网络请求异常：" + e.message);
   }
 }
 
