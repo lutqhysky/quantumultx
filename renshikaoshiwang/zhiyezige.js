@@ -1,4 +1,4 @@
-const $ = new Env("人事考试网关键公告");
+const $ = new Env("人事考试网考试信息公告");
 
 // 日志等级
 $.logLevel = ($.getdata("cpta_debug") === "true") ? "debug" : "info";
