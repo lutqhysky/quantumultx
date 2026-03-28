@@ -223,30 +223,21 @@ function extractNotices(html) {
   return results;
 }
 
-// ========== 推送增强版 ==========
+// ========== 推送函数 ==========
 async function sendBark(cfg, title, body, url) {
-  if (!cfg.barkEnable) {
-    $.log("Bark未启用");
-    return;
-  }
-  
-  if (!cfg.barkUrl || cfg.barkUrl === "") {
-    $.log("Bark URL为空，跳过推送");
+  if (!cfg.barkEnable || !cfg.barkUrl || cfg.barkUrl === "") {
     return;
   }
   
   try {
-    // 处理 Bark URL
-    let baseUrl = cfg.barkUrl;
-    if (!baseUrl.includes("https://") && !baseUrl.includes("http://")) {
+    let baseUrl = cfg.barkUrl.trim();
+    if (!baseUrl.startsWith("http")) {
       baseUrl = "https://" + baseUrl;
     }
     baseUrl = baseUrl.replace(/\/$/, "");
     
-    // 构建推送 URL
     const fullUrl = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
     
-    // 添加可选参数
     const params = [];
     if (cfg.barkGroup && cfg.barkGroup !== "") {
       params.push(`group=${encodeURIComponent(cfg.barkGroup)}`);
@@ -262,10 +253,7 @@ async function sendBark(cfg, title, body, url) {
     }
     
     const finalUrl = params.length ? `${fullUrl}?${params.join("&")}` : fullUrl;
-    $.log(`Bark推送地址: ${finalUrl.substring(0, 100)}...`);
-    
-    const response = await $.get({ url: finalUrl, timeout: 10000 });
-    $.log(`Bark响应: ${response.data || "成功"}`);
+    await $.get({ url: finalUrl, timeout: 10000 });
     $.log("✅ Bark推送成功");
     
   } catch (e) {
@@ -274,28 +262,18 @@ async function sendBark(cfg, title, body, url) {
 }
 
 async function sendTelegram(cfg, text) {
-  if (!cfg.tgEnable) {
-    $.log("Telegram未启用");
-    return;
-  }
-  
-  if (!cfg.tgBotToken || cfg.tgBotToken === "" || !cfg.tgChatId || cfg.tgChatId === "") {
-    $.log(`TG配置缺失 - Token: ${cfg.tgBotToken ? "已设置" : "未设置"}, ChatID: ${cfg.tgChatId ? "已设置" : "未设置"}`);
+  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) {
     return;
   }
   
   try {
     const apiUrl = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
-    
     const payload = {
       chat_id: cfg.tgChatId,
       text: text,
       disable_web_page_preview: cfg.tgDisableWebPagePreview,
       parse_mode: "HTML"
     };
-    
-    $.log(`TG推送地址: ${apiUrl}`);
-    $.log(`TG消息长度: ${text.length} 字符`);
     
     const response = await $.post({
       url: apiUrl,
@@ -305,15 +283,14 @@ async function sendTelegram(cfg, text) {
     });
     
     const result = safeJSONParse(response.data, {});
-    
     if (result.ok) {
       $.log("✅ Telegram推送成功");
     } else {
-      $.log(`❌ Telegram API错误: ${result.description || "未知错误"}`);
+      $.log(`❌ Telegram失败: ${result.description}`);
     }
     
   } catch (e) {
-    $.log(`❌ Telegram推送异常: ${e.message}`);
+    $.log(`❌ Telegram异常: ${e.message}`);
   }
 }
 
@@ -321,94 +298,90 @@ async function sendTelegram(cfg, text) {
 (async () => {
   const cfg = getConfig();
   
-  // 详细配置日志
-  $.log("=== 📋 配置信息 ===");
+  $.log("=== 人事考试网公告监控 ===");
   $.log(`关键词: ${cfg.keywords.join(" | ")}`);
-  $.log(`Bark状态: ${cfg.barkEnable ? "✅ 启用" : "❌ 禁用"}`);
-  if (cfg.barkEnable) {
-    $.log(`Bark URL: ${cfg.barkUrl || "未设置"}`);
-    $.log(`Bark分组: ${cfg.barkGroup}`);
-  }
-  $.log(`TG状态: ${cfg.tgEnable ? "✅ 启用" : "❌ 禁用"}`);
-  if (cfg.tgEnable) {
-    $.log(`TG Token: ${cfg.tgBotToken ? cfg.tgBotToken.substring(0, 15) + "..." : "未设置"}`);
-    $.log(`TG ChatID: ${cfg.tgChatId || "未设置"}`);
-  }
-  $.log("==================");
   
   try {
-    $.log("正在获取公告页面...");
     const res = await $.get({ url: cfg.url });
-    $.log(`页面获取成功，大小: ${res.data.length} 字符`);
-    
     let notices = extractNotices(res.data).filter(item => 
       cfg.keywords.some(k => item.title.indexOf(k) !== -1)
     );
     
-    $.log(`匹配到 ${notices.length} 条相关公告`);
-    
     if (!notices.length) {
-      $.log("没有匹配的公告");
+      $.log("未匹配到公告");
       $.done({ 
         title: SCRIPT_NAME, 
-        content: "未匹配到公告",
-        icon: "📭"
+        content: "未匹配到公告"
       });
       return;
     }
     
-    // 显示前3条公告
-    notices.slice(0, 3).forEach((item, idx) => {
-      $.log(`  ${idx+1}. ${item.title} (${item.date})`);
-    });
+    $.log(`匹配到 ${notices.length} 条公告`);
     
-    // 测试推送第一条公告
-    const testNotice = notices[0];
-    const title = `【${SCRIPT_NAME}】${testNotice.title}`;
-    const body = `📅 日期: ${testNotice.date}\n🔗 链接: ${testNotice.link}\n\n💡 这是一条测试推送`;
+    // 获取缓存
+    let cache = safeJSONParse($.read(STORE_KEYS.latestIds), []);
+    let newNotices = [];
     
-    $.log("=== 📢 开始推送测试 ===");
-    
-    // 1. Surge 本地通知
-    if (cfg.enableNotification) {
-      $.notify(title, "", body);
-      $.log("✅ Surge通知已发送");
-    } else {
-      $.log("⏭️ Surge通知已禁用");
+    // 增量检测
+    for (let notice of notices) {
+      const id = makeId(notice);
+      if (!cache.includes(id)) {
+        newNotices.push(notice);
+        cache.unshift(id);
+      }
     }
     
-    // 2. Bark 推送
-    if (cfg.barkEnable && cfg.barkUrl && cfg.barkUrl !== "") {
-      $.log("发送Bark推送...");
-      await sendBark(cfg, title, body, testNotice.link);
-    } else {
-      $.log("⏭️ 跳过Bark推送: 未启用或URL为空");
+    // 限制缓存大小
+    if (cache.length > cfg.saveLimit) {
+      cache = cache.slice(0, cfg.saveLimit);
     }
+    $.write(JSON.stringify(cache), STORE_KEYS.latestIds);
     
-    // 3. Telegram 推送
-    if (cfg.tgEnable && cfg.tgBotToken && cfg.tgChatId) {
-      $.log("发送Telegram推送...");
-      const tgMessage = `<b>${title}</b>\n\n📅 ${testNotice.date}\n\n🔗 <a href="${testNotice.link}">点击查看详情</a>\n\n💡 这是一条测试推送`;
-      await sendTelegram(cfg, tgMessage);
+    $.log(`新增公告: ${newNotices.length} 条`);
+    
+    // 处理新增公告
+    if (newNotices.length > 0) {
+      for (let notice of newNotices.slice(0, cfg.maxCount)) {
+        const title = `【${SCRIPT_NAME}】${notice.title}`;
+        const body = `📅 日期: ${notice.date}\n🔗 链接: ${notice.link}`;
+        
+        // Surge 通知
+        if (cfg.enableNotification) {
+          $.notify(title, "", body);
+        }
+        
+        // Bark 推送
+        if (cfg.barkEnable && cfg.barkUrl) {
+          await sendBark(cfg, title, body, notice.link);
+        }
+        
+        // Telegram 推送
+        if (cfg.tgEnable) {
+          const tgMessage = `<b>${title}</b>\n\n📅 ${notice.date}\n\n🔗 <a href="${notice.link}">点击查看详情</a>`;
+          await sendTelegram(cfg, tgMessage);
+        }
+        
+        // 避免推送过快
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      $.done({
+        title: SCRIPT_NAME,
+        content: `发现 ${newNotices.length} 条新公告\n\n${newNotices.slice(0, 5).map(n => `• ${n.title}`).join("\n")}`
+      });
     } else {
-      $.log("⏭️ 跳过Telegram推送: 未启用或配置不完整");
+      $.log("没有新公告");
+      $.done({
+        title: SCRIPT_NAME,
+        content: `已是最新\n共监控 ${notices.length} 条公告`
+      });
     }
-    
-    $.log("=== ✅ 推送测试完成 ===");
-    
-    $.done({
-      title: SCRIPT_NAME,
-      content: `✅ 测试完成\n匹配到 ${notices.length} 条公告\n已完成推送测试\n\n最新公告:\n${notices.slice(0, 3).map(n => `• ${n.title}`).join("\n")}`,
-      icon: "📢"
-    });
     
   } catch (e) {
-    $.log(`❌ 脚本错误: ${e.message}`);
-    if (e.stack) $.log(`错误堆栈: ${e.stack}`);
+    $.log(`脚本错误: ${e.message}`);
     $.done({ 
       title: SCRIPT_NAME, 
-      content: `❌ 错误: ${e.message}`,
-      icon: "⚠️"
+      content: `错误: ${e.message}`
     });
   }
 })();
