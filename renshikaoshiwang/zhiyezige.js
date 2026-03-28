@@ -209,71 +209,40 @@ async function sendTelegram(cfg, text) {
 }
 
 // ========== 主流程 ==========
+// ========== 主流程 (调试版) ==========
 (async () => {
   const cfg = getConfig();
-  $.log(`当前关键词: ${cfg.keywords.join("|")}`);
+  $.log(`[Debug] 关键词: ${cfg.keywords.join("|")}, Bark: ${cfg.barkEnable}, TG: ${cfg.tgEnable}`);
 
   try {
-    if (cfg.clearCache) {
-      $.write("[]", STORE_KEYS.latestIds);
-      $.write("false", STORE_KEYS.inited);
-      $.write("false", STORE_KEYS.clearCache);
-      $.log("缓存已清空");
-    }
-
     const res = await $.get({ url: cfg.url });
     let notices = extractNotices(res.data).filter(item => 
-      cfg.keywords.some(k => item.title.indexOf(k) !== -1) && 
-      diffDays(parseDate(item.date)) <= cfg.maxAgeDays
+      cfg.keywords.some(k => item.title.indexOf(k) !== -1)
     );
 
-    if (!notices.length) return $.done({ title: SCRIPT_NAME, content: "未匹配到相关公告" });
+    if (!notices.length) return $.done({ title: SCRIPT_NAME, content: "未匹配到公告" });
 
-    notices.sort((a, b) => parseDate(b.date) - parseDate(a.date));
-    
-    const oldIds = safeJSONParse($.read(STORE_KEYS.latestIds) || "[]", []);
-    const newItems = notices.filter(item => !oldIds.includes(makeId(item)));
-    const isFirstRun = $.read(STORE_KEYS.inited) !== "true";
+    // --- 强制推送测试开始 ---
+    let shouldNotify = true; 
+    let pushContent = notices.slice(0, 1); 
+    // --- 强制推送测试结束 ---
 
-    // 更新持久化数据
-    $.write(JSON.stringify(notices.slice(0, cfg.saveLimit).map(makeId)), STORE_KEYS.latestIds);
-    $.write("true", STORE_KEYS.inited);
+    const title = `测试推送 - ${notices[0].title}`;
+    const body = `📅 日期: ${notices[0].date}\n这是一条强制测试推送`;
 
-    // 确定是否推送
-    let shouldNotify = false;
-    let pushContent = "";
-    
-    if (!cfg.onlyNew) {
-      shouldNotify = true;
-      pushContent = notices.slice(0, cfg.maxCount);
-    } else if (isFirstRun && cfg.firstRunNotify) {
-      shouldNotify = true;
-      pushContent = notices.slice(0, cfg.maxCount);
-    } else if (newItems.length > 0) {
-      shouldNotify = true;
-      pushContent = newItems;
-    }
-shouldNotify = true; pushContent = notices.slice(0, 1); // 强制开启：只要运行就推送第一条
-    
-    // 调试开关：如果你现在就在调试推送，请取消下面这行的注释
-    // shouldNotify = true; pushContent = notices.slice(0,1);
-
-    if (shouldNotify && cfg.enableNotification) {
-      const title = `${SCRIPT_NAME}${newItems.length ? ` - 发现${newItems.length}条更新` : ""}`;
-      const body = pushContent.map((item, i) => `${i+1}. ${getTimeMarker(item.date, cfg)} ${item.title} (${item.date})`).join("\n");
-      
-      $.notify(title, "", body);
-      await sendBark(cfg, title, body, pushContent[0].link);
-      await sendTelegram(cfg, `${title}\n\n${body}`);
-    }
+    $.log("--- 准备触发推送流程 ---");
+    await $.notify(title, "", body);
+    if (cfg.barkEnable) await sendBark(cfg, title, body, notices[0].link);
+    if (cfg.tgEnable) await sendTelegram(cfg, title + "\n" + body);
+    $.log("--- 推送流程尝试结束 ---");
 
     $.done({
       title: SCRIPT_NAME,
-      content: `关键词: ${cfg.keywords.join("/")}\n新增: ${newItems.length} 条\n\n` + notices.slice(0, cfg.maxCount).map(item => `${getTimeMarker(item.date, cfg)} ${item.title}`).join("\n")
+      content: `测试模式运行中\n匹配到 ${notices.length} 条公告`
     });
 
   } catch (e) {
-    $.log("出错: " + e.message);
-    $.done({ title: SCRIPT_NAME, content: "异常: " + e.message });
+    $.log("脚本运行报错: " + e.message);
+    $.done({ title: SCRIPT_NAME, content: "报错: " + e.message });
   }
 })();
