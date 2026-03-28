@@ -1,23 +1,25 @@
 /*************************************
 
-项目名称：人事考试网关键公告监控
-适用平台：Surge（兼容长期 cron 运行）
-设计目标：
+项目名称：人事考试网关键公告监控 V3
+适用平台：Surge
+功能特点：
 1. 长期稳定运行
-2. 支持增量通知（只提醒新增）
-3. 支持参数化，方便以后接入 NEBOX / BoxJS
-4. 首次运行可选择仅建立缓存，不通知
-5. 手动运行时也能直接看到结果
+2. 支持增量通知
+3. 支持首次运行仅建缓存不提醒
+4. 支持关键词分类图标
+5. 支持仅显示最近 N 天公告
+6. 支持 clearCache 清空缓存
+7. 适合后续接入 NEBOX / BoxJS 参数填写
 
 Surge 任务示例：
 [Script]
-人事考试网关键公告 = type=cron,cronexp=0 0 9,15 * * *,script-path=https://你的地址/cpta_notice_monitor.js,timeout=30,argument=keywords=监理|造价|建造师&maxCount=10&onlyNew=true&showLink=false&enableNotification=true&firstRunNotify=false
+人事考试网关键公告 = type=cron,cronexp=0 0 9,15 * * *,script-path=https://你的地址/cpta_notice_monitor_v3.js,timeout=30,argument=keywords=监理|造价|建造师&maxCount=10&onlyNew=true&showLink=false&enableNotification=true&firstRunNotify=false&maxAgeDays=180&clearCache=false
 
 *************************************/
 
 const SCRIPT_NAME = "人事考试网关键公告";
 
-// ========== 默认配置（可被 BoxJS/NEBOX 或 argument 覆盖） ==========
+// ========== 默认配置 ==========
 const DEFAULTS = {
   url: "http://www.cpta.com.cn/notice.html",
   keywords: "监理|造价|建造师",
@@ -28,10 +30,12 @@ const DEFAULTS = {
   firstRunNotify: "false",
   recentDaysRed: "7",
   recentDaysOrange: "30",
-  saveLimit: "100"
+  maxAgeDays: "180",
+  saveLimit: "100",
+  clearCache: "false"
 };
 
-// ========== 持久化键名（以后给 NEBOX / BoxJS 填参数就填这些） ==========
+// ========== 存储键 ==========
 const STORE_KEYS = {
   url: "@cpta.url",
   keywords: "@cpta.keywords",
@@ -42,19 +46,19 @@ const STORE_KEYS = {
   firstRunNotify: "@cpta.firstRunNotify",
   recentDaysRed: "@cpta.recentDaysRed",
   recentDaysOrange: "@cpta.recentDaysOrange",
+  maxAgeDays: "@cpta.maxAgeDays",
   saveLimit: "@cpta.saveLimit",
+  clearCache: "@cpta.clearCache",
 
   latestIds: "@cpta.latestIds",
   inited: "@cpta.inited"
 };
 
-// ========== 环境工具 ==========
+// ========== 环境 ==========
 class Env {
   constructor(name) {
     this.name = name;
-    this.isSurge = typeof $httpClient !== "undefined" && typeof $persistentStore !== "undefined";
     this.startTime = Date.now();
-    this.logs = [];
   }
 
   log(...args) {
@@ -62,13 +66,11 @@ class Env {
   }
 
   read(key) {
-    if (this.isSurge) return $persistentStore.read(key);
-    return null;
+    return $persistentStore.read(key);
   }
 
   write(value, key) {
-    if (this.isSurge) return $persistentStore.write(String(value), key);
-    return false;
+    return $persistentStore.write(String(value), key);
   }
 
   get(opts) {
@@ -109,28 +111,36 @@ function parseArgument(str) {
   return obj;
 }
 
+function getBool(val, fallback = false) {
+  if (val === undefined || val === null || val === "") return fallback;
+  return String(val).toLowerCase() === "true";
+}
+
+function getNum(val, fallback) {
+  const n = Number(val);
+  return isNaN(n) || n <= 0 ? fallback : n;
+}
+
 function getConfig() {
   const arg = typeof $argument !== "undefined" ? parseArgument($argument) : {};
 
   function pick(name, storeKey) {
-    return (
-      arg[name] ??
-      $.read(storeKey) ??
-      DEFAULTS[name]
-    );
+    return arg[name] ?? $.read(storeKey) ?? DEFAULTS[name];
   }
 
   const cfg = {
     url: pick("url", STORE_KEYS.url),
     keywordsRaw: pick("keywords", STORE_KEYS.keywords),
-    maxCount: Number(pick("maxCount", STORE_KEYS.maxCount)),
-    onlyNew: String(pick("onlyNew", STORE_KEYS.onlyNew)).toLowerCase() === "true",
-    showLink: String(pick("showLink", STORE_KEYS.showLink)).toLowerCase() === "true",
-    enableNotification: String(pick("enableNotification", STORE_KEYS.enableNotification)).toLowerCase() === "true",
-    firstRunNotify: String(pick("firstRunNotify", STORE_KEYS.firstRunNotify)).toLowerCase() === "true",
-    recentDaysRed: Number(pick("recentDaysRed", STORE_KEYS.recentDaysRed)),
-    recentDaysOrange: Number(pick("recentDaysOrange", STORE_KEYS.recentDaysOrange)),
-    saveLimit: Number(pick("saveLimit", STORE_KEYS.saveLimit))
+    maxCount: getNum(pick("maxCount", STORE_KEYS.maxCount), 10),
+    onlyNew: getBool(pick("onlyNew", STORE_KEYS.onlyNew), true),
+    showLink: getBool(pick("showLink", STORE_KEYS.showLink), false),
+    enableNotification: getBool(pick("enableNotification", STORE_KEYS.enableNotification), true),
+    firstRunNotify: getBool(pick("firstRunNotify", STORE_KEYS.firstRunNotify), false),
+    recentDaysRed: getNum(pick("recentDaysRed", STORE_KEYS.recentDaysRed), 7),
+    recentDaysOrange: getNum(pick("recentDaysOrange", STORE_KEYS.recentDaysOrange), 30),
+    maxAgeDays: getNum(pick("maxAgeDays", STORE_KEYS.maxAgeDays), 180),
+    saveLimit: getNum(pick("saveLimit", STORE_KEYS.saveLimit), 100),
+    clearCache: getBool(pick("clearCache", STORE_KEYS.clearCache), false)
   };
 
   cfg.keywords = cfg.keywordsRaw
@@ -138,15 +148,12 @@ function getConfig() {
     .map(s => s.trim())
     .filter(Boolean);
 
-  if (!cfg.maxCount || cfg.maxCount < 1) cfg.maxCount = 10;
-  if (!cfg.saveLimit || cfg.saveLimit < 10) cfg.saveLimit = 100;
-  if (!cfg.recentDaysRed || cfg.recentDaysRed < 1) cfg.recentDaysRed = 7;
-  if (!cfg.recentDaysOrange || cfg.recentDaysOrange < cfg.recentDaysRed) cfg.recentDaysOrange = 30;
+  if (cfg.recentDaysOrange < cfg.recentDaysRed) cfg.recentDaysOrange = 30;
 
   return cfg;
 }
 
-// ========== 工具函数 ==========
+// ========== 工具 ==========
 function decodeHtml(str = "") {
   return str
     .replace(/&nbsp;/g, " ")
@@ -185,12 +192,18 @@ function diffDays(dateObj) {
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-function getMarker(dateStr, cfg) {
-  const d = parseDate(dateStr);
-  const days = diffDays(d);
+function getTimeMarker(dateStr, cfg) {
+  const days = diffDays(parseDate(dateStr));
   if (days <= cfg.recentDaysRed) return "🔴";
   if (days <= cfg.recentDaysOrange) return "🟠";
   return "⚪";
+}
+
+function getKeywordTag(title = "") {
+  if (title.includes("监理")) return "🏗️";
+  if (title.includes("造价")) return "💰";
+  if (title.includes("建造师")) return "👷";
+  return "📌";
 }
 
 function safeJSONParse(str, fallback) {
@@ -209,7 +222,6 @@ function makeId(item) {
 function extractNotices(html) {
   const results = [];
 
-  // 优先匹配更常见的列表结构
   const pattern1 = /<li[^>]*>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<i[^>]*>|<span[^>]*>|<em[^>]*>)\s*\[?(\d{4}[-\/.]\d{2}[-\/.]\d{2})\]?\s*(?:<\/i>|<\/span>|<\/em>)/gi;
 
   let m;
@@ -220,7 +232,6 @@ function extractNotices(html) {
     if (title && date) results.push({ title, date, link });
   }
 
-  // 兜底
   if (results.length === 0) {
     const pattern2 = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]{0,220}?(\d{4}[-\/.]\d{2}[-\/.]\d{2})/gi;
     while ((m = pattern2.exec(html)) !== null) {
@@ -234,21 +245,30 @@ function extractNotices(html) {
   return results;
 }
 
-// ========== 主逻辑 ==========
+// ========== 主流程 ==========
 (async () => {
   const cfg = getConfig();
 
-  $.log("当前配置：", JSON.stringify({
+  $.log("配置：", JSON.stringify({
     url: cfg.url,
     keywords: cfg.keywords,
     maxCount: cfg.maxCount,
     onlyNew: cfg.onlyNew,
     showLink: cfg.showLink,
     enableNotification: cfg.enableNotification,
-    firstRunNotify: cfg.firstRunNotify
+    firstRunNotify: cfg.firstRunNotify,
+    maxAgeDays: cfg.maxAgeDays,
+    clearCache: cfg.clearCache
   }));
 
   try {
+    if (cfg.clearCache) {
+      $.write("[]", STORE_KEYS.latestIds);
+      $.write("false", STORE_KEYS.inited);
+      $.write("false", STORE_KEYS.clearCache);
+      $.log("已清空缓存，下次按首次运行处理");
+    }
+
     const { data } = await $.get({
       url: cfg.url,
       headers: {
@@ -277,21 +297,10 @@ function extractNotices(html) {
       });
     }
 
-    // 关键词筛选
     notices = notices.filter(item =>
       cfg.keywords.some(k => item.title.includes(k))
     );
 
-    if (!notices.length) {
-      return $.done({
-        title: SCRIPT_NAME,
-        content: `⚠️ 没有找到包含关键词（${cfg.keywords.join(" / ")}）的公告`,
-        icon: "appletv",
-        "icon-color": "#b8b8b8"
-      });
-    }
-
-    // 去重
     const seen = new Set();
     notices = notices.filter(item => {
       const key = makeId(item);
@@ -300,17 +309,28 @@ function extractNotices(html) {
       return true;
     });
 
-    // 按日期倒序
+    notices = notices.filter(item => {
+      const d = parseDate(item.date);
+      return d && diffDays(d) <= cfg.maxAgeDays;
+    });
+
     notices.sort((a, b) => {
       const ta = parseDate(a.date)?.getTime() || 0;
       const tb = parseDate(b.date)?.getTime() || 0;
       return tb - ta;
     });
 
-    // 全量展示结果（用于面板）
+    if (!notices.length) {
+      return $.done({
+        title: SCRIPT_NAME,
+        content: `⚠️ 没有找到最近 ${cfg.maxAgeDays} 天内包含关键词（${cfg.keywords.join(" / ")}）的公告`,
+        icon: "appletv",
+        "icon-color": "#b8b8b8"
+      });
+    }
+
     const panelList = notices.slice(0, cfg.maxCount);
 
-    // 增量判断
     const oldIds = safeJSONParse($.read(STORE_KEYS.latestIds) || "[]", []);
     const oldSet = new Set(oldIds);
     const newItems = notices.filter(item => !oldSet.has(makeId(item)));
@@ -318,19 +338,13 @@ function extractNotices(html) {
     const hasInited = $.read(STORE_KEYS.inited) === "true";
     const isFirstRun = !hasInited;
 
-    // 保存最新记录
-    const latestIds = notices
-      .slice(0, cfg.saveLimit)
-      .map(item => makeId(item));
-
+    const latestIds = notices.slice(0, cfg.saveLimit).map(item => makeId(item));
     $.write(JSON.stringify(latestIds), STORE_KEYS.latestIds);
     $.write("true", STORE_KEYS.inited);
 
-    // 统计
     const recentRed = panelList.filter(item => diffDays(parseDate(item.date)) <= cfg.recentDaysRed).length;
     const recentOrange = panelList.filter(item => diffDays(parseDate(item.date)) <= cfg.recentDaysOrange).length;
 
-    // 标题
     let panelTitle = SCRIPT_NAME;
     if (recentRed > 0) {
       panelTitle = `${SCRIPT_NAME} — 🔴${recentRed}条近期公告`;
@@ -338,29 +352,30 @@ function extractNotices(html) {
       panelTitle = `${SCRIPT_NAME} — 🟠${recentOrange}条近30天公告`;
     }
 
-    // 面板内容
     const panelContent = panelList.map((item, idx) => {
-      const marker = getMarker(item.date, cfg);
-      const line1 = `${idx + 1}. ${marker} ${item.title}`;
+      const timeMarker = getTimeMarker(item.date, cfg);
+      const keywordTag = getKeywordTag(item.title);
+      const line1 = `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title}`;
       const line2 = `📅 ${item.date}`;
       const line3 = cfg.showLink ? `🔗 ${item.link}` : "";
       return [line1, line2, line3].filter(Boolean).join("\n");
     }).join("\n\n");
 
-    // 通知逻辑
+    let shouldNotify = false;
     let notifyTitle = "";
     let notifySub = "";
     let notifyBody = "";
-    let shouldNotify = false;
 
     if (cfg.onlyNew) {
       if (isFirstRun) {
-        if (cfg.firstRunNotify && newItems.length > 0) {
+        if (cfg.firstRunNotify && panelList.length > 0) {
           shouldNotify = cfg.enableNotification;
           notifyTitle = `${SCRIPT_NAME}（首次运行）`;
-          notifySub = `匹配到 ${newItems.length} 条公告`;
-          notifyBody = newItems.slice(0, cfg.maxCount).map((item, idx) => {
-            return `${idx + 1}. ${item.title} (${item.date})`;
+          notifySub = `已建立缓存，当前匹配 ${panelList.length} 条`;
+          notifyBody = panelList.map((item, idx) => {
+            const timeMarker = getTimeMarker(item.date, cfg);
+            const keywordTag = getKeywordTag(item.title);
+            return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
           }).join("\n");
         }
       } else {
@@ -369,8 +384,9 @@ function extractNotices(html) {
           notifyTitle = `${SCRIPT_NAME} — 发现 ${newItems.length} 条新公告`;
           notifySub = `关键词：${cfg.keywords.join(" / ")}`;
           notifyBody = newItems.slice(0, cfg.maxCount).map((item, idx) => {
-            const marker = getMarker(item.date, cfg);
-            return `${idx + 1}. ${marker} ${item.title} (${item.date})`;
+            const timeMarker = getTimeMarker(item.date, cfg);
+            const keywordTag = getKeywordTag(item.title);
+            return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
           }).join("\n");
         }
       }
@@ -379,8 +395,9 @@ function extractNotices(html) {
       notifyTitle = panelTitle;
       notifySub = `关键词：${cfg.keywords.join(" / ")}｜共 ${panelList.length} 条`;
       notifyBody = panelList.map((item, idx) => {
-        const marker = getMarker(item.date, cfg);
-        return `${idx + 1}. ${marker} ${item.title} (${item.date})`;
+        const timeMarker = getTimeMarker(item.date, cfg);
+        const keywordTag = getKeywordTag(item.title);
+        return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
       }).join("\n");
     }
 
@@ -388,16 +405,22 @@ function extractNotices(html) {
       $.notify(notifyTitle, notifySub, notifyBody);
     }
 
-    // 面板信息补充
     const statusLine = isFirstRun
-      ? `初始化：首次运行，已建立缓存`
+      ? "初始化：首次运行，已建立缓存"
       : `本次新增：${newItems.length} 条`;
 
-    const summaryLine = `关键词：${cfg.keywords.join(" / ")}｜展示：${panelList.length} 条｜模式：${cfg.onlyNew ? "仅新增通知" : "每次通知"}`;
+    const summaryLine = `关键词：${cfg.keywords.join(" / ")}｜展示：${panelList.length} 条｜模式：${cfg.onlyNew ? "仅新增通知" : "每次通知"}｜范围：最近 ${cfg.maxAgeDays} 天`;
 
-    const iconColor = newItems.length > 0
-      ? "#FF5A5A"
-      : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+    let iconColor = "#b8b8b8";
+    if (isFirstRun) {
+      iconColor = recentRed > 0
+        ? "#FF5A5A"
+        : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+    } else {
+      iconColor = newItems.length > 0
+        ? "#FF5A5A"
+        : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+    }
 
     return $.done({
       title: panelTitle,
