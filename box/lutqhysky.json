@@ -1,191 +1,191 @@
 {
-  "id": "lutqhysky.cpta.sub",
+  "id": "lutqhysky.cpta",
   "name": "人事考试网关键公告",
   "author": "lutqhysky",
-  "icon": "https://raw.githubusercontent.com/chavyleung/scripts/master/box/assets/icon_rounded.png",
   "repo": "https://github.com/lutqhysky",
+  "icon": "https://raw.githubusercontent.com/chavyleung/scripts/master/box/assets/icon_rounded.png",
   "apps": [
     {
       "id": "lutqhysky.cpta.notice",
-      "name": "人事考试网关键公告监控",
+      "name": "职业资格考试公告监控",
       "author": "lutqhysky",
       "repo": "https://github.com/lutqhysky",
       "descs_html": [
-        "<p>用于配置 Surge 脚本“人事考试网关键公告监控 V4 Stable”的参数。</p>",
-        "<p>推荐方式：Surge 负责执行脚本，NEBOX 负责填写参数。</p>",
+        "<p>监控中国人事考试网中包含 监理 / 造价 / 建造师 等关键词的公告。</p>",
+        "<p>参数直接写入 BoxJS / NEBOX 持久化存储，脚本运行时直接读取。</p>",
         "<p>多个关键词请用英文竖线 | 分隔，例如：监理|造价|建造师|咨询工程师</p>",
         "<a onClick=\"window.location.reload(true);\">刷新页面</a>"
       ],
       "keys": [
-        "@cpta.url",
-        "@cpta.keywords",
-        "@cpta.maxCount",
-        "@cpta.onlyNew",
-        "@cpta.showLink",
-        "@cpta.enableNotification",
-        "@cpta.firstRunNotify",
-        "@cpta.recentDaysRed",
-        "@cpta.recentDaysOrange",
-        "@cpta.maxAgeDays",
-        "@cpta.saveLimit",
-        "@cpta.clearCache",
-        "@cpta.barkEnable",
-        "@cpta.barkUrl",
-        "@cpta.barkAutoCopy",
-        "@cpta.barkSound",
-        "@cpta.barkGroup",
-        "@cpta.tgEnable",
-        "@cpta.tgBotToken",
-        "@cpta.tgChatId",
-        "@cpta.tgDisableWebPagePreview"
+        "cpta_url",
+        "cpta_keywords",
+        "cpta_max_count",
+        "cpta_only_new",
+        "cpta_show_link",
+        "cpta_enable_notification",
+        "cpta_first_run_notify",
+        "cpta_recent_days_red",
+        "cpta_recent_days_orange",
+        "cpta_max_age_days",
+        "cpta_save_limit",
+        "cpta_clear_cache",
+        "cpta_bark_push",
+        "cpta_bark_auto_copy",
+        "cpta_bark_sound",
+        "cpta_bark_group",
+        "cpta_tg_enable",
+        "cpta_tg_bot_token",
+        "cpta_tg_chat_id",
+        "cpta_tg_disable_web_page_preview",
+        "cpta_debug"
       ],
       "settings": [
         {
-          "id": "@cpta.url",
+          "id": "cpta_url",
           "name": "公告页地址",
           "val": "http://www.cpta.com.cn/notice.html",
           "type": "text",
           "desc": "默认即可，一般不要改。"
         },
         {
-          "id": "@cpta.keywords",
+          "id": "cpta_keywords",
           "name": "关键词",
           "val": "监理|造价|建造师",
           "type": "text",
           "desc": "多个关键词用英文竖线 | 分隔。"
         },
         {
-          "id": "@cpta.maxCount",
+          "id": "cpta_max_count",
           "name": "最多展示条数",
           "val": "10",
           "type": "text",
           "desc": "建议填写 5 到 15。"
         },
         {
-          "id": "@cpta.onlyNew",
+          "id": "cpta_only_new",
           "name": "仅通知新增",
           "val": true,
           "type": "boolean",
-          "desc": "开启后，只在发现新公告时通知。"
+          "desc": "开启后，只在发现新公告时推送。"
         },
         {
-          "id": "@cpta.showLink",
+          "id": "cpta_show_link",
           "name": "显示详情链接",
           "val": false,
           "type": "boolean",
-          "desc": "开启后，面板和推送中会显示链接。"
+          "desc": "开启后，面板和推送中会显示公告链接。"
         },
         {
-          "id": "@cpta.enableNotification",
-          "name": "启用 Surge 通知",
+          "id": "cpta_enable_notification",
+          "name": "启用系统通知",
           "val": true,
           "type": "boolean",
-          "desc": "关闭后不发 Surge 本地通知，但仍保留面板结果。"
+          "desc": "开启后，同时发送代理工具本地通知。"
         },
         {
-          "id": "@cpta.firstRunNotify",
+          "id": "cpta_first_run_notify",
           "name": "首次运行也通知",
           "val": false,
           "type": "boolean",
           "desc": "默认关闭。首次运行通常只建立缓存。"
         },
         {
-          "id": "@cpta.recentDaysRed",
+          "id": "cpta_recent_days_red",
           "name": "红点阈值（天）",
           "val": "7",
           "type": "text",
           "desc": "几天内的公告显示为 🔴。"
         },
         {
-          "id": "@cpta.recentDaysOrange",
+          "id": "cpta_recent_days_orange",
           "name": "橙点阈值（天）",
           "val": "30",
           "type": "text",
           "desc": "几天内的公告显示为 🟠，应大于或等于红点阈值。"
         },
         {
-          "id": "@cpta.maxAgeDays",
+          "id": "cpta_max_age_days",
           "name": "公告保留范围（天）",
           "val": "90",
           "type": "text",
           "desc": "只显示最近多少天内的公告。推荐 60 / 90 / 180。"
         },
         {
-          "id": "@cpta.saveLimit",
+          "id": "cpta_save_limit",
           "name": "缓存记录条数",
           "val": "100",
           "type": "text",
           "desc": "用于增量比对，默认 100 足够。"
         },
         {
-          "id": "@cpta.clearCache",
+          "id": "cpta_clear_cache",
           "name": "下次运行清空缓存",
           "val": false,
           "type": "boolean",
-          "desc": "开启后，下次脚本运行会清空旧缓存并重新建立，然后自动恢复为 false。"
+          "desc": "开启后，下次脚本运行会清空旧缓存并重新建立，然后脚本会自动恢复为 false。"
         },
         {
-          "id": "@cpta.barkEnable",
-          "name": "启用 Bark 推送",
-          "val": true,
-          "type": "boolean",
-          "desc": "开启后，有新增时推送 Bark。"
-        },
-        {
-          "id": "@cpta.barkUrl",
-          "name": "Bark 地址",
-          "val": "https://api.day.app/你的Bark密钥",
+          "id": "cpta_bark_push",
+          "name": "Bark 推送地址",
+          "val": "",
           "type": "text",
-          "desc": "填写你的 Bark 推送地址，例如 https://api.day.app/你的key"
+          "desc": "填写你的 Bark 地址，例如 https://bark.example.com/你的key/"
         },
         {
-          "id": "@cpta.barkAutoCopy",
+          "id": "cpta_bark_auto_copy",
           "name": "Bark 自动复制",
           "val": false,
           "type": "boolean",
           "desc": "开启后，推送内容自动复制到剪贴板。"
         },
         {
-          "id": "@cpta.barkSound",
+          "id": "cpta_bark_sound",
           "name": "Bark 提示音",
           "val": "",
           "type": "text",
           "desc": "可留空，例如 bell / electronic / healthnotification"
         },
         {
-          "id": "@cpta.barkGroup",
+          "id": "cpta_bark_group",
           "name": "Bark 分组名",
           "val": "人事考试网公告",
           "type": "text",
           "desc": "Bark 中用于分组显示。"
         },
         {
-          "id": "@cpta.tgEnable",
+          "id": "cpta_tg_enable",
           "name": "启用 Telegram 推送",
-          "val": true,
+          "val": false,
           "type": "boolean",
           "desc": "开启后，有新增时推送到 Telegram。"
         },
         {
-          "id": "@cpta.tgBotToken",
+          "id": "cpta_tg_bot_token",
           "name": "Telegram Bot Token",
-          "val": "你的BotToken",
+          "val": "",
           "type": "text",
           "desc": "填写你的 Telegram 机器人 Token。"
         },
         {
-          "id": "@cpta.tgChatId",
+          "id": "cpta_tg_chat_id",
           "name": "Telegram Chat ID",
-          "val": "你的ChatID",
+          "val": "",
           "type": "text",
-          "desc": "填写接收消息的 chat_id。"
+          "desc": "填写接收消息的 chat_id，可为群组 ID。"
         },
         {
-          "id": "@cpta.tgDisableWebPagePreview",
+          "id": "cpta_tg_disable_web_page_preview",
           "name": "Telegram 关闭链接预览",
           "val": true,
           "type": "boolean",
           "desc": "建议开启，避免消息太长。"
+        },
+        {
+          "id": "cpta_debug",
+          "name": "调试模式",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后输出更多日志，便于排查问题。"
         }
       ],
       "icons": [
