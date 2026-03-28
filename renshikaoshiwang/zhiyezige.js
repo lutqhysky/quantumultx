@@ -1,7 +1,11 @@
-const $ = new Env("人事考试网考试信息公告");
+const $ = new Env("人事考试网关键公告");
 
 // 日志等级
 $.logLevel = ($.getdata("cpta_debug") === "true") ? "debug" : "info";
+
+// 免责声明
+showDisclaimer();
+$.info("日志等级: " + $.logLevel.toUpperCase());
 
 // ========== 配置 ==========
 const Config = {
@@ -32,6 +36,29 @@ const Config = {
 Config.keywords = Config.keywordsRaw.split("|").map(s => s.trim()).filter(Boolean);
 if (Config.recentDaysOrange < Config.recentDaysRed) Config.recentDaysOrange = 30;
 
+$.debug("当前配置: " + $.toStr({
+  url: Config.url,
+  keywords: Config.keywords,
+  maxCount: Config.maxCount,
+  onlyNew: Config.onlyNew,
+  showLink: Config.showLink,
+  enableNotification: Config.enableNotification,
+  firstRunNotify: Config.firstRunNotify,
+  maxAgeDays: Config.maxAgeDays
+}));
+
+if (Config.barkPush) {
+  $.debug("已开启Bark推送");
+} else {
+  $.debug("未开启Bark推送");
+}
+
+if (Config.tgEnable) {
+  $.debug("已开启Telegram推送");
+} else {
+  $.debug("未开启Telegram推送");
+}
+
 // ========== 缓存键 ==========
 const CacheKeys = {
   latestIds: "cpta_latest_ids",
@@ -39,15 +66,6 @@ const CacheKeys = {
 };
 
 (async () => {
-  $.info("配置", JSON.stringify({
-    keywords: Config.keywords,
-    maxCount: Config.maxCount,
-    onlyNew: Config.onlyNew,
-    maxAgeDays: Config.maxAgeDays,
-    barkEnable: !!Config.barkPush,
-    tgEnable: Config.tgEnable
-  }));
-
   if (Config.clearCache) {
     $.setdata("[]", CacheKeys.latestIds);
     $.setdata("false", CacheKeys.inited);
@@ -56,12 +74,15 @@ const CacheKeys = {
   }
 
   const html = await httpGet(Config.url);
+  $.debug("页面抓取完成，长度: " + (html ? html.length : 0));
   if (!html) throw new Error("页面内容为空，可能网站暂时不可用");
 
   let notices = extractNotices(html);
+  $.debug("页面原始解析条数: " + notices.length);
   if (!notices.length) throw new Error("页面解析失败，可能网站结构已变更");
 
   notices = notices.filter(item => Config.keywords.some(k => item.title.indexOf(k) !== -1));
+  $.debug("关键词过滤后条数: " + notices.length);
 
   const seen = new Set();
   notices = notices.filter(item => {
@@ -75,6 +96,7 @@ const CacheKeys = {
     const d = parseDate(item.date);
     return d && diffDays(d) <= Config.maxAgeDays;
   });
+  $.debug("日期过滤后条数: " + notices.length);
 
   notices.sort((a, b) => {
     const ta = parseDate(a.date) ? parseDate(a.date).getTime() : 0;
@@ -94,6 +116,9 @@ const CacheKeys = {
 
   const hasInited = $.getdata(CacheKeys.inited) === "true";
   const isFirstRun = !hasInited;
+
+  $.debug("本次新增条数: " + newItems.length);
+  $.debug("是否首次运行: " + isFirstRun);
 
   const latestIds = notices.slice(0, Config.saveLimit).map(item => makeId(item));
   $.setdata($.toStr(latestIds), CacheKeys.latestIds);
@@ -144,6 +169,9 @@ const CacheKeys = {
     notifySub = "关键词：" + Config.keywords.join(" / ") + "｜共 " + panelList.length + " 条";
     pushItems = panelList;
   }
+
+  $.debug("是否发送通知: " + shouldNotify);
+  $.debug("推送条数: " + pushItems.length);
 
   if (pushItems.length) {
     notifyBody = pushItems.map((item, idx) => {
@@ -205,6 +233,33 @@ const CacheKeys = {
 });
 
 // ========== 方法 ==========
+function showDisclaimer() {
+  const lines = [
+    "==============📣免责声明📣==============",
+    "本脚本仅用于学习研究，禁止用于商业用途",
+    "本脚本不保证准确性、可靠性、完整性和及时性",
+    "任何个人或组织均可无需经过通知而自由使用",
+    "作者对任何脚本问题概不负责，包括由此产生的任何损失",
+    "如有单位或个人认为本脚本侵权，请通知并提供证明，我将删除",
+    "请勿将本脚本用于商业用途，由此引起的问题与作者无关",
+    "本脚本及其更新版权归作者所有",
+    "",
+    "⌚ " + nowTime()
+  ];
+  $.log(lines.join("\n"));
+}
+
+function nowTime() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  const h = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const s = String(d.getSeconds()).padStart(2, "0");
+  return y + "/" + m + "/" + day + " " + h + ":" + min + ":" + s;
+}
+
 function toBool(val, def) {
   if (val === undefined || val === null || val === "") return def;
   return String(val) === "true";
@@ -329,10 +384,11 @@ async function barkNotify(title, subtitle, content, openUrl) {
       headers: { "content-type": "application/json; charset=utf-8" },
       body: $.toStr(body)
     }, (err, resp, data) => {
+      $.log("=========📣 Bark 推送结果 =========");
       if (err) {
         $.logErr(err);
       } else {
-        $.info("Bark返回", data);
+        $.log(data || "(empty)");
       }
       resolve();
     });
@@ -350,10 +406,11 @@ async function telegramNotify(text) {
         disable_web_page_preview: Config.tgDisableWebPagePreview
       })
     }, (err, resp, data) => {
+      $.log("=========📣 Telegram 推送结果 =========");
       if (err) {
         $.logErr(err);
       } else {
-        $.info("Telegram返回", data);
+        $.log(data || "(empty)");
       }
       resolve();
     });
@@ -380,8 +437,6 @@ function Env(name) {
       };
       this.log("", "🔔" + this.name + ", 开始!");
     }
-
-    isNode() { return false; }
 
     getdata(key) {
       return $persistentStore.read(key);
@@ -418,11 +473,27 @@ function Env(name) {
     }
 
     info() {
-      if (["info", "debug"].indexOf(this.logLevel) !== -1) console.log("[INFO]", ...arguments);
+      if (["info", "debug"].indexOf(this.logLevel) !== -1) {
+        const args = Array.prototype.slice.call(arguments).map(i => "ℹ️ " + i);
+        console.log.apply(console, args);
+      }
     }
 
     debug() {
-      if (this.logLevel === "debug") console.log("[DEBUG]", ...arguments);
+      if (this.logLevel === "debug") {
+        const args = Array.prototype.slice.call(arguments).map(i => "🅱️ " + i);
+        console.log.apply(console, args);
+      }
+    }
+
+    warn() {
+      const args = Array.prototype.slice.call(arguments).map(i => "⚠️ " + i);
+      console.log.apply(console, args);
+    }
+
+    error() {
+      const args = Array.prototype.slice.call(arguments).map(i => "❌ " + i);
+      console.log.apply(console, args);
     }
 
     log() {
