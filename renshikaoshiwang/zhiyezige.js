@@ -1,51 +1,120 @@
 /*************************************
-项目名称：人事考试网关键公告监控 V4 Stable
+项目名称：人事考试网关键公告监控 Stable
 适用平台：Surge
-支持：NEBOX 配置 01
+功能：
+1. 长期稳定运行
+2. 仅新增通知
+3. 首次运行仅建缓存
+4. 支持关键词分类图标
+5. 支持最近 N 天过滤
+6. 支持 clearCache 清空缓存
+7. 支持 Bark 推送
+8. 支持 Telegram 推送（纯文本模式）
 *************************************/
 
 const SCRIPT_NAME = "人事考试网关键公告";
 
-// ========== 存储键 ==========
-const STORE_KEYS = {
-  latestIds: "@cpta.latestIds"
+// ========== 默认配置 ==========
+const DEFAULTS = {
+  url: "http://www.cpta.com.cn/notice.html",
+  keywords: "监理|造价|建造师",
+  maxCount: "10",
+  onlyNew: "true",
+  showLink: "false",
+  enableNotification: "true",
+  firstRunNotify: "false",
+  recentDaysRed: "7",
+  recentDaysOrange: "30",
+  maxAgeDays: "90",
+  saveLimit: "100",
+  clearCache: "false",
+
+  barkEnable: "false",
+  barkUrl: "",
+  barkAutoCopy: "false",
+  barkSound: "",
+  barkGroup: "人事考试网公告",
+
+  tgEnable: "false",
+  tgBotToken: "",
+  tgChatId: "",
+  tgDisableWebPagePreview: "true"
 };
 
+// ========== 存储键 ==========
+const STORE_KEYS = {
+  url: "@cpta.url",
+  keywords: "@cpta.keywords",
+  maxCount: "@cpta.maxCount",
+  onlyNew: "@cpta.onlyNew",
+  showLink: "@cpta.showLink",
+  enableNotification: "@cpta.enableNotification",
+  firstRunNotify: "@cpta.firstRunNotify",
+  recentDaysRed: "@cpta.recentDaysRed",
+  recentDaysOrange: "@cpta.recentDaysOrange",
+  maxAgeDays: "@cpta.maxAgeDays",
+  saveLimit: "@cpta.saveLimit",
+  clearCache: "@cpta.clearCache",
+
+  barkEnable: "@cpta.barkEnable",
+  barkUrl: "@cpta.barkUrl",
+  barkAutoCopy: "@cpta.barkAutoCopy",
+  barkSound: "@cpta.barkSound",
+  barkGroup: "@cpta.barkGroup",
+
+  tgEnable: "@cpta.tgEnable",
+  tgBotToken: "@cpta.tgBotToken",
+  tgChatId: "@cpta.tgChatId",
+  tgDisableWebPagePreview: "@cpta.tgDisableWebPagePreview",
+
+  latestIds: "@cpta.latestIds",
+  inited: "@cpta.inited"
+};
+
+// ========== 环境 ==========
 class Env {
   constructor(name) {
     this.name = name;
     this.startTime = Date.now();
   }
+
   log() {
-    console.log("[" + this.name + "]", ...arguments);
+    const args = Array.prototype.slice.call(arguments);
+    console.log("[" + this.name + "]", ...args);
   }
-  read(key) { 
-    return $persistentStore.read(key); 
+
+  read(key) {
+    return $persistentStore.read(key);
   }
-  write(value, key) { 
-    return $persistentStore.write(String(value), key); 
+
+  write(value, key) {
+    return $persistentStore.write(String(value), key);
   }
+
   get(opts) {
     return new Promise((resolve, reject) => {
       $httpClient.get(opts, (err, resp, data) => {
         if (err) reject(err);
-        else resolve({ resp, data });
+        else resolve({ resp: resp, data: data });
       });
     });
   }
+
   post(opts) {
     return new Promise((resolve, reject) => {
       $httpClient.post(opts, (err, resp, data) => {
         if (err) reject(err);
-        else resolve({ resp, data });
+        else resolve({ resp: resp, data: data });
       });
     });
   }
+
   notify(title, subtitle, body) {
     if (typeof $notification !== "undefined") {
       $notification.post(title || "", subtitle || "", body || "");
     }
   }
+
   done(payload) {
     const cost = ((Date.now() - this.startTime) / 1000).toFixed(2);
     this.log("执行结束，耗时 " + cost + "s");
@@ -55,312 +124,451 @@ class Env {
 
 const $ = new Env(SCRIPT_NAME);
 
-// ========== 解析 NEBOX 传递的参数 ==========
+// ========== 参数处理 ==========
 function parseArgument(str) {
   const obj = {};
   if (!str) return obj;
-  
-  // 解析 URL 参数格式: key1=value1&key2=value2
-  str.split("&").forEach(pair => {
+
+  const parts = str.split("&");
+  for (let i = 0; i < parts.length; i++) {
+    const pair = parts[i];
     const idx = pair.indexOf("=");
-    if (idx !== -1) {
-      const key = pair.slice(0, idx).trim();
-      const value = decodeURIComponent(pair.slice(idx + 1).trim());
-      obj[key] = value;
-    }
-  });
+    if (idx === -1) continue;
+    const key = pair.slice(0, idx).trim();
+    const val = pair.slice(idx + 1).trim();
+    if (key) obj[key] = decodeURIComponent(val);
+  }
   return obj;
 }
 
-// ========== 获取配置（优先 NEBOX 参数）==========
+function getBool(val, fallback) {
+  if (val === undefined || val === null || val === "") return fallback;
+  return String(val).toLowerCase() === "true";
+}
+
+function getNum(val, fallback) {
+  const n = Number(val);
+  return isNaN(n) || n <= 0 ? fallback : n;
+}
+
+function pickValue(arg, name, storeKey) {
+  if (arg[name] !== undefined && arg[name] !== null && arg[name] !== "") return arg[name];
+  const storeVal = $.read(storeKey);
+  if (storeVal !== undefined && storeVal !== null && storeVal !== "") return storeVal;
+  return DEFAULTS[name];
+}
+
 function getConfig() {
-  // 获取 NEBOX 传递的参数
   const arg = typeof $argument !== "undefined" ? parseArgument($argument) : {};
-  
-  // 调试：打印接收到的参数
-  $.log("=== 接收到的 NEBOX 参数 ===");
-  for (const [key, value] of Object.entries(arg)) {
-    if (key.includes("token") || key.includes("key")) {
-      $.log(`${key}: ${value ? "***已设置***" : "空"}`);
-    } else {
-      $.log(`${key}: ${value || "空"}`);
-    }
-  }
-  
-  // 辅助函数
-  const getBool = (val, fallback = false) => {
-    if (val === undefined || val === null || val === "") return fallback;
-    return String(val).toLowerCase() === "true";
-  };
-  
-  const getNum = (val, fallback) => {
-    const n = Number(val);
-    return isNaN(n) || n <= 0 ? fallback : n;
-  };
-  
-  // 获取配置（优先使用 NEBOX 参数，其次使用默认值）
+
   const cfg = {
-    url: arg.url || "http://www.cpta.com.cn/notice.html",
-    keywordsRaw: arg.keywords || "监理|造价|建造师",
-    maxCount: getNum(arg.maxCount, 10),
-    onlyNew: getBool(arg.onlyNew, true),
-    showLink: getBool(arg.showLink, false),
-    enableNotification: getBool(arg.enableNotification, true),
-    firstRunNotify: getBool(arg.firstRunNotify, false),
-    recentDaysRed: getNum(arg.recentDaysRed, 7),
-    recentDaysOrange: getNum(arg.recentDaysOrange, 30),
-    maxAgeDays: getNum(arg.maxAgeDays, 90),
-    saveLimit: getNum(arg.saveLimit, 100),
-    clearCache: getBool(arg.clearCache, false),
-    
-    barkEnable: getBool(arg.barkEnable, false),
-    barkUrl: arg.barkUrl || "",
-    barkAutoCopy: getBool(arg.barkAutoCopy, false),
-    barkSound: arg.barkSound || "",
-    barkGroup: arg.barkGroup || "人事考试网公告",
-    
-    tgEnable: getBool(arg.tgEnable, false),
-    tgBotToken: arg.tgBotToken || "",
-    tgChatId: arg.tgChatId || "",
-    tgDisableWebPagePreview: getBool(arg.tgDisableWebPagePreview, true)
+    url: pickValue(arg, "url", STORE_KEYS.url),
+    keywordsRaw: pickValue(arg, "keywords", STORE_KEYS.keywords),
+    maxCount: getNum(pickValue(arg, "maxCount", STORE_KEYS.maxCount), 10),
+    onlyNew: getBool(pickValue(arg, "onlyNew", STORE_KEYS.onlyNew), true),
+    showLink: getBool(pickValue(arg, "showLink", STORE_KEYS.showLink), false),
+    enableNotification: getBool(pickValue(arg, "enableNotification", STORE_KEYS.enableNotification), true),
+    firstRunNotify: getBool(pickValue(arg, "firstRunNotify", STORE_KEYS.firstRunNotify), false),
+    recentDaysRed: getNum(pickValue(arg, "recentDaysRed", STORE_KEYS.recentDaysRed), 7),
+    recentDaysOrange: getNum(pickValue(arg, "recentDaysOrange", STORE_KEYS.recentDaysOrange), 30),
+    maxAgeDays: getNum(pickValue(arg, "maxAgeDays", STORE_KEYS.maxAgeDays), 90),
+    saveLimit: getNum(pickValue(arg, "saveLimit", STORE_KEYS.saveLimit), 100),
+    clearCache: getBool(pickValue(arg, "clearCache", STORE_KEYS.clearCache), false),
+
+    barkEnable: getBool(pickValue(arg, "barkEnable", STORE_KEYS.barkEnable), false),
+    barkUrl: pickValue(arg, "barkUrl", STORE_KEYS.barkUrl),
+    barkAutoCopy: getBool(pickValue(arg, "barkAutoCopy", STORE_KEYS.barkAutoCopy), false),
+    barkSound: pickValue(arg, "barkSound", STORE_KEYS.barkSound),
+    barkGroup: pickValue(arg, "barkGroup", STORE_KEYS.barkGroup) || "人事考试网公告",
+
+    tgEnable: getBool(pickValue(arg, "tgEnable", STORE_KEYS.tgEnable), false),
+    tgBotToken: pickValue(arg, "tgBotToken", STORE_KEYS.tgBotToken),
+    tgChatId: pickValue(arg, "tgChatId", STORE_KEYS.tgChatId),
+    tgDisableWebPagePreview: getBool(pickValue(arg, "tgDisableWebPagePreview", STORE_KEYS.tgDisableWebPagePreview), true)
   };
-  
-  cfg.keywords = cfg.keywordsRaw.split("|").map(s => s.trim()).filter(s => !!s);
-  
+
+  cfg.keywords = cfg.keywordsRaw.split("|").map(function (s) {
+    return s.trim();
+  }).filter(function (s) {
+    return !!s;
+  });
+
+  if (cfg.recentDaysOrange < cfg.recentDaysRed) cfg.recentDaysOrange = 30;
+
   return cfg;
 }
 
-function decodeHtml(str) { 
-  str = str || ""; 
-  return str.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">"); 
+// ========== 工具 ==========
+function decodeHtml(str) {
+  str = str || "";
+  return str
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
 }
 
-function stripTags(str) { 
-  str = str || ""; 
-  return str.replace(/<[^>]*>/g, ""); 
+function stripTags(str) {
+  str = str || "";
+  return str.replace(/<[^>]*>/g, "");
 }
 
-function cleanText(str) { 
-  return decodeHtml(stripTags(str)).replace(/\s+/g, " ").trim(); 
+function cleanText(str) {
+  return decodeHtml(stripTags(str)).replace(/\s+/g, " ").trim();
 }
 
-function normalizeUrl(link) { 
-  link = (link || "").trim(); 
-  if (!link) return ""; 
-  if (link.indexOf("http") === 0) return link; 
-  return "http://www.cpta.com.cn/" + link.replace(/^\//, ""); 
+function normalizeUrl(link) {
+  link = (link || "").trim();
+  if (!link) return "";
+  if (link.indexOf("http://") === 0 || link.indexOf("https://") === 0) return link;
+  if (link.charAt(0) === "/") return "http://www.cpta.com.cn" + link;
+  if (link.indexOf("./") === 0) link = link.slice(2);
+  return "http://www.cpta.com.cn/" + link;
 }
 
-function parseDate(dateStr) { 
-  dateStr = (dateStr || "").replace(/\./g, "-").replace(/\//g, "-"); 
-  const d = new Date(dateStr); 
-  return isNaN(d.getTime()) ? null : d; 
+function parseDate(dateStr) {
+  dateStr = (dateStr || "").replace(/\./g, "-").replace(/\//g, "-");
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
 }
 
-function diffDays(dateObj) { 
-  if (!dateObj) return 9999; 
-  const now = new Date(); 
-  return Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60 * 24)); 
+function diffDays(dateObj) {
+  if (!dateObj) return 9999;
+  const now = new Date();
+  const diff = now.getTime() - dateObj.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-function safeJSONParse(str, fallback) { 
-  try { 
-    return JSON.parse(str); 
-  } catch (e) { 
-    return fallback; 
-  } 
+function getTimeMarker(dateStr, cfg) {
+  const days = diffDays(parseDate(dateStr));
+  if (days <= cfg.recentDaysRed) return "🔴";
+  if (days <= cfg.recentDaysOrange) return "🟠";
+  return "⚪";
 }
 
-function makeId(item) { 
-  return item.date + "__" + item.title; 
+function getKeywordTag(title) {
+  title = title || "";
+  if (title.indexOf("监理") !== -1) return "🏗️";
+  if (title.indexOf("造价") !== -1) return "💰";
+  if (title.indexOf("建造师") !== -1) return "👷";
+  return "📌";
 }
 
+function safeJSONParse(str, fallback) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function makeId(item) {
+  return item.date + "__" + item.title;
+}
+
+// ========== 页面解析 ==========
 function extractNotices(html) {
   const results = [];
-  const pattern = /<li[^>]*>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?(\d{4}[-\/.]\d{2}[-\/.]\d{2})/gi;
+
+  const pattern1 = /<li[^>]*>[\s\S]*?<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]*?(?:<i[^>]*>|<span[^>]*>|<em[^>]*>)\s*\[?(\d{4}[-\/.]\d{2}[-\/.]\d{2})\]?\s*(?:<\/i>|<\/span>|<\/em>)/gi;
+
   let m;
-  while ((m = pattern.exec(html)) !== null) {
-    results.push({ 
-      title: cleanText(m[2]), 
-      date: m[3].replace(/\./g, "-"), 
-      link: normalizeUrl(m[1]) 
-    });
+  while ((m = pattern1.exec(html)) !== null) {
+    const link = normalizeUrl(m[1]);
+    const title = cleanText(m[2]);
+    const date = (m[3] || "").replace(/\./g, "-").replace(/\//g, "-").trim();
+    if (title && date) {
+      results.push({ title: title, date: date, link: link });
+    }
   }
+
+  if (results.length === 0) {
+    const pattern2 = /<a[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>[\s\S]{0,220}?(\d{4}[-\/.]\d{2}[-\/.]\d{2})/gi;
+    while ((m = pattern2.exec(html)) !== null) {
+      const link = normalizeUrl(m[1]);
+      const title = cleanText(m[2]);
+      const date = (m[3] || "").replace(/\./g, "-").replace(/\//g, "-").trim();
+      if (title && date) {
+        results.push({ title: title, date: date, link: link });
+      }
+    }
+  }
+
   return results;
 }
 
-// ========== 推送函数 ==========
-function sendBark(cfg, title, body, url) {
-  return new Promise((resolve) => {
-    if (!cfg.barkEnable || !cfg.barkUrl) {
-      resolve(false);
-      return;
-    }
-    
-    let baseUrl = cfg.barkUrl.trim();
-    if (!baseUrl.startsWith("http")) {
-      baseUrl = "https://" + baseUrl;
-    }
-    baseUrl = baseUrl.replace(/\/$/, "");
-    
-    const fullUrl = `${baseUrl}/${encodeURIComponent(title)}/${encodeURIComponent(body)}`;
-    
-    const params = [];
-    if (cfg.barkGroup && cfg.barkGroup !== "") {
-      params.push(`group=${encodeURIComponent(cfg.barkGroup)}`);
-    }
-    if (cfg.barkSound && cfg.barkSound !== "") {
-      params.push(`sound=${encodeURIComponent(cfg.barkSound)}`);
-    }
-    if (cfg.barkAutoCopy) {
-      params.push(`automaticallyCopy=1`);
-    }
-    if (url && url !== "") {
-      params.push(`url=${encodeURIComponent(url)}`);
-    }
-    
-    const finalUrl = params.length ? `${fullUrl}?${params.join("&")}` : fullUrl;
-    
-    $httpClient.get(finalUrl, (err, resp, data) => {
-      if (err) {
-        $.log(`❌ Bark失败: ${err}`);
-        resolve(false);
-      } else {
-        $.log(`✅ Bark推送成功`);
-        resolve(true);
-      }
+// ========== 推送 ==========
+async function sendBark(cfg, title, body, url) {
+  if (!cfg.barkEnable || !cfg.barkUrl) return;
+
+  try {
+    const barkBody = {
+      title: title,
+      body: body,
+      group: cfg.barkGroup || "人事考试网公告"
+    };
+
+    if (url) barkBody.url = url;
+    if (cfg.barkAutoCopy) barkBody.automaticallyCopy = "1";
+    if (cfg.barkSound) barkBody.sound = cfg.barkSound;
+
+    await $.post({
+      url: cfg.barkUrl,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(barkBody)
     });
-  });
+
+    $.log("Bark 推送成功");
+  } catch (e) {
+    $.log("Bark 推送失败：", e.message);
+  }
 }
 
-function sendTelegram(cfg, text) {
-  return new Promise((resolve) => {
-    if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) {
-      resolve(false);
-      return;
-    }
-    
-    const apiUrl = `https://api.telegram.org/bot${cfg.tgBotToken}/sendMessage`;
-    const payload = {
+async function sendTelegram(cfg, text) {
+  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) return;
+
+  try {
+    const url = "https://api.telegram.org/bot" + cfg.tgBotToken + "/sendMessage";
+    const body = {
       chat_id: cfg.tgChatId,
       text: text,
       disable_web_page_preview: cfg.tgDisableWebPagePreview
     };
-    
-    $httpClient.post({
-      url: apiUrl,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }, (err, resp, data) => {
-      if (err) {
-        $.log(`❌ Telegram失败: ${err}`);
-        resolve(false);
-      } else {
-        const result = safeJSONParse(data, {});
-        if (result.ok) {
-          $.log(`✅ Telegram推送成功`);
-          resolve(true);
-        } else {
-          $.log(`❌ Telegram错误: ${result.description}`);
-          resolve(false);
-        }
-      }
+
+    await $.post({
+      url: url,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(body)
     });
-  });
+
+    $.log("Telegram 推送成功");
+  } catch (e) {
+    $.log("Telegram 推送失败：", e.message);
+  }
 }
 
 // ========== 主流程 ==========
 (async () => {
   const cfg = getConfig();
-  
-  $.log("=== 人事考试网公告监控 ===");
-  $.log(`关键词: ${cfg.keywords.join(" | ")}`);
-  $.log(`Bark: ${cfg.barkEnable ? "✅ 启用" : "❌ 禁用"} | TG: ${cfg.tgEnable ? "✅ 启用" : "❌ 禁用"}`);
-  
-  if (cfg.barkEnable && cfg.barkUrl) {
-    $.log(`Bark URL: ${cfg.barkUrl.substring(0, 50)}...`);
-  }
-  if (cfg.tgEnable && cfg.tgBotToken) {
-    $.log(`TG ChatID: ${cfg.tgChatId}`);
-  }
-  
+
+  $.log("配置：", JSON.stringify({
+    keywords: cfg.keywords,
+    maxCount: cfg.maxCount,
+    onlyNew: cfg.onlyNew,
+    maxAgeDays: cfg.maxAgeDays,
+    barkEnable: cfg.barkEnable,
+    tgEnable: cfg.tgEnable
+  }));
+
   try {
-    const res = await $.get({ url: cfg.url });
-    let notices = extractNotices(res.data);
-    
-    notices = notices.filter(item => 
-      cfg.keywords.some(k => item.title.indexOf(k) !== -1)
-    );
-    
+    if (cfg.clearCache) {
+      $.write("[]", STORE_KEYS.latestIds);
+      $.write("false", STORE_KEYS.inited);
+      $.write("false", STORE_KEYS.clearCache);
+      $.log("已清空缓存，下次按首次运行处理");
+    }
+
+    const res = await $.get({
+      url: cfg.url,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+        "Accept-Language": "zh-CN,zh-Hans;q=0.9"
+      }
+    });
+
+    const data = res.data;
+
+    if (!data) {
+      return $.done({
+        title: SCRIPT_NAME,
+        content: "❌ 页面内容为空，可能网站暂时不可用",
+        icon: "appletv",
+        "icon-color": "#b8b8b8"
+      });
+    }
+
+    let notices = extractNotices(data);
+
     if (!notices.length) {
-      $.log("未匹配到公告");
-      $.done({ 
-        title: SCRIPT_NAME, 
-        content: "未匹配到公告"
-      });
-      return;
-    }
-    
-    $.log(`匹配到 ${notices.length} 条公告`);
-    
-    let cache = safeJSONParse($.read(STORE_KEYS.latestIds), []);
-    let newNotices = [];
-    
-    for (let notice of notices) {
-      const id = makeId(notice);
-      if (!cache.includes(id)) {
-        newNotices.push(notice);
-        cache.unshift(id);
-      }
-    }
-    
-    if (cache.length > cfg.saveLimit) {
-      cache = cache.slice(0, cfg.saveLimit);
-    }
-    $.write(JSON.stringify(cache), STORE_KEYS.latestIds);
-    
-    $.log(`新增公告: ${newNotices.length} 条`);
-    
-    if (newNotices.length > 0) {
-      const notifyList = newNotices.slice(0, cfg.maxCount);
-      
-      for (let notice of notifyList) {
-        const title = `【${SCRIPT_NAME}】${notice.title}`;
-        const body = `📅 日期: ${notice.date}\n🔗 ${notice.link}`;
-        
-        if (cfg.enableNotification) {
-          $.notify(title, "", body);
-        }
-        
-        if (cfg.barkEnable) {
-          await sendBark(cfg, title, body, notice.link);
-        }
-        
-        if (cfg.tgEnable) {
-          const tgMsg = `【${SCRIPT_NAME}】\n\n${notice.title}\n\n📅 ${notice.date}\n\n🔗 ${notice.link}`;
-          await sendTelegram(cfg, tgMsg);
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      $.done({
+      return $.done({
         title: SCRIPT_NAME,
-        content: `发现 ${newNotices.length} 条新公告\n\n${notifyList.map(n => `• ${n.title}`).join("\n")}`
+        content: "⚠️ 页面解析失败，可能网站结构已变更",
+        icon: "appletv",
+        "icon-color": "#b8b8b8"
       });
+    }
+
+    notices = notices.filter(function (item) {
+      return cfg.keywords.some(function (k) {
+        return item.title.indexOf(k) !== -1;
+      });
+    });
+
+    const seen = new Set();
+    notices = notices.filter(function (item) {
+      const key = makeId(item);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    notices = notices.filter(function (item) {
+      const d = parseDate(item.date);
+      return d && diffDays(d) <= cfg.maxAgeDays;
+    });
+
+    notices.sort(function (a, b) {
+      const ta = parseDate(a.date) ? parseDate(a.date).getTime() : 0;
+      const tb = parseDate(b.date) ? parseDate(b.date).getTime() : 0;
+      return tb - ta;
+    });
+
+    if (!notices.length) {
+      return $.done({
+        title: SCRIPT_NAME,
+        content: "⚠️ 没有找到最近 " + cfg.maxAgeDays + " 天内包含关键词（" + cfg.keywords.join(" / ") + "）的公告",
+        icon: "appletv",
+        "icon-color": "#b8b8b8"
+      });
+    }
+
+    const panelList = notices.slice(0, cfg.maxCount);
+
+    const oldIds = safeJSONParse($.read(STORE_KEYS.latestIds) || "[]", []);
+    const oldSet = new Set(oldIds);
+    const newItems = notices.filter(function (item) {
+      return !oldSet.has(makeId(item));
+    });
+
+    const hasInited = $.read(STORE_KEYS.inited) === "true";
+    const isFirstRun = !hasInited;
+
+    const latestIds = notices.slice(0, cfg.saveLimit).map(function (item) {
+      return makeId(item);
+    });
+    $.write(JSON.stringify(latestIds), STORE_KEYS.latestIds);
+    $.write("true", STORE_KEYS.inited);
+
+    const recentRed = panelList.filter(function (item) {
+      return diffDays(parseDate(item.date)) <= cfg.recentDaysRed;
+    }).length;
+
+    const recentOrange = panelList.filter(function (item) {
+      return diffDays(parseDate(item.date)) <= cfg.recentDaysOrange;
+    }).length;
+
+    let panelTitle = SCRIPT_NAME;
+    if (recentRed > 0) {
+      panelTitle = SCRIPT_NAME + " — 🔴" + recentRed + "条近期公告";
+    } else if (recentOrange > 0) {
+      panelTitle = SCRIPT_NAME + " — 🟠" + recentOrange + "条近30天公告";
+    }
+
+    const panelContent = panelList.map(function (item, idx) {
+      const timeMarker = getTimeMarker(item.date, cfg);
+      const keywordTag = getKeywordTag(item.title);
+      const line1 = (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title;
+      const line2 = "📅 " + item.date;
+      const arr = [line1, line2];
+      if (cfg.showLink) arr.push("🔗 " + item.link);
+      return arr.join("\n");
+    }).join("\n\n");
+
+    let shouldNotify = false;
+    let notifyTitle = "";
+    let notifySub = "";
+    let notifyBody = "";
+
+    if (cfg.onlyNew) {
+      if (isFirstRun) {
+        if (cfg.firstRunNotify && panelList.length > 0) {
+          shouldNotify = cfg.enableNotification;
+          notifyTitle = SCRIPT_NAME + "（首次运行）";
+          notifySub = "已建立缓存，当前匹配 " + panelList.length + " 条";
+          notifyBody = panelList.map(function (item, idx) {
+            const timeMarker = getTimeMarker(item.date, cfg);
+            const keywordTag = getKeywordTag(item.title);
+            return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
+          }).join("\n");
+        }
+      } else {
+        if (newItems.length > 0) {
+          shouldNotify = cfg.enableNotification;
+          notifyTitle = SCRIPT_NAME + " — 发现 " + newItems.length + " 条新公告";
+          notifySub = "关键词：" + cfg.keywords.join(" / ");
+          notifyBody = newItems.slice(0, cfg.maxCount).map(function (item, idx) {
+            const timeMarker = getTimeMarker(item.date, cfg);
+            const keywordTag = getKeywordTag(item.title);
+            return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
+          }).join("\n");
+        }
+      }
     } else {
-      $.log("没有新公告");
-      $.done({
-        title: SCRIPT_NAME,
-        content: `已是最新\n共监控 ${notices.length} 条公告`
-      });
+      shouldNotify = cfg.enableNotification;
+      notifyTitle = panelTitle;
+      notifySub = "关键词：" + cfg.keywords.join(" / ") + "｜共 " + panelList.length + " 条";
+      notifyBody = panelList.map(function (item, idx) {
+        const timeMarker = getTimeMarker(item.date, cfg);
+        const keywordTag = getKeywordTag(item.title);
+        return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
+      }).join("\n");
     }
-    
+
+    if (shouldNotify) {
+      $.notify(notifyTitle, notifySub, notifyBody);
+
+      const pushItems = cfg.onlyNew && !isFirstRun ? newItems.slice(0, cfg.maxCount) : panelList;
+      const firstLink = pushItems[0] ? pushItems[0].link : "";
+
+      const barkTitle = notifyTitle;
+      const barkBody = pushItems.map(function (item, idx) {
+        const timeMarker = getTimeMarker(item.date, cfg);
+        const keywordTag = getKeywordTag(item.title);
+        let text = (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + "\n📅 " + item.date;
+        if (cfg.showLink) text += "\n🔗 " + item.link;
+        return text;
+      }).join("\n\n");
+
+      await sendBark(cfg, barkTitle, barkBody, firstLink);
+
+      const tgText = [notifyTitle, notifySub].filter(Boolean).join("\n") + "\n\n" + pushItems.map(function (item, idx) {
+        let text = (idx + 1) + ". " + getTimeMarker(item.date, cfg) + " " + getKeywordTag(item.title) + " " + item.title + "\n📅 " + item.date;
+        if (item.link) text += "\n🔗 " + item.link;
+        return text;
+      }).join("\n\n");
+
+      await sendTelegram(cfg, tgText);
+    }
+
+    const statusLine = isFirstRun ? "初始化：首次运行，已建立缓存" : "本次新增：" + newItems.length + " 条";
+    const summaryLine = "关键词：" + cfg.keywords.join(" / ") + "｜展示：" + panelList.length + " 条｜模式：" + (cfg.onlyNew ? "仅新增通知" : "每次通知") + "｜范围：最近 " + cfg.maxAgeDays + " 天";
+
+    let iconColor = "#b8b8b8";
+    if (isFirstRun) {
+      iconColor = recentRed > 0 ? "#FF5A5A" : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+    } else {
+      iconColor = newItems.length > 0 ? "#FF5A5A" : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+    }
+
+    return $.done({
+      title: panelTitle,
+      content: summaryLine + "\n" + statusLine + "\n\n" + panelContent,
+      icon: "appletv",
+      "icon-color": iconColor
+    });
+
   } catch (e) {
-    $.log(`❌ 错误: ${e.message}`);
-    $.done({ 
-      title: SCRIPT_NAME, 
-      content: `错误: ${e.message}`
+    return $.done({
+      title: SCRIPT_NAME,
+      content: "❌ 运行异常：" + e.message,
+      icon: "appletv",
+      "icon-color": "#b8b8b8"
     });
   }
 })();
