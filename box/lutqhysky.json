@@ -1,0 +1,116 @@
+{
+  "id": "lutqhysky.cpta.sub",
+  "name": "人事考试网关键公告",
+  "author": "lutqhysky",
+  "icon": "https://raw.githubusercontent.com/chavyleung/scripts/master/box/assets/icon_rounded.png",
+  "repo": "https://github.com/lutqhysky",
+  "apps": [
+    {
+      "id": "lutqhysky.cpta.notice",
+      "name": "人事考试网关键公告监控",
+      "author": "lutqhysky",
+      "repo": "https://github.com/lutqhysky",
+      "descs_html": [
+        "<p>用于配置 Surge 脚本“人事考试网关键公告监控 V2”的参数。</p>",
+        "<p>建议：Surge 负责执行脚本，NEBOX 负责填写参数。</p>",
+        "<a onClick=\"window.location.reload(true);\">刷新</a>"
+      ],
+      "keys": [
+        "@cpta.url",
+        "@cpta.keywords",
+        "@cpta.maxCount",
+        "@cpta.onlyNew",
+        "@cpta.showLink",
+        "@cpta.enableNotification",
+        "@cpta.firstRunNotify",
+        "@cpta.recentDaysRed",
+        "@cpta.recentDaysOrange",
+        "@cpta.maxAgeDays",
+        "@cpta.saveLimit"
+      ],
+      "settings": [
+        {
+          "id": "@cpta.url",
+          "name": "公告页地址",
+          "val": "http://www.cpta.com.cn/notice.html",
+          "type": "text",
+          "desc": "默认即可，一般不要改。"
+        },
+        {
+          "id": "@cpta.keywords",
+          "name": "关键词",
+          "val": "监理|造价|建造师",
+          "type": "text",
+          "desc": "多个关键词用英文竖线 | 分隔，例如：监理|造价|建造师|咨询工程师"
+        },
+        {
+          "id": "@cpta.maxCount",
+          "name": "最多展示条数",
+          "val": "10",
+          "type": "text",
+          "desc": "建议 5-15。"
+        },
+        {
+          "id": "@cpta.onlyNew",
+          "name": "仅通知新增",
+          "val": true,
+          "type": "boolean",
+          "desc": "开启后，只在发现新公告时通知。"
+        },
+        {
+          "id": "@cpta.showLink",
+          "name": "显示详情链接",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后，面板内容里会显示公告链接。"
+        },
+        {
+          "id": "@cpta.enableNotification",
+          "name": "启用系统通知",
+          "val": true,
+          "type": "boolean",
+          "desc": "关闭后只更新面板结果，不发送通知。"
+        },
+        {
+          "id": "@cpta.firstRunNotify",
+          "name": "首次运行也通知",
+          "val": false,
+          "type": "boolean",
+          "desc": "默认关闭。首次运行通常只建立缓存，不提醒。"
+        },
+        {
+          "id": "@cpta.recentDaysRed",
+          "name": "红点阈值（天）",
+          "val": "7",
+          "type": "text",
+          "desc": "几天内的公告显示为 🔴。"
+        },
+        {
+          "id": "@cpta.recentDaysOrange",
+          "name": "橙点阈值（天）",
+          "val": "30",
+          "type": "text",
+          "desc": "几天内的公告显示为 🟠。应大于或等于红点阈值。"
+        },
+        {
+          "id": "@cpta.maxAgeDays",
+          "name": "公告保留范围（天）",
+          "val": "180",
+          "type": "text",
+          "desc": "只显示最近多少天内的公告。想看更近期可改成 90 或 60。"
+        },
+        {
+          "id": "@cpta.saveLimit",
+          "name": "缓存记录条数",
+          "val": "100",
+          "type": "text",
+          "desc": "用于增量比对，默认 100 足够。"
+        }
+      ],
+      "icons": [
+        "https://raw.githubusercontent.com/chavyleung/scripts/master/box/assets/icon_rounded.png",
+        "https://raw.githubusercontent.com/chavyleung/scripts/master/box/assets/icon_rounded.png"
+      ]
+    }
+  ]
+}
