@@ -1,20 +1,16 @@
 /*************************************
-
-项目名称：人事考试网关键公告监控 V3
+项目名称：人事考试网关键公告监控 V4 Stable
 适用平台：Surge
-功能特点：
+功能：
 1. 长期稳定运行
-2. 支持增量通知
-3. 支持首次运行仅建缓存不提醒
+2. 仅新增通知
+3. 首次运行仅建缓存
 4. 支持关键词分类图标
-5. 支持仅显示最近 N 天公告
+5. 支持最近 N 天过滤
 6. 支持 clearCache 清空缓存
-7. 适合后续接入 NEBOX / BoxJS 参数填写
-
-Surge 任务示例：
-[Script]
-人事考试网关键公告 = type=cron,cronexp=0 0 9,15 * * *,script-path=https://你的地址/cpta_notice_monitor_v3.js,timeout=30,argument=keywords=监理|造价|建造师&maxCount=10&onlyNew=true&showLink=false&enableNotification=true&firstRunNotify=false&maxAgeDays=180&clearCache=false
-
+7. 支持 Bark 推送
+8. 支持 Telegram 推送（纯文本模式，兼容更稳）
+9. 适合后续接入 NEBOX / BoxJS 参数填写
 *************************************/
 
 const SCRIPT_NAME = "人事考试网关键公告";
@@ -30,9 +26,20 @@ const DEFAULTS = {
   firstRunNotify: "false",
   recentDaysRed: "7",
   recentDaysOrange: "30",
-  maxAgeDays: "180",
+  maxAgeDays: "90",
   saveLimit: "100",
-  clearCache: "false"
+  clearCache: "false",
+
+  barkEnable: "false",
+  barkUrl: "",
+  barkAutoCopy: "false",
+  barkSound: "",
+  barkGroup: "人事考试网公告",
+
+  tgEnable: "false",
+  tgBotToken: "",
+  tgChatId: "",
+  tgDisableWebPagePreview: "true"
 };
 
 // ========== 存储键 ==========
@@ -50,6 +57,17 @@ const STORE_KEYS = {
   saveLimit: "@cpta.saveLimit",
   clearCache: "@cpta.clearCache",
 
+  barkEnable: "@cpta.barkEnable",
+  barkUrl: "@cpta.barkUrl",
+  barkAutoCopy: "@cpta.barkAutoCopy",
+  barkSound: "@cpta.barkSound",
+  barkGroup: "@cpta.barkGroup",
+
+  tgEnable: "@cpta.tgEnable",
+  tgBotToken: "@cpta.tgBotToken",
+  tgChatId: "@cpta.tgChatId",
+  tgDisableWebPagePreview: "@cpta.tgDisableWebPagePreview",
+
   latestIds: "@cpta.latestIds",
   inited: "@cpta.inited"
 };
@@ -61,8 +79,9 @@ class Env {
     this.startTime = Date.now();
   }
 
-  log(...args) {
-    console.log(`[${this.name}]`, ...args);
+  log() {
+    const args = Array.prototype.slice.call(arguments);
+    console.log("[" + this.name + "]", ...args);
   }
 
   read(key) {
@@ -77,21 +96,30 @@ class Env {
     return new Promise((resolve, reject) => {
       $httpClient.get(opts, (err, resp, data) => {
         if (err) reject(err);
-        else resolve({ resp, data });
+        else resolve({ resp: resp, data: data });
       });
     });
   }
 
-  notify(title, subtitle = "", body = "") {
+  post(opts) {
+    return new Promise((resolve, reject) => {
+      $httpClient.post(opts, (err, resp, data) => {
+        if (err) reject(err);
+        else resolve({ resp: resp, data: data });
+      });
+    });
+  }
+
+  notify(title, subtitle, body) {
     if (typeof $notification !== "undefined") {
-      $notification.post(title, subtitle, body);
+      $notification.post(title || "", subtitle || "", body || "");
     }
   }
 
-  done(payload = {}) {
+  done(payload) {
     const cost = ((Date.now() - this.startTime) / 1000).toFixed(2);
-    this.log(`执行结束，耗时 ${cost}s`);
-    $done(payload);
+    this.log("执行结束，耗时 " + cost + "s");
+    $done(payload || {});
   }
 }
 
@@ -101,17 +129,20 @@ const $ = new Env(SCRIPT_NAME);
 function parseArgument(str) {
   const obj = {};
   if (!str) return obj;
-  str.split("&").forEach(pair => {
+
+  const parts = str.split("&");
+  for (let i = 0; i < parts.length; i++) {
+    const pair = parts[i];
     const idx = pair.indexOf("=");
-    if (idx === -1) return;
+    if (idx === -1) continue;
     const key = pair.slice(0, idx).trim();
     const val = pair.slice(idx + 1).trim();
     if (key) obj[key] = decodeURIComponent(val);
-  });
+  }
   return obj;
 }
 
-function getBool(val, fallback = false) {
+function getBool(val, fallback) {
   if (val === undefined || val === null || val === "") return fallback;
   return String(val).toLowerCase() === "true";
 }
@@ -121,32 +152,47 @@ function getNum(val, fallback) {
   return isNaN(n) || n <= 0 ? fallback : n;
 }
 
+function pickValue(arg, name, storeKey) {
+  if (arg[name] !== undefined && arg[name] !== null && arg[name] !== "") return arg[name];
+  const storeVal = $.read(storeKey);
+  if (storeVal !== undefined && storeVal !== null && storeVal !== "") return storeVal;
+  return DEFAULTS[name];
+}
+
 function getConfig() {
   const arg = typeof $argument !== "undefined" ? parseArgument($argument) : {};
 
-  function pick(name, storeKey) {
-    return arg[name] ?? $.read(storeKey) ?? DEFAULTS[name];
-  }
-
   const cfg = {
-    url: pick("url", STORE_KEYS.url),
-    keywordsRaw: pick("keywords", STORE_KEYS.keywords),
-    maxCount: getNum(pick("maxCount", STORE_KEYS.maxCount), 10),
-    onlyNew: getBool(pick("onlyNew", STORE_KEYS.onlyNew), true),
-    showLink: getBool(pick("showLink", STORE_KEYS.showLink), false),
-    enableNotification: getBool(pick("enableNotification", STORE_KEYS.enableNotification), true),
-    firstRunNotify: getBool(pick("firstRunNotify", STORE_KEYS.firstRunNotify), false),
-    recentDaysRed: getNum(pick("recentDaysRed", STORE_KEYS.recentDaysRed), 7),
-    recentDaysOrange: getNum(pick("recentDaysOrange", STORE_KEYS.recentDaysOrange), 30),
-    maxAgeDays: getNum(pick("maxAgeDays", STORE_KEYS.maxAgeDays), 180),
-    saveLimit: getNum(pick("saveLimit", STORE_KEYS.saveLimit), 100),
-    clearCache: getBool(pick("clearCache", STORE_KEYS.clearCache), false)
+    url: pickValue(arg, "url", STORE_KEYS.url),
+    keywordsRaw: pickValue(arg, "keywords", STORE_KEYS.keywords),
+    maxCount: getNum(pickValue(arg, "maxCount", STORE_KEYS.maxCount), 10),
+    onlyNew: getBool(pickValue(arg, "onlyNew", STORE_KEYS.onlyNew), true),
+    showLink: getBool(pickValue(arg, "showLink", STORE_KEYS.showLink), false),
+    enableNotification: getBool(pickValue(arg, "enableNotification", STORE_KEYS.enableNotification), true),
+    firstRunNotify: getBool(pickValue(arg, "firstRunNotify", STORE_KEYS.firstRunNotify), false),
+    recentDaysRed: getNum(pickValue(arg, "recentDaysRed", STORE_KEYS.recentDaysRed), 7),
+    recentDaysOrange: getNum(pickValue(arg, "recentDaysOrange", STORE_KEYS.recentDaysOrange), 30),
+    maxAgeDays: getNum(pickValue(arg, "maxAgeDays", STORE_KEYS.maxAgeDays), 90),
+    saveLimit: getNum(pickValue(arg, "saveLimit", STORE_KEYS.saveLimit), 100),
+    clearCache: getBool(pickValue(arg, "clearCache", STORE_KEYS.clearCache), false),
+
+    barkEnable: getBool(pickValue(arg, "barkEnable", STORE_KEYS.barkEnable), false),
+    barkUrl: pickValue(arg, "barkUrl", STORE_KEYS.barkUrl),
+    barkAutoCopy: getBool(pickValue(arg, "barkAutoCopy", STORE_KEYS.barkAutoCopy), false),
+    barkSound: pickValue(arg, "barkSound", STORE_KEYS.barkSound),
+    barkGroup: pickValue(arg, "barkGroup", STORE_KEYS.barkGroup) || "人事考试网公告",
+
+    tgEnable: getBool(pickValue(arg, "tgEnable", STORE_KEYS.tgEnable), false),
+    tgBotToken: pickValue(arg, "tgBotToken", STORE_KEYS.tgBotToken),
+    tgChatId: pickValue(arg, "tgChatId", STORE_KEYS.tgChatId),
+    tgDisableWebPagePreview: getBool(pickValue(arg, "tgDisableWebPagePreview", STORE_KEYS.tgDisableWebPagePreview), true)
   };
 
-  cfg.keywords = cfg.keywordsRaw
-    .split("|")
-    .map(s => s.trim())
-    .filter(Boolean);
+  cfg.keywords = cfg.keywordsRaw.split("|").map(function (s) {
+    return s.trim();
+  }).filter(function (s) {
+    return !!s;
+  });
 
   if (cfg.recentDaysOrange < cfg.recentDaysRed) cfg.recentDaysOrange = 30;
 
@@ -154,7 +200,8 @@ function getConfig() {
 }
 
 // ========== 工具 ==========
-function decodeHtml(str = "") {
+function decodeHtml(str) {
+  str = str || "";
   return str
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -164,24 +211,27 @@ function decodeHtml(str = "") {
     .replace(/&gt;/g, ">");
 }
 
-function stripTags(str = "") {
+function stripTags(str) {
+  str = str || "";
   return str.replace(/<[^>]*>/g, "");
 }
 
-function cleanText(str = "") {
+function cleanText(str) {
   return decodeHtml(stripTags(str)).replace(/\s+/g, " ").trim();
 }
 
-function normalizeUrl(link = "") {
-  link = link.trim();
+function normalizeUrl(link) {
+  link = (link || "").trim();
   if (!link) return "";
-  if (/^https?:\/\//i.test(link)) return link;
-  if (link.startsWith("/")) return "http://www.cpta.com.cn" + link;
-  return "http://www.cpta.com.cn/" + link.replace(/^\.?\//, "");
+  if (link.indexOf("http://") === 0 || link.indexOf("https://") === 0) return link;
+  if (link.charAt(0) === "/") return "http://www.cpta.com.cn" + link;
+  if (link.indexOf("./") === 0) link = link.slice(2);
+  return "http://www.cpta.com.cn/" + link;
 }
 
-function parseDate(dateStr = "") {
-  const d = new Date(dateStr.replace(/[/.]/g, "-"));
+function parseDate(dateStr) {
+  dateStr = (dateStr || "").replace(/\./g, "-").replace(/\//g, "-");
+  const d = new Date(dateStr);
   return isNaN(d.getTime()) ? null : d;
 }
 
@@ -199,23 +249,24 @@ function getTimeMarker(dateStr, cfg) {
   return "⚪";
 }
 
-function getKeywordTag(title = "") {
-  if (title.includes("监理")) return "🏗️";
-  if (title.includes("造价")) return "💰";
-  if (title.includes("建造师")) return "👷";
+function getKeywordTag(title) {
+  title = title || "";
+  if (title.indexOf("监理") !== -1) return "🏗️";
+  if (title.indexOf("造价") !== -1) return "💰";
+  if (title.indexOf("建造师") !== -1) return "👷";
   return "📌";
 }
 
 function safeJSONParse(str, fallback) {
   try {
     return JSON.parse(str);
-  } catch {
+  } catch (e) {
     return fallback;
   }
 }
 
 function makeId(item) {
-  return `${item.date}__${item.title}`;
+  return item.date + "__" + item.title;
 }
 
 // ========== 页面解析 ==========
@@ -228,8 +279,10 @@ function extractNotices(html) {
   while ((m = pattern1.exec(html)) !== null) {
     const link = normalizeUrl(m[1]);
     const title = cleanText(m[2]);
-    const date = m[3].replace(/[/.]/g, "-").trim();
-    if (title && date) results.push({ title, date, link });
+    const date = (m[3] || "").replace(/\./g, "-").replace(/\//g, "-").trim();
+    if (title && date) {
+      results.push({ title: title, date: date, link: link });
+    }
   }
 
   if (results.length === 0) {
@@ -237,12 +290,68 @@ function extractNotices(html) {
     while ((m = pattern2.exec(html)) !== null) {
       const link = normalizeUrl(m[1]);
       const title = cleanText(m[2]);
-      const date = m[3].replace(/[/.]/g, "-").trim();
-      if (title && date) results.push({ title, date, link });
+      const date = (m[3] || "").replace(/\./g, "-").replace(/\//g, "-").trim();
+      if (title && date) {
+        results.push({ title: title, date: date, link: link });
+      }
     }
   }
 
   return results;
+}
+
+// ========== 推送 ==========
+async function sendBark(cfg, title, body, url) {
+  if (!cfg.barkEnable || !cfg.barkUrl) return;
+
+  try {
+    const barkBody = {
+      title: title,
+      body: body,
+      group: cfg.barkGroup || "人事考试网公告"
+    };
+
+    if (url) barkBody.url = url;
+    if (cfg.barkAutoCopy) barkBody.automaticallyCopy = "1";
+    if (cfg.barkSound) barkBody.sound = cfg.barkSound;
+
+    await $.post({
+      url: cfg.barkUrl,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(barkBody)
+    });
+
+    $.log("Bark 推送成功");
+  } catch (e) {
+    $.log("Bark 推送失败：", e.message);
+  }
+}
+
+async function sendTelegram(cfg, text) {
+  if (!cfg.tgEnable || !cfg.tgBotToken || !cfg.tgChatId) return;
+
+  try {
+    const url = "https://api.telegram.org/bot" + cfg.tgBotToken + "/sendMessage";
+    const body = {
+      chat_id: cfg.tgChatId,
+      text: text,
+      disable_web_page_preview: cfg.tgDisableWebPagePreview
+    };
+
+    await $.post({
+      url: url,
+      headers: {
+        "Content-Type": "application/json; charset=utf-8"
+      },
+      body: JSON.stringify(body)
+    });
+
+    $.log("Telegram 推送成功");
+  } catch (e) {
+    $.log("Telegram 推送失败：", e.message);
+  }
 }
 
 // ========== 主流程 ==========
@@ -250,15 +359,12 @@ function extractNotices(html) {
   const cfg = getConfig();
 
   $.log("配置：", JSON.stringify({
-    url: cfg.url,
     keywords: cfg.keywords,
     maxCount: cfg.maxCount,
     onlyNew: cfg.onlyNew,
-    showLink: cfg.showLink,
-    enableNotification: cfg.enableNotification,
-    firstRunNotify: cfg.firstRunNotify,
     maxAgeDays: cfg.maxAgeDays,
-    clearCache: cfg.clearCache
+    barkEnable: cfg.barkEnable,
+    tgEnable: cfg.tgEnable
   }));
 
   try {
@@ -269,13 +375,15 @@ function extractNotices(html) {
       $.log("已清空缓存，下次按首次运行处理");
     }
 
-    const { data } = await $.get({
+    const res = await $.get({
       url: cfg.url,
       headers: {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
         "Accept-Language": "zh-CN,zh-Hans;q=0.9"
       }
     });
+
+    const data = res.data;
 
     if (!data) {
       return $.done({
@@ -297,33 +405,35 @@ function extractNotices(html) {
       });
     }
 
-    notices = notices.filter(item =>
-      cfg.keywords.some(k => item.title.includes(k))
-    );
+    notices = notices.filter(function (item) {
+      return cfg.keywords.some(function (k) {
+        return item.title.indexOf(k) !== -1;
+      });
+    });
 
     const seen = new Set();
-    notices = notices.filter(item => {
+    notices = notices.filter(function (item) {
       const key = makeId(item);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
-    notices = notices.filter(item => {
+    notices = notices.filter(function (item) {
       const d = parseDate(item.date);
       return d && diffDays(d) <= cfg.maxAgeDays;
     });
 
-    notices.sort((a, b) => {
-      const ta = parseDate(a.date)?.getTime() || 0;
-      const tb = parseDate(b.date)?.getTime() || 0;
+    notices.sort(function (a, b) {
+      const ta = parseDate(a.date) ? parseDate(a.date).getTime() : 0;
+      const tb = parseDate(b.date) ? parseDate(b.date).getTime() : 0;
       return tb - ta;
     });
 
     if (!notices.length) {
       return $.done({
         title: SCRIPT_NAME,
-        content: `⚠️ 没有找到最近 ${cfg.maxAgeDays} 天内包含关键词（${cfg.keywords.join(" / ")}）的公告`,
+        content: "⚠️ 没有找到最近 " + cfg.maxAgeDays + " 天内包含关键词（" + cfg.keywords.join(" / ") + "）的公告",
         icon: "appletv",
         "icon-color": "#b8b8b8"
       });
@@ -333,32 +443,42 @@ function extractNotices(html) {
 
     const oldIds = safeJSONParse($.read(STORE_KEYS.latestIds) || "[]", []);
     const oldSet = new Set(oldIds);
-    const newItems = notices.filter(item => !oldSet.has(makeId(item)));
+    const newItems = notices.filter(function (item) {
+      return !oldSet.has(makeId(item));
+    });
 
     const hasInited = $.read(STORE_KEYS.inited) === "true";
     const isFirstRun = !hasInited;
 
-    const latestIds = notices.slice(0, cfg.saveLimit).map(item => makeId(item));
+    const latestIds = notices.slice(0, cfg.saveLimit).map(function (item) {
+      return makeId(item);
+    });
     $.write(JSON.stringify(latestIds), STORE_KEYS.latestIds);
     $.write("true", STORE_KEYS.inited);
 
-    const recentRed = panelList.filter(item => diffDays(parseDate(item.date)) <= cfg.recentDaysRed).length;
-    const recentOrange = panelList.filter(item => diffDays(parseDate(item.date)) <= cfg.recentDaysOrange).length;
+    const recentRed = panelList.filter(function (item) {
+      return diffDays(parseDate(item.date)) <= cfg.recentDaysRed;
+    }).length;
+
+    const recentOrange = panelList.filter(function (item) {
+      return diffDays(parseDate(item.date)) <= cfg.recentDaysOrange;
+    }).length;
 
     let panelTitle = SCRIPT_NAME;
     if (recentRed > 0) {
-      panelTitle = `${SCRIPT_NAME} — 🔴${recentRed}条近期公告`;
+      panelTitle = SCRIPT_NAME + " — 🔴" + recentRed + "条近期公告";
     } else if (recentOrange > 0) {
-      panelTitle = `${SCRIPT_NAME} — 🟠${recentOrange}条近30天公告`;
+      panelTitle = SCRIPT_NAME + " — 🟠" + recentOrange + "条近30天公告";
     }
 
-    const panelContent = panelList.map((item, idx) => {
+    const panelContent = panelList.map(function (item, idx) {
       const timeMarker = getTimeMarker(item.date, cfg);
       const keywordTag = getKeywordTag(item.title);
-      const line1 = `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title}`;
-      const line2 = `📅 ${item.date}`;
-      const line3 = cfg.showLink ? `🔗 ${item.link}` : "";
-      return [line1, line2, line3].filter(Boolean).join("\n");
+      const line1 = (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title;
+      const line2 = "📅 " + item.date;
+      const arr = [line1, line2];
+      if (cfg.showLink) arr.push("🔗 " + item.link);
+      return arr.join("\n");
     }).join("\n\n");
 
     let shouldNotify = false;
@@ -370,61 +490,76 @@ function extractNotices(html) {
       if (isFirstRun) {
         if (cfg.firstRunNotify && panelList.length > 0) {
           shouldNotify = cfg.enableNotification;
-          notifyTitle = `${SCRIPT_NAME}（首次运行）`;
-          notifySub = `已建立缓存，当前匹配 ${panelList.length} 条`;
-          notifyBody = panelList.map((item, idx) => {
+          notifyTitle = SCRIPT_NAME + "（首次运行）";
+          notifySub = "已建立缓存，当前匹配 " + panelList.length + " 条";
+          notifyBody = panelList.map(function (item, idx) {
             const timeMarker = getTimeMarker(item.date, cfg);
             const keywordTag = getKeywordTag(item.title);
-            return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
+            return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
           }).join("\n");
         }
       } else {
         if (newItems.length > 0) {
           shouldNotify = cfg.enableNotification;
-          notifyTitle = `${SCRIPT_NAME} — 发现 ${newItems.length} 条新公告`;
-          notifySub = `关键词：${cfg.keywords.join(" / ")}`;
-          notifyBody = newItems.slice(0, cfg.maxCount).map((item, idx) => {
+          notifyTitle = SCRIPT_NAME + " — 发现 " + newItems.length + " 条新公告";
+          notifySub = "关键词：" + cfg.keywords.join(" / ");
+          notifyBody = newItems.slice(0, cfg.maxCount).map(function (item, idx) {
             const timeMarker = getTimeMarker(item.date, cfg);
             const keywordTag = getKeywordTag(item.title);
-            return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
+            return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
           }).join("\n");
         }
       }
     } else {
       shouldNotify = cfg.enableNotification;
       notifyTitle = panelTitle;
-      notifySub = `关键词：${cfg.keywords.join(" / ")}｜共 ${panelList.length} 条`;
-      notifyBody = panelList.map((item, idx) => {
+      notifySub = "关键词：" + cfg.keywords.join(" / ") + "｜共 " + panelList.length + " 条";
+      notifyBody = panelList.map(function (item, idx) {
         const timeMarker = getTimeMarker(item.date, cfg);
         const keywordTag = getKeywordTag(item.title);
-        return `${idx + 1}. ${timeMarker} ${keywordTag} ${item.title} (${item.date})`;
+        return (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + " (" + item.date + ")";
       }).join("\n");
     }
 
     if (shouldNotify) {
       $.notify(notifyTitle, notifySub, notifyBody);
+
+      const pushItems = cfg.onlyNew && !isFirstRun ? newItems.slice(0, cfg.maxCount) : panelList;
+      const firstLink = pushItems[0] ? pushItems[0].link : "";
+
+      const barkTitle = notifyTitle;
+      const barkBody = pushItems.map(function (item, idx) {
+        const timeMarker = getTimeMarker(item.date, cfg);
+        const keywordTag = getKeywordTag(item.title);
+        let text = (idx + 1) + ". " + timeMarker + " " + keywordTag + " " + item.title + "\n📅 " + item.date;
+        if (cfg.showLink) text += "\n🔗 " + item.link;
+        return text;
+      }).join("\n\n");
+
+      await sendBark(cfg, barkTitle, barkBody, firstLink);
+
+      const tgText = [notifyTitle, notifySub].filter(Boolean).join("\n") + "\n\n" + pushItems.map(function (item, idx) {
+        let text = (idx + 1) + ". " + getTimeMarker(item.date, cfg) + " " + getKeywordTag(item.title) + " " + item.title + "\n📅 " + item.date;
+        if (item.link) text += "\n🔗 " + item.link;
+        return text;
+      }).join("\n\n");
+
+      await sendTelegram(cfg, tgText);
     }
 
-    const statusLine = isFirstRun
-      ? "初始化：首次运行，已建立缓存"
-      : `本次新增：${newItems.length} 条`;
-
-    const summaryLine = `关键词：${cfg.keywords.join(" / ")}｜展示：${panelList.length} 条｜模式：${cfg.onlyNew ? "仅新增通知" : "每次通知"}｜范围：最近 ${cfg.maxAgeDays} 天`;
+    const statusLine = isFirstRun ? "初始化：首次运行，已建立缓存" : "本次新增：" + newItems.length + " 条";
+    const summaryLine = "关键词：" + cfg.keywords.join(" / ") + "｜展示：" + panelList.length + " 条｜模式：" + (cfg.onlyNew ? "仅新增通知" : "每次通知") + "｜范围：最近 " + cfg.maxAgeDays + " 天";
 
     let iconColor = "#b8b8b8";
     if (isFirstRun) {
-      iconColor = recentRed > 0
-        ? "#FF5A5A"
-        : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+      iconColor = recentRed > 0 ? "#FF5A5A" : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
     } else {
-      iconColor = newItems.length > 0
-        ? "#FF5A5A"
-        : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
+      iconColor = newItems.length > 0 ? "#FF5A5A" : (recentOrange > 0 ? "#FF9F0A" : "#b8b8b8");
     }
 
     return $.done({
       title: panelTitle,
-      content: `${summaryLine}\n${statusLine}\n\n${panelContent}`,
+      content: summaryLine + "\n" + statusLine + "\n\n" + panelContent,
       icon: "appletv",
       "icon-color": iconColor
     });
@@ -432,7 +567,7 @@ function extractNotices(html) {
   } catch (e) {
     return $.done({
       title: SCRIPT_NAME,
-      content: `❌ 运行异常：${e.message}`,
+      content: "❌ 运行异常：" + e.message,
       icon: "appletv",
       "icon-color": "#b8b8b8"
     });
