@@ -69,9 +69,8 @@ if (typeof $response === "undefined") {
                 'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
                 'WaterMinder': { name: 'waterminder-pro', id: 'waterminder.premiumYearly' },
                  'Endel': { name: 'pro', id: 'Lifetime'},  //Endel
-                'Gentler': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
-                'Law': { name: 'vip', id: 'LawVIPOneYear'},  //中国法律
-                'GentlerStreak': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' }
+                'Gentler Streak': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
+                'Law': { name: 'vip', id: 'LawVIPOneYear'},  //中国法律                
             };
 
             let isMatched = false;
