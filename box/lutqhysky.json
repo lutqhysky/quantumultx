@@ -192,202 +192,202 @@
         "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png",
         "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png"
       ]
+    },
+    {
+      "id": "lutqhysky.sxzc.notice",
+      "name": "山西人社职称公告监控",
+      "author": "lutqhysky",
+      "repo": "https://github.com/lutqhysky",
+      "descs_html": [
+        "<p>监控山西省人力资源和社会保障厅公告页中包含“职称”等关键词的公告。</p>",
+        "<p>支持工作日检查、仅新增通知、本地通知、Bark 推送、Telegram 推送。</p>",
+        "<p>多个关键词请用英文竖线 | 分隔，例如：职称|评审|申报</p>",
+        "<a onClick=\"window.location.reload(true);\">刷新页面</a>"
+      ],
+      "keys": [
+        "sxzc_url",
+        "sxzc_keywords",
+        "sxzc_max_count",
+        "sxzc_only_workday",
+        "sxzc_only_new",
+        "sxzc_enable_notification",
+        "sxzc_first_run_notify",
+        "sxzc_show_link",
+        "sxzc_recent_days_red",
+        "sxzc_recent_days_orange",
+        "sxzc_max_age_days",
+        "sxzc_save_limit",
+        "sxzc_clear_cache",
+        "sxzc_bark_push",
+        "sxzc_bark_auto_copy",
+        "sxzc_bark_sound",
+        "sxzc_bark_group",
+        "sxzc_tg_enable",
+        "sxzc_tg_bot_token",
+        "sxzc_tg_chat_id",
+        "sxzc_tg_disable_web_page_preview",
+        "sxzc_debug"
+      ],
+      "settings": [
+        {
+          "id": "sxzc_url",
+          "name": "公告页地址",
+          "val": "https://rst.shanxi.gov.cn/zwyw/tzgg/",
+          "type": "text",
+          "desc": "默认即可，一般不要改。"
+        },
+        {
+          "id": "sxzc_keywords",
+          "name": "关键词",
+          "val": "职称",
+          "type": "text",
+          "desc": "多个关键词用英文竖线 | 分隔，例如：职称|评审|申报。"
+        },
+        {
+          "id": "sxzc_max_count",
+          "name": "最多展示条数",
+          "val": "5",
+          "type": "text",
+          "desc": "建议填写 3 到 10。"
+        },
+        {
+          "id": "sxzc_only_workday",
+          "name": "仅工作日检查",
+          "val": true,
+          "type": "boolean",
+          "desc": "开启后，仅周一到周五执行查询。"
+        },
+        {
+          "id": "sxzc_only_new",
+          "name": "仅通知新增",
+          "val": true,
+          "type": "boolean",
+          "desc": "开启后，只在发现新公告时推送。"
+        },
+        {
+          "id": "sxzc_enable_notification",
+          "name": "启用系统通知",
+          "val": true,
+          "type": "boolean",
+          "desc": "开启后，同时发送代理工具本地通知。"
+        },
+        {
+          "id": "sxzc_first_run_notify",
+          "name": "首次运行也通知",
+          "val": false,
+          "type": "boolean",
+          "desc": "默认关闭。首次运行通常只建立缓存。"
+        },
+        {
+          "id": "sxzc_show_link",
+          "name": "显示详情链接",
+          "val": true,
+          "type": "boolean",
+          "desc": "开启后，面板和推送中会显示公告链接。"
+        },
+        {
+          "id": "sxzc_recent_days_red",
+          "name": "红点阈值（天）",
+          "val": "30",
+          "type": "text",
+          "desc": "几天内的公告显示为 🔴。"
+        },
+        {
+          "id": "sxzc_recent_days_orange",
+          "name": "橙点阈值（天）",
+          "val": "60",
+          "type": "text",
+          "desc": "几天内的公告显示为 🟠，应大于或等于红点阈值。"
+        },
+        {
+          "id": "sxzc_max_age_days",
+          "name": "公告保留范围（天）",
+          "val": "120",
+          "type": "text",
+          "desc": "只显示最近多少天内的公告。推荐 60 / 120 / 180。"
+        },
+        {
+          "id": "sxzc_save_limit",
+          "name": "缓存记录条数",
+          "val": "100",
+          "type": "text",
+          "desc": "用于增量比对，默认 100 足够。"
+        },
+        {
+          "id": "sxzc_clear_cache",
+          "name": "下次运行清空缓存",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后，下次脚本运行会清空旧缓存并重新建立，然后脚本会自动恢复为 false。"
+        },
+        {
+          "id": "sxzc_bark_push",
+          "name": "Bark 推送地址",
+          "val": "",
+          "type": "text",
+          "desc": "填写你的 Bark 地址，例如 https://bark.example.com/push"
+        },
+        {
+          "id": "sxzc_bark_auto_copy",
+          "name": "Bark 自动复制",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后，推送内容自动复制到剪贴板。"
+        },
+        {
+          "id": "sxzc_bark_sound",
+          "name": "Bark 提示音",
+          "val": "",
+          "type": "text",
+          "desc": "可留空，例如 bell / electronic / healthnotification。"
+        },
+        {
+          "id": "sxzc_bark_group",
+          "name": "Bark 分组名",
+          "val": "山西人社职称公告",
+          "type": "text",
+          "desc": "Bark 中用于分组显示。"
+        },
+        {
+          "id": "sxzc_tg_enable",
+          "name": "启用 Telegram 推送",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后，有新增时推送到 Telegram。"
+        },
+        {
+          "id": "sxzc_tg_bot_token",
+          "name": "Telegram Bot Token",
+          "val": "",
+          "type": "text",
+          "desc": "填写你的 Telegram 机器人 Token。"
+        },
+        {
+          "id": "sxzc_tg_chat_id",
+          "name": "Telegram Chat ID",
+          "val": "",
+          "type": "text",
+          "desc": "填写接收消息的 chat_id，可为群组 ID。"
+        },
+        {
+          "id": "sxzc_tg_disable_web_page_preview",
+          "name": "Telegram 关闭链接预览",
+          "val": true,
+          "type": "boolean",
+          "desc": "建议开启，避免消息太长。"
+        },
+        {
+          "id": "sxzc_debug",
+          "name": "调试模式",
+          "val": false,
+          "type": "boolean",
+          "desc": "开启后输出更多日志，便于排查问题。"
+        }
+      ],
+      "icons": [
+        "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png",
+        "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png"
+      ]
     }
-  ]
-},
-{
-  "id": "lutqhysky.sxzc.notice",
-  "name": "山西人社职称公告监控",
-  "author": "lutqhysky",
-  "repo": "https://github.com/lutqhysky",
-  "descs_html": [
-    "<p>监控山西省人力资源和社会保障厅公告页中包含“职称”等关键词的公告。</p>",
-    "<p>支持工作日检查、仅新增通知、本地通知、Bark 推送、Telegram 推送。</p>",
-    "<p>多个关键词请用英文竖线 | 分隔，例如：职称|评审|申报</p>",
-    "<a onClick=\"window.location.reload(true);\">刷新页面</a>"
-  ],
-  "keys": [
-    "sxzc_url",
-    "sxzc_keywords",
-    "sxzc_max_count",
-    "sxzc_only_workday",
-    "sxzc_only_new",
-    "sxzc_enable_notification",
-    "sxzc_first_run_notify",
-    "sxzc_show_link",
-    "sxzc_recent_days_red",
-    "sxzc_recent_days_orange",
-    "sxzc_max_age_days",
-    "sxzc_save_limit",
-    "sxzc_clear_cache",
-    "sxzc_bark_push",
-    "sxzc_bark_auto_copy",
-    "sxzc_bark_sound",
-    "sxzc_bark_group",
-    "sxzc_tg_enable",
-    "sxzc_tg_bot_token",
-    "sxzc_tg_chat_id",
-    "sxzc_tg_disable_web_page_preview",
-    "sxzc_debug"
-  ],
-  "settings": [
-    {
-      "id": "sxzc_url",
-      "name": "公告页地址",
-      "val": "https://rst.shanxi.gov.cn/zwyw/tzgg/",
-      "type": "text",
-      "desc": "默认即可，一般不要改。"
-    },
-    {
-      "id": "sxzc_keywords",
-      "name": "关键词",
-      "val": "职称",
-      "type": "text",
-      "desc": "多个关键词用英文竖线 | 分隔，例如：职称|评审|申报。"
-    },
-    {
-      "id": "sxzc_max_count",
-      "name": "最多展示条数",
-      "val": "5",
-      "type": "text",
-      "desc": "建议填写 3 到 10。"
-    },
-    {
-      "id": "sxzc_only_workday",
-      "name": "仅工作日检查",
-      "val": true,
-      "type": "boolean",
-      "desc": "开启后，仅周一到周五执行查询。"
-    },
-    {
-      "id": "sxzc_only_new",
-      "name": "仅通知新增",
-      "val": true,
-      "type": "boolean",
-      "desc": "开启后，只在发现新公告时推送。"
-    },
-    {
-      "id": "sxzc_enable_notification",
-      "name": "启用系统通知",
-      "val": true,
-      "type": "boolean",
-      "desc": "开启后，同时发送代理工具本地通知。"
-    },
-    {
-      "id": "sxzc_first_run_notify",
-      "name": "首次运行也通知",
-      "val": false,
-      "type": "boolean",
-      "desc": "默认关闭。首次运行通常只建立缓存。"
-    },
-    {
-      "id": "sxzc_show_link",
-      "name": "显示详情链接",
-      "val": true,
-      "type": "boolean",
-      "desc": "开启后，面板和推送中会显示公告链接。"
-    },
-    {
-      "id": "sxzc_recent_days_red",
-      "name": "红点阈值（天）",
-      "val": "30",
-      "type": "text",
-      "desc": "几天内的公告显示为 🔴。"
-    },
-    {
-      "id": "sxzc_recent_days_orange",
-      "name": "橙点阈值（天）",
-      "val": "60",
-      "type": "text",
-      "desc": "几天内的公告显示为 🟠，应大于或等于红点阈值。"
-    },
-    {
-      "id": "sxzc_max_age_days",
-      "name": "公告保留范围（天）",
-      "val": "120",
-      "type": "text",
-      "desc": "只显示最近多少天内的公告。推荐 60 / 120 / 180。"
-    },
-    {
-      "id": "sxzc_save_limit",
-      "name": "缓存记录条数",
-      "val": "100",
-      "type": "text",
-      "desc": "用于增量比对，默认 100 足够。"
-    },
-    {
-      "id": "sxzc_clear_cache",
-      "name": "下次运行清空缓存",
-      "val": false,
-      "type": "boolean",
-      "desc": "开启后，下次脚本运行会清空旧缓存并重新建立，然后脚本会自动恢复为 false。"
-    },
-    {
-      "id": "sxzc_bark_push",
-      "name": "Bark 推送地址",
-      "val": "",
-      "type": "text",
-      "desc": "填写你的 Bark 地址，例如 https://bark.example.com/push"
-    },
-    {
-      "id": "sxzc_bark_auto_copy",
-      "name": "Bark 自动复制",
-      "val": false,
-      "type": "boolean",
-      "desc": "开启后，推送内容自动复制到剪贴板。"
-    },
-    {
-      "id": "sxzc_bark_sound",
-      "name": "Bark 提示音",
-      "val": "",
-      "type": "text",
-      "desc": "可留空，例如 bell / electronic / healthnotification。"
-    },
-    {
-      "id": "sxzc_bark_group",
-      "name": "Bark 分组名",
-      "val": "山西人社职称公告",
-      "type": "text",
-      "desc": "Bark 中用于分组显示。"
-    },
-    {
-      "id": "sxzc_tg_enable",
-      "name": "启用 Telegram 推送",
-      "val": false,
-      "type": "boolean",
-      "desc": "开启后，有新增时推送到 Telegram。"
-    },
-    {
-      "id": "sxzc_tg_bot_token",
-      "name": "Telegram Bot Token",
-      "val": "",
-      "type": "text",
-      "desc": "填写你的 Telegram 机器人 Token。"
-    },
-    {
-      "id": "sxzc_tg_chat_id",
-      "name": "Telegram Chat ID",
-      "val": "",
-      "type": "text",
-      "desc": "填写接收消息的 chat_id，可为群组 ID。"
-    },
-    {
-      "id": "sxzc_tg_disable_web_page_preview",
-      "name": "Telegram 关闭链接预览",
-      "val": true,
-      "type": "boolean",
-      "desc": "建议开启，避免消息太长。"
-    },
-    {
-      "id": "sxzc_debug",
-      "name": "调试模式",
-      "val": false,
-      "type": "boolean",
-      "desc": "开启后输出更多日志，便于排查问题。"
-    }
-  ],
-  "icons": [
-    "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png",
-    "https://raw.githubusercontent.com/evilbutcher/quantumult_x/master/picture/sydw.png"
   ]
 }
