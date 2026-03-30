@@ -1,4 +1,4 @@
-const $ = new Env("RevenueCatUltraHybrid");
+const $ = new Env("🎊内购解锁啦，恭喜啊！");
 const NOTIFY_INTERVAL_HOURS = 2; 
 const EXCLUDE_APPS = ['Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
