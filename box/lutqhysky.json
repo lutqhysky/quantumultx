@@ -10,6 +10,7 @@
       "name": "职业资格考试公告监控",
       "author": "lutqhysky",
       "repo": "https://github.com/lutqhysky",
+      "script": "https://raw.githubusercontent.com/lutqhysky/quantumultx/refs/heads/mylove/renshikaoshiwang/zhiyezige.js",
       "descs_html": [
         "<p>监控中国人事考试网中包含 监理 / 造价 / 建造师 等关键词的公告。</p>",
         "<p>参数直接写入 BoxJS / NEBOX 持久化存储，脚本运行时直接读取。</p>",
@@ -198,6 +199,7 @@
       "name": "山西人社职称公告监控",
       "author": "lutqhysky",
       "repo": "https://github.com/lutqhysky",
+      "script": "https://raw.githubusercontent.com/lutqhysky/quantumultx/refs/heads/mylove/renli/gaogong.js",
       "descs_html": [
         "<p>监控山西省人力资源和社会保障厅公告页中包含“职称”等关键词的公告。</p>",
         "<p>支持工作日检查、仅新增通知、本地通知、Bark 推送、Telegram 推送。</p>",
