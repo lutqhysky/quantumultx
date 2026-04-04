@@ -52,6 +52,7 @@ if (typeof $response === "undefined") {
             };
 
             const UAMappings = {
+                'AdGuard%20Home%20Remote': { name: 'aghrpro', id: 'adguard.home.remote.pro' },
                 'Pillow': { name: 'premium', id: 'com.neybox.pillow.premium.year' },
                 'Bookfy': { name: 'Bookfy Pro', id: 'bookfy_lifetime' },
                 'Charger': { name: 'pro', id: 'com.charginglite.weekly' },
