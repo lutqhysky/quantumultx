@@ -5,7 +5,7 @@
 **************************************/
 
 const $ = new Env("🎊 内购解锁成功");
-const NOTIFY_INTERVAL_HOURS = 2; 
+const NOTIFY_INTERVAL_HOURS = 5; 
 const EXCLUDE_APPS = ['LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
 if (typeof $response === "undefined") {
