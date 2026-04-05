@@ -47,6 +47,10 @@ if (typeof $response === "undefined") {
 
             // --- 精准库 (结合墨鱼数据) ---
             const UAMappings = {
+                'WaterMinder': { name: 'waterminder-pro', id: 'waterminder.premiumYearly' },
+                'Endel': { name: 'pro', id: 'Lifetime'},  //Endel
+                'Gentler': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
+                'Law': { name: 'vip', id: 'LawVIPOneYear'},  //中国法律 
                 'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
                 'Photomator': { name: 'pixelmator_photo_pro_access', id: 'pixelmator_photo_pro_subscription_v1_pro_offer' },
                 'Darkroom': { name: 'co.bergen.Darkroom.entitlement.allToolsAndFilters', id: 'darkroom_gold_lifetime' },
