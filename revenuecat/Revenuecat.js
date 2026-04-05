@@ -6,7 +6,7 @@
 
 const $ = new Env("🎊 内购解锁成功");
 const NOTIFY_INTERVAL_HOURS = 5; 
-const EXCLUDE_APPS = ['LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
+const EXCLUDE_APPS = ['ServerCat','LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
 if (typeof $response === "undefined") {
     let headers = $request ? $request.headers : null;
