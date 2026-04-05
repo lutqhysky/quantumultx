@@ -1,25 +1,39 @@
 /*************************************
-项目名称：RevenueCat 全能解锁 (旗舰 6.0 - 深度全兼容版)
+项目名称：RevenueCat 全能解锁 (旗舰 7.0 - 强制 200 OK 版)
 更新内容：
-1. 精准适配 CineDock (小象视频)，修复带空格权限名的识别
-2. 引入 non_subscriptions (买断项) 注入逻辑，解决买断制 App 校验失败问题
-3. 修正 FilmNoir 永久 ID 映射
-4. 增强全量数据漂白逻辑，确保 100% 覆盖
+1. 【核心】极大增强了请求头清理逻辑，删除所有可能导致 304 的缓存标记（ETag, Modified-Since）。
+2. 【核心】增加对 if-none-match 和 x-revenuecat-etag 的深度清理。
+3. 精准适配 CineDock (小象视频) 与 FilmNoir。
+4. 增强全量数据漂白，支持订阅、买断、权限三重覆盖。
 **************************************/
 
 const $ = new Env("🎊 内购解锁成功");
 const NOTIFY_INTERVAL_HOURS = 5; 
 const EXCLUDE_APPS = ['ServerCat','LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
+// --- 1. 请求阶段处理 (防止 304) ---
 if (typeof $response === "undefined") {
-    let headers = $request ? $request.headers : null;
-    if (headers) {
-        const deleteHeaders = ['x-revenuecat-etag', 'X-RevenueCat-ETag', 'if-none-match', 'If-None-Match', 'x-revenuecat-last-receive-time'];
-        deleteHeaders.forEach(h => { if (headers[h]) delete headers[h]; });
-        headers['Cache-Control'] = 'no-cache';
-    }
-    $done({ headers: headers || {} });
+    let headers = $request.headers;
+    const deleteHeaders = [
+        'x-revenuecat-etag', 
+        'X-RevenueCat-ETag', 
+        'if-none-match', 
+        'If-None-Match', 
+        'if-modified-since', 
+        'If-Modified-Since',
+        'x-revenuecat-last-receive-time'
+    ];
+    
+    // 强制清理缓存头，确保服务器返回 200 Body
+    deleteHeaders.forEach(h => { if (headers[h]) delete headers[h]; });
+    
+    // 注入强制刷新头
+    headers['Cache-Control'] = 'no-cache';
+    headers['Pragma'] = 'no-cache';
+
+    $done({ headers });
 } else {
+    // --- 2. 响应阶段处理 (解锁逻辑) ---
     const rawUA = ($request && $request.headers) ? ($request.headers['User-Agent'] || $request.headers['user-agent'] || "") : "";
     const UA = rawUA.toLowerCase();
     const BID = ($request && $request.headers) ? ($request.headers['X-Client-Bundle-ID'] || $request.headers['x-client-bundle-id'] || "") : "";
@@ -46,9 +60,8 @@ if (typeof $response === "undefined") {
                 "period_type": "normal"
             };
 
-            // --- 精准库 (根据你的抓包结果进行了深度更新) ---
             const UAMappings = {
-                'CineDock': { name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' }, // 针对小象视频
+                'CineDock': { name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' },
                 'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
                 'Photomator': { name: 'pixelmator_photo_pro_access', id: 'pixelmator_photo_pro_subscription_v1_pro_offer' },
                 'WaterMinder': { name: 'waterminder-pro', id: 'waterminder.premiumYearly' },
@@ -79,14 +92,11 @@ if (typeof $response === "undefined") {
                     obj.subscriber.entitlements = obj.subscriber.entitlements || {};
                     obj.subscriber.non_subscriptions = obj.subscriber.non_subscriptions || {};
                     
-                    // 注入订阅数据
                     obj.subscriber.subscriptions[id] = pData;
-                    // 注入买断数据 (应对 CineDock 类型)
                     obj.subscriber.non_subscriptions[id] = [{
                         "id": id, "is_sandbox": false, "purchase_date": formatDate(now),
                         "original_purchase_date": "2023-01-01T00:00:00Z", "store": "app_store"
                     }];
-                    // 注入权限名
                     names.forEach(n => {
                         obj.subscriber.entitlements[n] = { ...pData, "product_identifier": id };
                     });
@@ -95,7 +105,7 @@ if (typeof $response === "undefined") {
                 }
             }
 
-            // 2. 强力盲猜逻辑 (若库未匹配)
+            // 2. 强力盲猜逻辑
             if (!isMatched) {
                 matchedAppName = (rawUA.split('/')[0] || "Unknown").split(' ')[0];
                 const guessNames = ['pro', 'premium', 'plus', 'vip', 'all', 'gold', 'membership', 'Advanced', 'Entitlement.Pro', 'CineDock Pro'];
@@ -113,7 +123,7 @@ if (typeof $response === "undefined") {
                 isMatched = true;
             }
 
-            // 3. 全量刷新与漂白 (将 App 自带的所有过期项变更为永久)
+            // 3. 全量刷新与漂白
             if (obj.subscriber.subscriptions) {
                 Object.keys(obj.subscriber.subscriptions).forEach(id => {
                     obj.subscriber.subscriptions[id] = { ...pData };
@@ -125,7 +135,6 @@ if (typeof $response === "undefined") {
                     obj.subscriber.entitlements[n] = { ...pData, "product_identifier": pid || "com.premium.yearly" };
                 });
             }
-            // 漂白 non_subscriptions
             if (obj.subscriber.non_subscriptions) {
                 Object.keys(obj.subscriber.non_subscriptions).forEach(id => {
                     obj.subscriber.non_subscriptions[id] = [{
@@ -135,7 +144,6 @@ if (typeof $response === "undefined") {
                 });
             }
 
-            // 通知逻辑
             if (isMatched) {
                 const lastNotify = $.getdata(`${$.name}_${matchedAppName}`) || 0;
                 if ((Date.now() - lastNotify) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
@@ -143,7 +151,6 @@ if (typeof $response === "undefined") {
                     $.setdata(Date.now().toString(), `${$.name}_${matchedAppName}`);
                 }
             }
-
             $done({ body: JSON.stringify(obj) });
         } else {
             $done({});
