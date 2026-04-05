@@ -1,6 +1,6 @@
 const $ = new Env("🎊内购解锁啦，恭喜啊！");
 const NOTIFY_INTERVAL_HOURS = 2; 
-const EXCLUDE_APPS = ['flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
+const EXCLUDE_APPS = ['LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
 if (typeof $response === "undefined") {
     // --- 1. 请求阶段：移除缓存指纹 ---
