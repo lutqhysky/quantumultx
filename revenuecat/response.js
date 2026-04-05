@@ -52,6 +52,7 @@ if (typeof $response === "undefined") {
             };
 
             const UAMappings = {
+                'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.plus.annual' },
                 'AdGuard%20Home%20Remote': { name: 'aghrpro', id: 'adguard.home.remote.pro' },
                 'Pillow': { name: 'premium', id: 'com.neybox.pillow.premium.year' },
                 'Bookfy': { name: 'Bookfy Pro', id: 'bookfy_lifetime' },
