@@ -70,6 +70,7 @@ if (typeof $response === "undefined") {
 
             // --- 精准匹配库 (根据最新抓包更新) ---
             const UAMappings = {
+                'Welltory': { name: 'pro', id: 'com.welltory.subscription.annual'},
                 'CineDock': { name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' },
                 'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
                 'Photomator': { name: 'pixelmator_photo_pro_access', id: 'pixelmator_photo_pro_subscription_v1_pro_offer' },
