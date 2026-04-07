@@ -70,7 +70,7 @@ if (typeof $response === "undefined") {
 
             // --- 精准匹配库 (根据最新抓包更新) ---
             const UAMappings = {
-                'Sofa': { name: 'super', id: 'sofa_family_29999_onetime'}
+                'Sofa': { name: 'super', id: 'sofa_family_29999_onetime'},
                 'Welltory': { name: 'pro', id: 'com.welltory.subscription.annual'},
                 'CineDock': { name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' },
                 'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
