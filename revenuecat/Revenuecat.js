@@ -9,7 +9,7 @@
 
 const $ = new Env("🎊 内购解锁成功");
 const NOTIFY_INTERVAL_HOURS = 5; 
-const EXCLUDE_APPS = ['ServerCat','LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
+const EXCLUDE_APPS = ['LilyFM/2','ServerCat','LilyFM','flutter_rss_reader','EplayerX','Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward']; 
 
 // --- 1. 请求阶段：清理缓存头，强制服务器返回 200 Body ---
 if (typeof $response === "undefined") {
