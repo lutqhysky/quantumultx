@@ -1,32 +1,64 @@
 let body = $response.body;
 
-// 1. 定义一个强力注入脚本：直接在页面顶部生成一个显眼的磁力链接区域
+// 1. 【斩草除根】直接删除原网页负责渲染博彩广告和检测屏蔽的远程 JS 脚本
+body = body.replace(/<script src="[^"]*rm\.1\.023\.js"><\/script>/gi, "");
+
+// 2. 【清空广告数据】把隐藏在页面的 12 条博彩跳转数据直接清空
+body = body.replace(/var rmJson = '\[.*?\]';/g, "var rmJson = '[]';");
+body = body.replace(/var poJson = '\[.*?\]';/g, "var poJson = '[]';");
+
+// 3. 【注入界面】只保留最核心的磁力链接提取和清爽 UI
 let inject = `
+<style>
+/* 屏蔽底部的反屏蔽提示文字和所有残留图片 */
+#foo1ter, img { display: none !important; }
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function(){
-    // 检查页面里是否存在包含 hash 的全局变量
-    if (typeof json !== "undefined" && json.ref || (document.getElementById('ref'))) {
-        let hash = (typeof json !== "undefined" && json.ref) ? json.ref : document.getElementById('ref').value;
-        
-        // 有些网页的 ref 变量前两位可能是固定混淆字符（比如 26），真正的 hash 是后 40 位
-        if (hash.length > 40) {
-            hash = hash.slice(-40);
-        }
-        
+    // 提取特征码
+    let hash = "";
+    if (typeof json !== "undefined" && json.ref) {
+        hash = json.ref;
+    } else if (document.getElementById('ref')) {
+        hash = document.getElementById('ref').value;
+    }
+    
+    // 如果提取到的特征码长度大于40（前两位通常是26等混淆码），截取最后40位纯Hash
+    if (hash && hash.length > 40) {
+        hash = hash.slice(-40);
+    }
+
+    // 提取文件名
+    let fileName = (typeof json !== "undefined" && json.n) ? json.n : "未知文件";
+
+    if (hash) {
         let magnet = "magnet:?xt=urn:btih:" + hash;
 
-        // 创建一个悬浮在最顶部的浮层，方便复制
-        let div = document.createElement('div');
-        div.style.cssText = "position:fixed;top:0;left:0;width:100%;background:#d4edda;color:#155724;padding:15px;z-index:99999;text-align:center;font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,0.2);word-break:break-all;box-sizing:border-box;";
-        div.innerHTML = "<b>🎉 脚本已成功拦截磁力链：</b><br><input type='text' value='" + magnet + "' style='width:90%;max-width:600px;margin-top:10px;padding:5px;text-align:center;' readonly onclick='this.select()'><br><small style='color:#666;'>点击输入框即可全选复制</small>";
-        
-        document.body.insertBefore(div, document.body.firstChild);
+        // 构建一个极简、干净的下载控制台，覆盖掉中间区域
+        let cleanBox = document.createElement('div');
+        cleanBox.style.cssText = "max-width: 600px; margin: 30px auto; padding: 20px; background: #f8f9fa; border: 2px solid #28a745; border-radius: 10px; text-align: center; font-family: sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.1);";
+        cleanBox.innerHTML = \`
+            <h3 style="color:#28a745; margin-top:0;">⚡ 磁力链接提取成功</h3>
+            <p style="color:#333; font-size:14px; word-break:break-all;"><b>文件名：</b>\${fileName}</p>
+            <input type="text" value="\${magnet}" style="width:95%; padding:10px; font-size:14px; border:1px solid #ccc; border-radius:5px; text-align:center; color:#333; background:#fff;" readonly onclick="this.select()">
+            <p style="color:#666; font-size:12px; margin-bottom:0;">👆 点击上方框内链接即可一键全选复制</p>
+        \`;
+
+        // 查找原本存放表格的 list 区域并替换内容
+        let listEl = document.querySelector(".list");
+        if (listEl) {
+            listEl.innerHTML = "";
+            listEl.appendChild(cleanBox);
+            listEl.style.display = "block";
+        } else {
+            document.body.insertBefore(cleanBox, document.body.firstChild);
+        }
     }
 });
 </script>
 `;
 
-// 2. 注入到 </body> 之前
+// 把处理完的清爽样式和提取脚本插到页面底部
 body = body.replace("</body>", inject + "</body>");
 
 $done({ body });
