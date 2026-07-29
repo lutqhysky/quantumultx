@@ -1,0 +1,31 @@
+/**
+ * Surge Script: 草榴 (t66y) 帖子通用净化脚本 (终极容错版)
+ */
+
+let body = $response.body;
+
+if (body) {
+    // 1. 废掉 10 秒去广告检测逻辑
+    body = body.replace(/function r9aeadS\(\)\{[\s\S]*?\}/gi, 'function r9aeadS(){}');
+
+    // 2. 匹配外部视频 URL (容错不同提取格式)
+    const iframeSrcMatch = body.match(/getElementById\(['"]iframe1['"]\)\.src=['"]([^'"]+)['"]/i);
+
+    if (iframeSrcMatch && iframeSrcMatch[1]) {
+        let realUrl = iframeSrcMatch[1];
+
+        // 规范化 URL：修复可能存在的双斜杠问题 (除了 https:// 里的双斜杠)
+        realUrl = realUrl.replace(/([^:]\/)\/+/g, "$1");
+
+        // 3. 构造干净的 iframe 节点
+        const cleanIframeHtml = `<iframe src="${realUrl}" frameborder="0" allowtransparency="true" scrolling="no" width="100%" height="600" style="background:#000;"></iframe>`;
+
+        // 4. 直接把帖子里所有的隐藏占位符替换为真实的视频 iframe
+        body = body.replace(/<a[^>]*>點擊這里打開新視窗<\/a>[\s\S]*?<iframe src=['"]about:blank['"][^>]*><\/iframe>/gi, cleanIframeHtml);
+        
+        // 兜底替换
+        body = body.replace(/src=['"]about:blank['"]/i, `src="${realUrl}"`);
+    }
+}
+
+$done({ body });
