@@ -11,7 +11,7 @@ const $ = new Env("🎊 内购解锁成功");
 const NOTIFY_INTERVAL_HOURS = 12; // 提高到 12 小时，减少通知打扰
 const EXCLUDE_APPS = [
     'LilyFM/2','ServerCat','LilyFM','flutter_rss_reader','EplayerX',
-    'Authenticator','ReflixiOS', 'Fileball', 'APTV', 'Forward',
+    'Authenticator','Reflix', 'Fileball', 'APTV', 'Forward',
     'Shadowrocket', 'Quantumult', 'Surge', 'Stash', 'Loon' // 增加代理工具自身排除
 ]; 
 
