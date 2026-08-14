@@ -1,5 +1,5 @@
 /*
-@name 磁力解析增强版Rewrite
+@name 磁力解析增强版Rewrite（复制按钮统一复制完整magnet链接）
 @desc 拦截网页提取BT磁力链接，去除广告，自定义UI，自动复制
 */
 try {
@@ -27,7 +27,7 @@ try {
     // html转义，防止XSS注入
     fileName = fileName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-    // 3. 提取BT HASH，40位十六进制，去空格换行
+    // 3. 提取BT HASH，40位十六进制
     const hashReg = /\b([a-fA-F0-9]{40})\b/g;
     let hashArr = [];
     let tempMatch;
@@ -36,7 +36,7 @@ try {
     }
     let hash = hashArr.length > 0 ? hashArr[0] : null;
 
-    // 没有hash，直接返回原始页面，不做处理
+    // 没有hash，直接返回原始页面
     if (!hash) {
         $done({ body });
         return;
@@ -44,7 +44,7 @@ try {
 
     let magnet = "magnet:?xt=urn:btih:" + hash;
 
-    // 4. 增强HTML UI，支持深色模式，双复制按钮，容错提示
+    // 4. HTML UI
     let cleanHTML = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -166,8 +166,8 @@ try {
         <div class="file-info">
             <strong>文件名：</strong><br>${fileName}
         </div>
-        <div class="hash-info">
-            <strong>BT‑HASH：</strong>${hash}
+        <div class="hash-info" id="hashContainer">
+            <strong>BT‑HASH：</strong><span id="hashText">${hash}</span>
         </div>
 
         <p style="font-size:12px; color:var(--text-sub); margin-bottom:4px; text-align:left;"><b>磁力链接（点击框复制，长按选中）：</b></p>
@@ -175,7 +175,7 @@ try {
 
         <div class="btn-row">
             <a href="${magnet}" class="btn" onclick="copyMagnet()">🚀 调用下载器</a>
-            <button class="btn" onclick="copyHash()">📋复制HASH</button>
+            <button class="btn" onclick="copyMagnet()">📋 复制磁力链接</button>
         </div>
 
         <p id="tip" class="tip tip-normal">⏳ 尝试自动复制磁力链接...</p>
@@ -183,7 +183,6 @@ try {
 
     <script>
         const magnetStr = "${magnet}";
-        const hashStr = "${hash}";
         const tipDom = document.getElementById('tip');
 
         function setTip(text, cls) {
@@ -191,17 +190,18 @@ try {
             tipDom.className = "tip " + cls;
         }
 
-        //复制磁力链接
+        //复制完整磁力链接（带 magnet:?xt=urn:btih: 前缀）
         function copyMagnet() {
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(magnetStr).then(()=>{
                     setTip("📋 磁力链接已复制剪贴板！","tip-success");
-                }).catch(fallbackMagnet);
+                }).catch(fallbackCopy);
             } else {
-                fallbackMagnet();
+                fallbackCopy();
             }
         }
-        function fallbackMagnet(){
+
+        function fallbackCopy(){
             try {
                 const ta = document.createElement('textarea');
                 ta.value = magnetStr;
@@ -217,33 +217,7 @@ try {
             }
         }
 
-        //复制HASH
-        function copyHash(){
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(hashStr).then(()=>{
-                    setTip("✅ HASH已复制","tip-success");
-                }).catch(fallbackHash);
-            }else{
-                fallbackHash();
-            }
-        }
-        function fallbackHash(){
-            try{
-                const ta = document.createElement('textarea');
-                ta.value = hashStr;
-                ta.style.position='fixed';ta.style.opacity='0';
-                document.body.appendChild(ta);
-                ta.focus();ta.select();
-                const ok = document.execCommand('copy');
-                document.body.removeChild(ta);
-                if(ok) setTip("✅ HASH已复制","tip-success");
-                else setTip("⚠️HASH复制失败，请手动复制","tip-fail");
-            }catch(e){
-                setTip("⚠️HASH复制失败，请手动复制","tip-fail");
-            }
-        }
-
-        //多重触发，兼容各种webview
+        //多重触发自动复制，兼容各类webview
         function triggerAutoCopy(){
             setTimeout(copyMagnet, 200);
         }
@@ -261,7 +235,6 @@ try {
     $done({ body });
 
 } catch (err) {
-    //脚本整体异常捕获，出错直接返回原始网页，不要断网/空白
     console.log("rewrite error:" + String(err));
     $done({ body: $response.body });
 }
