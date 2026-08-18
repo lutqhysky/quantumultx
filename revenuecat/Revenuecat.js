@@ -19,7 +19,7 @@ const EXCLUDE_BUNDLE_IDS = [
 ];
 const EXCLUDE_UA_PREFIXES = [
     'lilyfm', 'servercat', 'eplayerx', 'authenticator', 
-    'reflix', 'fileball', 'aptv', 'forward', 'surge', 'stash', 'loon', 'shadowrocket'
+    'reflix', 'fileball', 'aptv', 'forward',  'flutter_rss_reader'
 ];
 
 // --- 1. 请求阶段：安全破除缓存 ---
