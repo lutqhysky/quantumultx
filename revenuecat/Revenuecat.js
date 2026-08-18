@@ -1,68 +1,93 @@
 /*************************************
-项目名称：RevenueCat 全能解锁 (2026 终极进化版)
-脚本功能：
-1. 【核心】强破 304 缓存：全量清理 ETag / Modified 头，强制 200 响应。
-2. 【安全】动态时间伪造：原始购买时间动态回溯，规避 App 本地时间差风控审计。
-3. 【深度】买断与订阅双注入：完美兼容永久买断制与订阅制 App。
-4. 【扩充】大厂精准适配：新增、校准 2025-2026 最新流行 App 映射关系。
+项目名称：RevenueCat 全能解锁 (2026 工业级重构版)
+核心改进：
+1. 修复 non_subscriptions 结构与多产品合并逻辑
+2. 采用增量安全注入，严格保留原有合法订阅与 store 属性
+3. 补齐 SDK 强校验字段 (original_application_version 等)
+4. 修复正则元字符逃逸、黑名单误杀与持久化 Key 异常
+5. 增加调试日志输出，完善异常追踪
 **************************************/
 
-const $ = new Env("🎊 内购解锁成功");
-const NOTIFY_INTERVAL_HOURS = 12; // 提高到 12 小时，减少通知打扰
-const EXCLUDE_APPS = [
-    'LilyFM/2','ServerCat','LilyFM','flutter_rss_reader','EplayerX',
-    'Authenticator','Reflix', 'Fileball', 'APTV', 'Forward',
-    'Shadowrocket', 'Quantumult', 'Surge', 'Stash', 'Loon' // 增加代理工具自身排除
-]; 
+const $ = new Env("RevenueCat_Pro");
+const NOTIFY_INTERVAL_HOURS = 12;
 
-// --- 1. 请求阶段：破除缓存，强制服务器返回 200 Body ---
+// 精准排除项 (全小写匹配，避免全局 substring 误杀)
+const EXCLUDE_BUNDLE_IDS = [
+    'com.crossutility.servercat',
+    'com.kr328.clash',
+    'zone.yiguo.flutter-rss-reader'
+];
+const EXCLUDE_UA_PREFIXES = [
+    'lilyfm', 'servercat', 'eplayerx', 'authenticator', 
+    'reflix', 'fileball', 'aptv', 'forward', 'surge', 'stash', 'loon', 'shadowrocket'
+];
+
+// --- 1. 请求阶段：安全破除缓存 ---
 if (typeof $response === "undefined") {
-    let headers = $request.headers;
-    const deleteHeaders = [
-        'x-revenuecat-etag', 'X-RevenueCat-ETag', 
-        'if-none-match', 'If-None-Match', 
-        'if-modified-since', 'If-Modified-Since',
+    let headers = $request.headers || {};
+    const deleteKeys = [
+        'x-revenuecat-etag',
+        'if-none-match',
+        'if-modified-since',
         'x-revenuecat-last-receive-time'
     ];
-    
-    deleteHeaders.forEach(h => { if (headers[h]) delete headers[h]; });
-    
+
+    Object.keys(headers).forEach(k => {
+        if (deleteKeys.includes(k.toLowerCase())) {
+            delete headers[k];
+        }
+    });
+
     headers['Cache-Control'] = 'no-cache';
     headers['Pragma'] = 'no-cache';
 
     $done({ headers });
 } else {
-    // --- 2. 响应阶段：动态修改会员数据 ---
-    const rawUA = ($request && $request.headers) ? ($request.headers['User-Agent'] || $request.headers['user-agent'] || "") : "";
-    const UA = rawUA.toLowerCase();
-    const BID = ($request && $request.headers) ? ($request.headers['X-Client-Bundle-ID'] || $request.headers['x-client-bundle-id'] || "") : "";
+    // --- 2. 响应阶段：动态构建与安全注入 ---
+    const headers = ($request && $request.headers) ? $request.headers : {};
+    let rawUA = "";
+    let BID = "";
 
-    // 检查白名单排除
-    if (EXCLUDE_APPS.some(key => UA.includes(key.toLowerCase()) || BID.includes(key))) {
+    for (const [k, v] of Object.entries(headers)) {
+        const lowerKey = k.toLowerCase();
+        if (lowerKey === 'user-agent') rawUA = v;
+        if (lowerKey === 'x-client-bundle-id') BID = v;
+    }
+
+    const lowerUA = rawUA.toLowerCase();
+    const lowerBID = BID.toLowerCase();
+
+    // 严谨黑名单检查 (避免 UA 包含 surge 等工具名字段被连带误杀)
+    const isExcluded = EXCLUDE_BUNDLE_IDS.includes(lowerBID) || 
+                       EXCLUDE_UA_PREFIXES.some(prefix => lowerUA.startsWith(prefix) || lowerUA.includes(`/${prefix}`));
+
+    if (isExcluded) {
+        console.log(`[RC] 命中排除名单: BID=${BID}, UA=${rawUA}`);
         $done({});
     } else {
         let obj = null;
-        try { 
-            obj = JSON.parse($response.body); 
-        } catch (e) { 
-            console.log("JSON解析失败，跳过修改");
+        try {
+            obj = JSON.parse($response.body);
+        } catch (e) {
+            console.log(`[RC] JSON 解析失败: ${e.message}，保持原始返回`);
             $done({});
         }
 
-        if (obj && obj.subscriber) {
-            // 动态生成时间，规避风控
+        if (!obj || !obj.subscriber) {
+            console.log("[RC] 响应体中无 subscriber 对象，跳过修改");
+            $done({});
+        } else {
             const now = new Date();
-            const future = new Date(2099, 11, 31, 23, 59, 59);
-            // 动态回溯原始购买时间为 3 年前的今天
-            const originalPurchase = new Date();
-            originalPurchase.setFullYear(now.getFullYear() - 3);
+            // 使用安全受支持的 ISO 时间，避免部分内核 2099 溢出
+            const future = new Date(2098, 11, 31, 23, 59, 59);
+            const originalPurchase = new Date(now.getTime() - 3 * 365 * 24 * 3600 * 1000);
 
             const formatDate = (d) => d.toISOString().replace(/\.\d{3}Z/, 'Z');
             const dateStr = formatDate(future);
             const nowStr = formatDate(now);
             const origStr = formatDate(originalPurchase);
-            
-            const pData = {
+
+            const basePlan = {
                 "expires_date": dateStr,
                 "original_purchase_date": origStr,
                 "purchase_date": nowStr,
@@ -73,113 +98,154 @@ if (typeof $response === "undefined") {
                 "period_type": "normal"
             };
 
-            // 初始化基础结构
+            // 基础架构合规性补全
             obj.subscriber.subscriptions = obj.subscriber.subscriptions || {};
             obj.subscriber.entitlements = obj.subscriber.entitlements || {};
             obj.subscriber.non_subscriptions = obj.subscriber.non_subscriptions || {};
+            obj.subscriber.original_application_version = obj.subscriber.original_application_version || "1.0";
+            obj.subscriber.original_purchase_date = obj.subscriber.original_purchase_date || origStr;
+            obj.subscriber.first_seen = obj.subscriber.first_seen || origStr;
+            obj.subscriber.management_url = obj.subscriber.management_url || "https://apps.apple.com/account/subscriptions";
 
-            // --- 精准匹配库 (全面校准与扩充) ---
-            const UAMappings = {
-                'Sofa': { name: 'super', id: 'sofa_family_29999_onetime'},
-                'Welltory': { name: 'pro', id: 'com.welltory.subscription.annual'},
-                'CineDock': { name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' },
-                'FilmNoir': { name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
-                'Photomator': { name: 'pixelmator_photo_pro_access', id: 'pixelmator_photo_pro_subscription_v1_pro_offer' },
-                'WaterMinder': { name: 'waterminder-pro', id: 'waterminder.premiumYearly' },
-                'Endel': { name: 'pro', id: 'Lifetime'},
-                'Gentler': { name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
-                'Law': { name: 'vip', id: 'LawVIPOneYear'}, 
-                'Darkroom': { name: 'co.bergen.Darkroom.entitlement.allToolsAndFilters', id: 'darkroom_gold_lifetime' },
-                'AdGuard%20Home': { name: 'aghrpro', id: 'adguard.home.remote.pro' },
-                'Pillow': { name: 'premium', id: 'com.neybox.pillow.premium.year' },
-                'MoneyThings': { name: 'Premium', id: 'com.lishaohui.cashflow.lifetime' },
-                'Anybox': { name: 'pro', id: 'cc.anybox.Anybox.annual' },
-                'ShellBean': { name: 'pro', id: 'com.ningle.shellbean.iap.forever' },
-                'iplayTV': { name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
-                'MOZE': { name: 'premium', id: 'moze_pro_yearly' },
-                // --- 2025-2026 新增热门适配 ---
-                'Vision': { name: 'pro', id: 'com.vision.yearly_pro' },
-                'Craft': { name: 'pro', id: 'com.lukilabs.craft.pro.annual' },
-                'Structured': { name: 'pro', id: 'un Prostuctured Pro' },
-                'Figma': { name: 'pro', id: 'com.figma.ios.pro' },
-                'Slopes': { name: 'pass', id: 'com.un損lopes.annual_pass' }
+            // 精准映射配置列表 (数组保序，正则安全转义)
+            const MappingRules = [
+                { match: 'Sofa', name: 'super', id: 'sofa_family_29999_onetime' },
+                { match: 'Welltory', name: 'pro', id: 'com.welltory.subscription.annual' },
+                { match: 'CineDock', name: 'CineDock Pro', id: 'cn.ixiaoxiang.video.lifetime' },
+                { match: 'FilmNoir', name: 'plus', id: 'app.filmnoir.appstore.purchases.lifetime' },
+                { match: 'Photomator', name: 'pixelmator_photo_pro_access', id: 'pixelmator_photo_pro_subscription_v1_pro_offer' },
+                { match: 'WaterMinder', name: 'waterminder-pro', id: 'waterminder.premiumYearly' },
+                { match: 'Endel', name: 'pro', id: 'Lifetime' },
+                { match: 'Gentler', name: 'premium', id: 'app.gentler.activity.nonconsumable.onetime1' },
+                { match: 'Law', name: 'vip', id: 'LawVIPOneYear' },
+                { match: 'Darkroom', name: 'co.bergen.Darkroom.entitlement.allToolsAndFilters', id: 'darkroom_gold_lifetime' },
+                { match: 'AdGuard%20Home', name: 'aghrpro', id: 'adguard.home.remote.pro' },
+                { match: 'Pillow', name: 'premium', id: 'com.neybox.pillow.premium.year' },
+                { match: 'MoneyThings', name: 'Premium', id: 'com.lishaohui.cashflow.lifetime' },
+                { match: 'Anybox', name: 'pro', id: 'cc.anybox.Anybox.annual' },
+                { match: 'ShellBean', name: 'pro', id: 'com.ningle.shellbean.iap.forever' },
+                { match: 'iplayTV', name: 'com.ll.btplayer.12', id: 'com.ll.btplayer.12' },
+                { match: 'MOZE', name: 'premium', id: 'moze_pro_yearly' },
+                { match: 'Vision', name: 'pro', id: 'com.vision.yearly_pro' },
+                { match: 'Craft', name: 'pro', id: 'com.lukilabs.craft.pro.annual' },
+                { match: 'Structured', name: 'pro', id: 'today.structured.pro' },
+                { match: 'Figma', name: 'pro', id: 'com.figma.ios.pro' },
+                { match: 'Slopes', name: 'pass', id: 'com.breakthrough.slopes.annual_pass' }
+            ];
+
+            let matchedAppKey = "";
+            let targetId = "";
+            let targetNames = [];
+
+            // 安全转义字符匹配
+            const safeTest = (pattern, text) => {
+                if (!text) return false;
+                const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                return new RegExp(escaped, 'i').test(text);
             };
 
-            let matchedAppName = "";
-            let isMatched = false;
-
-            // 1. 优先精准匹配
-            for (const key in UAMappings) {
-                if (new RegExp(key, 'i').test(UA) || new RegExp(key, 'i').test(BID)) {
-                    matchedAppName = key;
-                    const { name, id } = UAMappings[key];
-                    const names = name.includes('&') ? name.split('&') : [name];
-                    
-                    obj.subscriber.subscriptions[id] = pData;
-                    obj.subscriber.non_subscriptions[id] = [{
-                        "id": id, "is_sandbox": false, "purchase_date": nowStr,
-                        "original_purchase_date": origStr, "store": "app_store"
-                    }];
-                    names.forEach(n => {
-                        obj.subscriber.entitlements[n] = { ...pData, "product_identifier": id };
-                    });
-                    isMatched = true;
+            for (const rule of MappingRules) {
+                if (safeTest(rule.match, lowerUA) || safeTest(rule.match, lowerBID)) {
+                    matchedAppKey = rule.match;
+                    targetId = rule.id;
+                    targetNames = [rule.name];
                     break;
                 }
             }
 
-            // 2. 深度智能化盲猜 (未匹配到库时触发)
-            if (!isMatched) {
-                // 动态提取 App 名字，提取不到则用默认名
-                matchedAppName = BID ? BID.split('.').pop() : (rawUA.split('/')[0] || "Unknown").split(' ')[0];
-                
-                // 扩充国际化高频权限代称
-                const guessNames = ['pro', 'premium', 'plus', 'vip', 'all', 'gold', 'membership', 'advanced', 'lifetime', 'ultimate', 'super'];
-                const guessId = BID ? `${BID}.lifetime` : `com.${matchedAppName.toLowerCase()}.lifetime`;
-
-                guessNames.forEach(n => {
-                    if (!obj.subscriber.entitlements[n]) {
-                        obj.subscriber.entitlements[n] = { ...pData, "product_identifier": guessId };
-                    }
-                });
-                obj.subscriber.subscriptions[guessId] = pData;
-                isMatched = true;
+            // 智能盲猜逻辑
+            if (!matchedAppKey) {
+                matchedAppKey = BID ? BID.split('.').pop() : ((rawUA.split('/')[0] || "App").split(' ')[0]);
+                targetId = BID ? `${BID}.lifetime` : `com.${matchedAppKey.toLowerCase()}.lifetime`;
+                targetNames = ['pro', 'premium', 'plus', 'vip', 'all', 'gold', 'membership', 'advanced', 'lifetime', 'ultimate', 'super'];
             }
 
-            // 3. 全量刷新与漂白（覆盖 App 现有的过期/试用项）
-            if (obj.subscriber.subscriptions) {
-                Object.keys(obj.subscriber.subscriptions).forEach(id => {
-                    obj.subscriber.subscriptions[id] = { ...pData };
-                });
-            }
-            if (obj.subscriber.entitlements) {
-                Object.keys(obj.subscriber.entitlements).forEach(n => {
-                    const pid = obj.subscriber.entitlements[n].product_identifier;
-                    obj.subscriber.entitlements[n] = { ...pData, "product_identifier": pid || "com.premium.yearly" };
-                });
-            }
-            if (obj.subscriber.non_subscriptions) {
-                Object.keys(obj.subscriber.non_subscriptions).forEach(id => {
-                    obj.subscriber.non_subscriptions[id] = [{
-                        "id": id, "is_sandbox": false, "purchase_date": nowStr,
-                        "original_purchase_date": origStr, "store": "app_store"
-                    }];
-                });
+            // 1. 注入目标订阅
+            obj.subscriber.subscriptions[targetId] = {
+                ...(obj.subscriber.subscriptions[targetId] || {}),
+                ...basePlan
+            };
+
+            // 2. 注入目标 Entitlements
+            targetNames.forEach(name => {
+                obj.subscriber.entitlements[name] = {
+                    ...(obj.subscriber.entitlements[name] || {}),
+                    ...basePlan,
+                    "product_identifier": targetId
+                };
+            });
+
+            // 3. 安全补全现有 Entitlements（仅延期，保留其原有 product_identifier 和 store 渠道）
+            Object.keys(obj.subscriber.entitlements).forEach(name => {
+                const currentEnt = obj.subscriber.entitlements[name];
+                const existingPid = currentEnt.product_identifier || targetId;
+                obj.subscriber.entitlements[name] = {
+                    ...basePlan,
+                    ...currentEnt,
+                    "expires_date": dateStr,
+                    "product_identifier": existingPid
+                };
+            });
+
+            // 4. 安全补全现有 Subscriptions（保留原 store 等核心属性）
+            Object.keys(obj.subscriber.subscriptions).forEach(id => {
+                const currentSub = obj.subscriber.subscriptions[id];
+                obj.subscriber.subscriptions[id] = {
+                    ...basePlan,
+                    ...currentSub,
+                    "expires_date": dateStr
+                };
+            });
+
+            // 5. 安全注入 non_subscriptions
+            obj.subscriber.non_subscriptions[targetId] = obj.subscriber.non_subscriptions[targetId] || [];
+            obj.subscriber.non_subscriptions[targetId].push({
+                "id": targetId,
+                "is_sandbox": false,
+                "purchase_date": nowStr,
+                "original_purchase_date": origStr,
+                "store": "app_store"
+            });
+
+            // 6. 安全节流通知 (Key 做字符清洗，防止跨系统读写异常)
+            const cleanKey = matchedAppKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const storageKey = `rc_notify_${cleanKey}`;
+            const lastNotify = $.getdata(storageKey) || 0;
+
+            if ((Date.now() - parseInt(lastNotify, 10)) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
+                $.notify(`🎉 ${matchedAppKey} 授权更新`, `已安全注入永久凭证`, `有效期至：2098-12-31`);
+                $.setdata(Date.now().toString(), storageKey);
             }
 
-            // 4. 节流通知
-            const lastNotify = $.getdata(`${$.name}_${matchedAppName}`) || 0;
-            if ((Date.now() - parseInt(lastNotify)) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
-                $.notify(`🚀 ${$.name}`, `${matchedAppName} 已激活永久特权`, `安全运行中 · 有效期至 2099`);
-                $.setdata(Date.now().toString(), `${$.name}_${matchedAppName}`);
-            }
-
+            console.log(`[RC] 成功注入会员数据: ${matchedAppKey} (${targetId})`);
             $done({ body: JSON.stringify(obj) });
-        } else {
-            $done({});
         }
     }
 }
 
-// 环境兼容类
-function Env(n){this.name=n;this.notify=(t,s,c)=>{if(typeof $notification!="undefined")$notification.post(t,s,c);else if(typeof $notify!="undefined")$notify(t,s,c)};this.getdata=k=>(typeof $persistentStore!="undefined"?$persistentStore.read(k):(typeof $prefs!="undefined"?$prefs.valueForKey(k):null));this.setdata=(v,k)=>(typeof $persistentStore!="undefined"?$persistentStore.write(v,k):(typeof $prefs!="undefined"?$prefs.setValueForKey(v,k):false))}
+// Surge / 跨环境存储与通知兼容类
+function Env(name) {
+    this.name = name;
+    this.notify = (title, sub, msg) => {
+        if (typeof $notification !== "undefined") $notification.post(title, sub, msg);
+        else if (typeof $notify !== "undefined") $notify(title, sub, msg);
+    };
+    this.getdata = (key) => {
+        try {
+            if (typeof $persistentStore !== "undefined") return $persistentStore.read(key);
+            if (typeof $prefs !== "undefined") return $prefs.valueForKey(key);
+        } catch (e) {
+            console.log(`[RC] 读取存储失败: ${e.message}`);
+        }
+        return null;
+    };
+    this.setdata = (val, key) => {
+        try {
+            if (typeof $persistentStore !== "undefined") return $persistentStore.write(val, key);
+            if (typeof $prefs !== "undefined") return $prefs.setValueForKey(val, key);
+        } catch (e) {
+            console.log(`[RC] 写入存储失败: ${e.message}`);
+        }
+        return false;
+    };
+}
