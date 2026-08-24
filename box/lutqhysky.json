@@ -390,6 +390,59 @@
         "https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/zyzg.png",
         "https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/zyzg.png"
       ]
+    },
+    {
+      "id": "JavDB_Settings",
+      "name": "JavDB 视频抓取与跳转设置",
+      "author": "lutqhysky",
+      "repo": "https://github.com/lutqhysky",
+      "script": "https://raw.githubusercontent.com/lutqhysky/quantumultx/refs/heads/mylove/speedtest/javdb-senplayer.js",
+      "descs_html": [
+        "<p>拦截 JavDB 视频流地址并通过系统通知一键跳转播放器。</p>",
+        "<p>支持在下方切换调用的播放器协议或查看历史捕获记录。</p>"
+      ],
+      "keys": [
+        "javdb_target_player",
+        "javdb_notify_enabled",
+        "javdb_history_list"
+      ],
+      "settings": [
+        {
+          "id": "javdb_target_player",
+          "name": "目标播放器选择",
+          "val": "senplayer",
+          "type": "radios",
+          "items": [
+            { "key": "senplayer", "label": "SenPlayer" },
+            { "key": "iina", "label": "IINA (macOS)" },
+            { "key": "infuse", "label": "Infuse" },
+            { "key": "vlc", "label": "VLC" },
+            { "key": "nplayer", "label": "nPlayer" },
+            { "key": "none", "label": "不唤起 (仅记录/复制)" }
+          ],
+          "desc": "捕获到播放流后，通知将绑定的目标播放器跳转协议。"
+        },
+        {
+          "id": "javdb_notify_enabled",
+          "name": "启用系统弹窗通知",
+          "val": true,
+          "type": "boolean",
+          "desc": "关闭后将处于静默模式，仅在后台记录历史或复制链接。"
+        },
+        {
+          "id": "javdb_history_list",
+          "name": "历史捕获记录",
+          "val": "[]",
+          "type": "textarea",
+          "autoGrow": true,
+          "rows": 6,
+          "desc": "最近捕获的视频流直链历史清单（JSON 格式）。"
+        }
+      ],
+      "icons": [
+        "https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/lutqhysky.png",
+        "https://raw.githubusercontent.com/lutqhysky/quantumultx/mylove/lutqhysky.png"
+      ]
     }
   ]
 }
