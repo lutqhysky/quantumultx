@@ -1,12 +1,13 @@
 /**
- * Surge Script: JavBus 磁力链接优雅卡片化与一键复制
+ * Surge Script: JavBus & Miniflux 磁力链接提取与卡片化
+ * 兼容: Safari 网页端 + Miniflux API (SmartRSS 客户端)
  */
 
 let body = $response ? $response.body : null;
 
 if (body && (body.includes('magnet:?xt=') || body.includes('uncledatoolsbyajax'))) {
 
-  // 1. 处理 JavBus / RSS 表格行
+  // 1. 处理 JavBus 原生表格 / RSS 内容表格
   const trRegex = /<tr[\s\S]*?<\/tr>/gi;
   if (trRegex.test(body)) {
     body = body.replace(trRegex, (trBlock) => {
@@ -14,10 +15,6 @@ if (body && (body.includes('magnet:?xt=') || body.includes('uncledatoolsbyajax')
       const magnetMatch = trBlock.match(/magnet:\?xt=[^'"\s<>&]+/i);
       if (!magnetMatch) return trBlock;
       const magnetUrl = magnetMatch[0];
-
-      // 提取 Hash 短码 (用于简洁展示)
-      const hashMatch = magnetUrl.match(/btih:([a-zA-Z0-9]{8})/i);
-      const shortHash = hashMatch ? hashMatch[1].toUpperCase() + '...' : 'Magnet';
 
       // 提取番号/名称
       const nameMatch = trBlock.match(/<td[^>]*width=["']?70%["']?[^>]*>([\s\S]*?)<\/td>/i);
@@ -38,31 +35,39 @@ if (body && (body.includes('magnet:?xt=') || body.includes('uncledatoolsbyajax')
       const meta = [size, date].filter(Boolean).join(' · ');
       const hdBadge = isHD ? '<span style="background: linear-gradient(135deg, #007aff, #0051a8); color: #fff; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle;">HD</span>' : '';
 
-      // 现代精致卡片 UI
+      // 纯原生输入框方案：不依赖 JS，点一下直接在 iOS 唤起全选复制
       return `
         <tr style="border: none;">
           <td colspan="3" style="padding: 6px 0;">
-            <div style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 2px;">
+            <div style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 4px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <div style="font-size: 14px; font-weight: 600; color: #3890ff; display: flex; align-items: center;">
+                <div style="font-size: 14px; font-weight: 600; color: #3890ff;">
                   🧲 ${title} ${hdBadge}
                 </div>
                 <div style="font-size: 11px; color: #888;">${meta}</div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 5px 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
-                <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #aaa; user-select: all; -webkit-user-select: all;">${shortHash}</span>
-                <button onclick="navigator.clipboard.writeText('${magnetUrl}').then(()=>{this.innerText='已复制 ✓';this.style.background='#28a745';setTimeout(()=>{this.innerText='复制';this.style.background='#007aff'},1500)}).catch(()=>{prompt('请手动长按复制:', '${magnetUrl}')})" 
-                  style="background: #007aff; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: 500; cursor: pointer; -webkit-appearance: none;">
-                  复制
-                </button>
-              </div>
-              <div style="display: none;">${magnetUrl}</div>
+              <input type="text" readonly value="${magnetUrl}" onfocus="this.select();" onclick="this.select();" 
+                style="width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 6px 8px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #00e676; outline: none; -webkit-user-select: all; user-select: all;" />
             </div>
           </td>
         </tr>
       `;
     });
   }
+
+  // 2. 针对 Miniflux API 返回的 JSON 格式或纯 <a> 标签兜底
+  const aRegex = /<a\s+[^>]*href=["'](magnet:\?xt=[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  body = body.replace(aRegex, (match, magnetUrl, linkText) => {
+    if (match.includes('input type="text"')) return match;
+    const cleanTitle = linkText.replace(/<[^>]+>/g, '').trim();
+    return `
+      <div style="margin: 8px 0; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
+        <div style="font-weight: 600; color: #3890ff; font-size: 13px; margin-bottom: 4px;">🔗 ${cleanTitle || '磁力链接'}</div>
+        <input type="text" readonly value="${magnetUrl}" onfocus="this.select();" onclick="this.select();" 
+          style="width: 100%; box-sizing: border-box; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; padding: 6px 8px; font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #00e676; outline: none; -webkit-user-select: all; user-select: all;" />
+      </div>
+    `;
+  });
 
   $done({ body: body });
 } else {
