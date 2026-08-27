@@ -1,5 +1,5 @@
 /**
- * Surge Script: Miniflux & SmartRSS 通用磁力卡片化 (全端强兼容版)
+ * Surge Script: Miniflux & JavBus & 草榴 磁力复制卡片 (无跳转纯复制版)
  */
 
 let body = $response ? $response.body : null;
@@ -43,7 +43,7 @@ function handleAllMagnets(html) {
   return html;
 }
 
-// === JavBus 表格重构 ===
+// === 1. JavBus 表格解析 ===
 function parseJavBus(html) {
   if (!html.includes('magnet:?xt=')) return html;
 
@@ -68,13 +68,13 @@ function parseJavBus(html) {
       const meta = [size, date].filter(Boolean).join(' · ');
 
       let badges = '';
-      if (isSub) badges += '<span style="background: rgba(255, 45, 85, 0.15); color: #ff3b30; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 4px; margin-left: 5px;">中字</span>';
-      if (isHD) badges += '<span style="background: rgba(0, 122, 255, 0.15); color: #0a84ff; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 4px; margin-left: 5px;">HD</span>';
+      if (isSub) badges += '<span style="background: rgba(255, 45, 85, 0.2); color: #ff3b30; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 4px; margin-left: 5px;">中字</span>';
+      if (isHD) badges += '<span style="background: rgba(0, 122, 255, 0.2); color: #0a84ff; font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 4px; margin-left: 5px;">HD</span>';
 
       return `
         <tr style="border-top: 1px solid rgba(125, 125, 125, 0.15);">
-          <td colspan="3" style="padding: 8px 4px;">
-            <div style="background: rgba(125, 125, 125, 0.08); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;">
+          <td colspan="3" style="padding: 6px 2px;">
+            <div style="background: rgba(125, 125, 125, 0.08); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="font-size: 13px; font-weight: 600; color: #0969da; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
                   🧲 ${title} ${badges}
@@ -84,10 +84,22 @@ function parseJavBus(html) {
               <div style="display: flex; gap: 6px; align-items: center;">
                 <input type="text" readonly value="${magnetUrl}" onfocus="this.select();" onclick="this.select();" 
                   style="flex: 1; height: 28px; box-sizing: border-box; background: rgba(0,0,0,0.05); border: 1px solid rgba(125,125,125,0.25); border-radius: 4px; padding: 0 6px; font-family: monospace; font-size: 10px; color: #1a7f37; outline: none; -webkit-user-select: all; user-select: all;" />
-                <a href="${magnetUrl}" 
-                  style="height: 28px; line-height: 28px; background: #0969da; color: #fff; text-decoration: none; border-radius: 4px; padding: 0 10px; font-size: 11px; font-weight: 500; text-align: center; white-space: nowrap;">
-                  打开/拷贝
-                </a>
+                <button onclick="
+                  const btn = this;
+                  const input = btn.previousElementSibling;
+                  input.select();
+                  input.setSelectionRange(0, 99999);
+                  let ok = false;
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText('${magnetUrl}').then(() => { ok = true; });
+                  }
+                  try { document.execCommand('copy'); ok = true; } catch(e){}
+                  btn.innerText = '已复制 ✓';
+                  btn.style.background = '#2da44e';
+                  setTimeout(() => { btn.innerText = '复制'; btn.style.background = '#0969da'; }, 1500);
+                " style="height: 28px; background: #0969da; color: #fff; border: none; border-radius: 4px; padding: 0 12px; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; -webkit-appearance: none; transition: background 0.2s;">
+                  复制
+                </button>
               </div>
             </div>
           </td>
@@ -98,7 +110,7 @@ function parseJavBus(html) {
   return html;
 }
 
-// === 草榴 / rmdown 解析 ===
+// === 2. 草榴 / rmdown 解析 ===
 function parseT66y(html) {
   const rmdownRegex = /(?:<a[^>]*href=["'])?(https?:\/\/(?:www\.)?rmdown\.com\/link\.php\?hash=([a-zA-Z0-9]+))(?:["'][^>]*>[\s\S]*?<\/a>)?/gi;
 
@@ -119,10 +131,22 @@ function parseT66y(html) {
           <div style="display: flex; gap: 6px; align-items: center;">
             <input type="text" readonly value="${magnetUrl}" onfocus="this.select();" onclick="this.select();" 
               style="flex: 1; height: 28px; box-sizing: border-box; background: rgba(0,0,0,0.05); border: 1px solid rgba(125,125,125,0.25); border-radius: 4px; padding: 0 6px; font-family: monospace; font-size: 10px; color: #1a7f37; outline: none; -webkit-user-select: all; user-select: all;" />
-            <a href="${magnetUrl}" 
-              style="height: 28px; line-height: 28px; background: #0969da; color: #fff; text-decoration: none; border-radius: 4px; padding: 0 10px; font-size: 11px; font-weight: 500; text-align: center; white-space: nowrap;">
-              打开/拷贝
-            </a>
+            <button onclick="
+              const btn = this;
+              const input = btn.previousElementSibling;
+              input.select();
+              input.setSelectionRange(0, 99999);
+              let ok = false;
+              if (navigator.clipboard) {
+                navigator.clipboard.writeText('${magnetUrl}').then(() => { ok = true; });
+              }
+              try { document.execCommand('copy'); ok = true; } catch(e){}
+              btn.innerText = '已复制 ✓';
+              btn.style.background = '#2da44e';
+              setTimeout(() => { btn.innerText = '复制'; btn.style.background = '#0969da'; }, 1500);
+            " style="height: 28px; background: #0969da; color: #fff; border: none; border-radius: 4px; padding: 0 12px; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; -webkit-appearance: none; transition: background 0.2s;">
+              复制
+            </button>
           </div>
         </div>
       `;
