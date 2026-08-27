@@ -1,22 +1,25 @@
 /**
- * Surge Script: JavBus & FreshRSS/SmartRSS 磁力链接提取与明文化
- * 作用: 拦截 JavBus / FreshRSS / RSSHub 输出，强制把 magnet 转换为带复制框的明文
+ * Surge Script: JavBus 磁力链接优雅卡片化与一键复制
  */
 
 let body = $response ? $response.body : null;
 
 if (body && (body.includes('magnet:?xt=') || body.includes('uncledatoolsbyajax'))) {
 
-  // 1. 处理 JavBus / RSSHub 渲染的 <tr> 表格
+  // 1. 处理 JavBus / RSS 表格行
   const trRegex = /<tr[\s\S]*?<\/tr>/gi;
   if (trRegex.test(body)) {
     body = body.replace(trRegex, (trBlock) => {
-      // 提取磁链 (优先从 onclick 或 href 提取)
+      // 提取磁链
       const magnetMatch = trBlock.match(/magnet:\?xt=[^'"\s<>&]+/i);
       if (!magnetMatch) return trBlock;
       const magnetUrl = magnetMatch[0];
 
-      // 提取名称 (番号)
+      // 提取 Hash 短码 (用于简洁展示)
+      const hashMatch = magnetUrl.match(/btih:([a-zA-Z0-9]{8})/i);
+      const shortHash = hashMatch ? hashMatch[1].toUpperCase() + '...' : 'Magnet';
+
+      // 提取番号/名称
       const nameMatch = trBlock.match(/<td[^>]*width=["']?70%["']?[^>]*>([\s\S]*?)<\/td>/i);
       let title = '磁力下载';
       let isHD = trBlock.includes('高清') || trBlock.includes('HD');
@@ -32,37 +35,34 @@ if (body && (body.includes('magnet:?xt=') || body.includes('uncledatoolsbyajax')
         size = tdList[1][1].replace(/<[^>]+>/g, '').trim();
         date = tdList[2][1].replace(/<[^>]+>/g, '').trim();
       }
-      const meta = [size, date].filter(Boolean).join(' | ');
-      const hdTag = isHD ? '<span style="background:#0d6efd;color:#fff;font-size:10px;padding:1px 4px;border-radius:3px;margin-left:4px;">HD</span>' : '';
+      const meta = [size, date].filter(Boolean).join(' · ');
+      const hdBadge = isHD ? '<span style="background: linear-gradient(135deg, #007aff, #0051a8); color: #fff; font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle;">HD</span>' : '';
 
-      // 重构成手机端极易长按全选复制的卡片
+      // 现代精致卡片 UI
       return `
-        <tr style="border-top: 1px solid #e5e5e5;">
-          <td colspan="3" style="padding: 10px 4px;">
-            <div style="font-weight: bold; color: #1a73e8; font-size: 13px; margin-bottom: 4px;">
-              🧲 ${title} ${hdTag} <span style="font-size: 11px; color: #777; font-weight: normal;">(${meta})</span>
-            </div>
-            <div style="font-size: 11px; font-family: monospace; color: #111; word-break: break-all; -webkit-user-select: all; user-select: all; background: #f4f7fa; padding: 6px 8px; border-radius: 4px; border: 1px solid #cdd5df; line-height: 1.4;">
-              ${magnetUrl}
+        <tr style="border: none;">
+          <td colspan="3" style="padding: 6px 0;">
+            <div style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; padding: 10px 12px; margin-bottom: 2px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <div style="font-size: 14px; font-weight: 600; color: #3890ff; display: flex; align-items: center;">
+                  🧲 ${title} ${hdBadge}
+                </div>
+                <div style="font-size: 11px; color: #888;">${meta}</div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.25); border-radius: 6px; padding: 5px 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <span style="font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: #aaa; user-select: all; -webkit-user-select: all;">${shortHash}</span>
+                <button onclick="navigator.clipboard.writeText('${magnetUrl}').then(()=>{this.innerText='已复制 ✓';this.style.background='#28a745';setTimeout(()=>{this.innerText='复制';this.style.background='#007aff'},1500)}).catch(()=>{prompt('请手动长按复制:', '${magnetUrl}')})" 
+                  style="background: #007aff; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; font-size: 11px; font-weight: 500; cursor: pointer; -webkit-appearance: none;">
+                  复制
+                </button>
+              </div>
+              <div style="display: none;">${magnetUrl}</div>
             </div>
           </td>
         </tr>
       `;
     });
   }
-
-  // 2. 兜底处理：如果不是表格，而是散落的 <a> 标签
-  const aRegex = /<a\s+[^>]*href=["'](magnet:\?xt=[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  body = body.replace(aRegex, (match, magnetUrl, linkText) => {
-    if (match.includes('-webkit-user-select')) return match;
-    const cleanTitle = linkText.replace(/<[^>]+>/g, '').trim();
-    return `
-      <div style="margin: 8px 0; padding: 8px; border: 1px dashed #4a90e2; border-radius: 4px; background: #f7f9fc;">
-        <div style="font-weight: bold; color: #1a73e8; font-size: 12px; margin-bottom: 4px;">🔗 ${cleanTitle || '磁力链接'}</div>
-        <div style="font-size: 11px; font-family: monospace; word-break: break-all; user-select: all; -webkit-user-select: all; background: #fff; padding: 6px; border: 1px solid #d0d7de; border-radius: 4px;">${magnetUrl}</div>
-      </div>
-    `;
-  });
 
   $done({ body: body });
 } else {
