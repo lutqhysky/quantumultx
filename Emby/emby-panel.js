@@ -1,7 +1,7 @@
 /**
  * Surge Emby 观影统计 - 自动初始化版
  */
-const apiKey = "123456";
+const apiKey = $persistentStore.read("Emby_API_Key") || "";
 
 (async () => {
     let panel = { title: "🎬 Emby 观影统计", icon: "play.tv.fill" };
