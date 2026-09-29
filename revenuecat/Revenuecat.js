@@ -17,6 +17,12 @@
    ETag 是响应头、x-revenuecat-* 不是请求头，原删除逻辑等价于空操作，
    已移除；同时移除发给服务器的无用 Cache-Control/Pragma
 9. 移除 original_application_version 硬编码补全，避免干扰 App 版本判断
+10. 终身凭证的 entitlement.expires_date 改为 null（RevenueCat 官方规范：
+    终身无到期时间，不能写远期时间）；"统一延期"阶段保留终身为 null，
+    只延期订阅型，避免把刚注入的 lifetime 又改回远期时间
+11. 已知客观限制：RevenueCat Trusted Entitlements（响应签名校验，
+    EntitlementVerificationMode）在 ENFORCED 模式下改 body 会失效；
+    该功能默认关闭，INFORMATIONAL 模式只上报不拦截
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -103,8 +109,15 @@ const GUESS_NAMES = [
     const nowStr = formatDate(now);
     const origStr = formatDate(new Date(now.getTime() - 3 * 365 * 24 * 3600 * 1000));
 
-    // 两套模板分开：entitlement 只含 entitlement 字段
-    const baseEntitlement = {
+    // 三套模板分开：entitlement 只含 entitlement 字段。
+    // 注意：终身凭证的 expires_date 必须为 null（RevenueCat 官方规范），
+    // 不能写远期时间——部分 App 用 expirationDate == nil 判断是否为终身。
+    const baseEntitlementLifetime = {
+        "grace_period_expires_date": null,
+        "purchase_date": nowStr,
+        "expires_date": null
+    };
+    const baseEntitlementSub = {
         "grace_period_expires_date": null,
         "purchase_date": nowStr,
         "expires_date": FAKE_EXPIRES
@@ -181,7 +194,7 @@ const GUESS_NAMES = [
         for (const n of entNames) {
             sub.entitlements[n] = {
                 ...(sub.entitlements[n] || {}),
-                ...baseEntitlement,
+                ...baseEntitlementSub,
                 "product_identifier": productId
             };
         }
@@ -191,7 +204,7 @@ const GUESS_NAMES = [
         for (const n of entNames) {
             sub.entitlements[n] = {
                 ...(sub.entitlements[n] || {}),
-                ...baseEntitlement,
+                ...baseEntitlementLifetime,
                 "product_identifier": productId
             };
         }
@@ -223,13 +236,16 @@ const GUESS_NAMES = [
         injectSubscription(targetId, GUESS_NAMES);
     }
 
-    // 统一延期现存 entitlement / subscription（保留原有 product_identifier 与 store 等属性）
+    // 统一延期现存 entitlement / subscription（保留原有 product_identifier 与 store 等属性）。
+    // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null，
+    // 只把订阅型的延期到远期——否则上一步注入的 lifetime 会在这里被改回远期时间。
     for (const name of Object.keys(sub.entitlements)) {
         const cur = sub.entitlements[name] || {};
+        const isLifetime = cur.expires_date === null || cur.expires_date === undefined;
         sub.entitlements[name] = {
-            ...baseEntitlement,
+            ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
             ...cur,
-            "expires_date": FAKE_EXPIRES,
+            "expires_date": isLifetime ? null : FAKE_EXPIRES,
             "product_identifier": cur.product_identifier || targetId
         };
     }
@@ -248,12 +264,12 @@ const GUESS_NAMES = [
         const storageKey = `rc_notify_${cleanKey}`;
         const lastNotify = $.getdata(storageKey) || 0;
         if ((Date.now() - parseInt(lastNotify, 10)) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
-            $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入永久凭证`, `有效期至：2098-12-31`);
+            $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2098-12-31`);
             $.setdata(Date.now().toString(), storageKey);
         }
     }
 
-    console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId})${rule ? ' [精确]' : ' [盲猜]'}`);
+    console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId})${rule ? ` [精确/${rule.type}]` : ' [盲猜]'}`);
     $done({ body: JSON.stringify(obj) });
     return;
 })();
