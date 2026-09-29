@@ -34,6 +34,9 @@
 16. 到期时间常量改为 2099-12-31T23:59:59Z（用户要求）
 17. 请求阶段恢复删除 x-revenuecat-etag（纠正第一轮审查的误判：抓包证实
     RevenueCat SDK 确实在请求中携带该头做条件请求；不删会命中 304 无 body）
+18. offerings 诊断增加包映射输出（$rc_annual/$rc_lifetime 等包标识 -> product id，
+    判断订阅/买断的铁证）；盲猜日志的 App 名过滤纯顶级域名
+    （thirteendoots.kelo.com 不再显示为 com）；新增 Kelo 精确规则
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -117,10 +120,16 @@ const GUESS_NAMES = [
             const offerings = obj && obj.offerings;
             if (Array.isArray(offerings)) {
                 const pids = [];
+                const pkgmap = [];
                 offerings.forEach(o => (o.packages || []).forEach(p => {
-                    if (p.platform_product_identifier) pids.push(p.platform_product_identifier);
+                    if (p.platform_product_identifier) {
+                        pids.push(p.platform_product_identifier);
+                        // 包标识（$rc_annual/$rc_monthly/$rc_lifetime 等）是判断订阅/买断的铁证
+                        pkgmap.push(`${p.identifier || '?'} -> ${p.platform_product_identifier}`);
+                    }
                 }));
                 if (pids.length) console.log(`[RC] Offerings 真实 product id: ${[...new Set(pids)].join(' | ')}`);
+                if (pkgmap.length) console.log(`[RC] Offerings 包映射: ${[...new Set(pkgmap)].join(' | ')}`);
             }
         } catch (e) { /* 诊断失败不影响主流程 */ }
         console.log("[RC] 响应体中无 subscriber 对象，跳过修改");
@@ -195,7 +204,11 @@ const GUESS_NAMES = [
         { match: 'Slopes',       name: 'pass',                                               id: 'com.breakthrough.slopes.annual_pass',      type: 'subscription', strict: false },
         // The Outsiders：product id 已从真实响应核实（display_name "Yearly Regular Outsider Absolute"，
         // 用户 2026-03-23 有过一年试用后取消）；entitlement 名未核实，用 GUESS_NAMES 候选集注入
-        { match: 'outsiders',    names: GUESS_NAMES,                                        id: 'app.outsiders.subscription.EB.yearly',    type: 'subscription', strict: false }
+        { match: 'outsiders',    names: GUESS_NAMES,                                        id: 'app.outsiders.subscription.EB.yearly',    type: 'subscription', strict: false },
+        // Kelo：product id 已从 offerings 响应核实（2026-09-30）：
+        // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
+        // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
+        { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
@@ -260,7 +273,11 @@ const GUESS_NAMES = [
         else injectSubscription(rule.id, entNames);
     } else {
         // 盲猜：只走订阅型注入，不写 non_subscriptions，避免同一 product 两边写
-        matchedAppKey = BID ? BID.split('.').pop() : ((rawUA.split('/')[0] || "App").split(' ')[0]);
+        // BID 取最后一段，但过滤纯顶级域名（如 thirteendoots.kelo.com -> com），此时改用 UA 的 App 名
+        const TLD = new Set(['com', 'net', 'org', 'io', 'app', 'dev', 'me', 'co', 'cn']);
+        let keyFromBid = BID ? BID.split('.').pop() : '';
+        if (TLD.has(keyFromBid.toLowerCase())) keyFromBid = '';
+        matchedAppKey = keyFromBid || ((rawUA.split('/')[0] || "App").split(' ')[0]);
         targetId = BID ? `${BID}.subscription` : `com.${matchedAppKey.toLowerCase()}.subscription`;
         injectSubscription(targetId, GUESS_NAMES);
     }
