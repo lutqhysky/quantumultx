@@ -11,7 +11,7 @@
 5. 规则表新增 type 字段：lifetime 只写 non_subscriptions，subscription
    只写 subscriptions；同一 product 不再两边同时写
 6. 'Law' 改为词边界严格匹配，避免 Flawless、LawnCare 等误命中
-7. 到期时间改用 UTC 常量 '2098-12-31T23:59:59Z'，与通知文案一致；
+7. 到期时间改用 UTC 常量 '2099-12-31T23:59:59Z'，与通知文案一致；
    删除"2099 溢出"错误注释（JS Date 上限是 275760 年）
 8. 请求阶段只删真实存在的条件缓存头（if-none-match/if-modified-since）；
    ETag 是响应头、x-revenuecat-* 不是请求头，原删除逻辑等价于空操作，
@@ -27,12 +27,15 @@
 13. 通知节流 key 命名空间升级为 rc_notify_v2_，与旧版脚本的节流记录隔离
 14. 非订阅响应诊断：记录顶层 keys；offerings 响应额外抓取真实 platform_product_identifier，
     用于给未知 App 补充精确规则（只记 key 名，不记 token）
+15. 规则支持 names 数组（候选 entitlement 集）；新增 The Outsiders 精确规则，
+    product 用真实响应核实的 app.outsiders.subscription.EB.yearly（年订阅），entitlement 用候选集
+16. 到期时间常量改为 2099-12-31T23:59:59Z（用户要求）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
 const NOTIFY_INTERVAL_HOURS = 12;
-// 到期时间用 UTC 常量，与通知文案"有效期至：2098-12-31"一致
-const FAKE_EXPIRES = '2098-12-31T23:59:59Z';
+// 到期时间用 UTC 常量，与通知文案"有效期至：2099-12-31"一致
+const FAKE_EXPIRES = '2099-12-31T23:59:59Z';
 
 // 精准排除项（全小写匹配）
 const EXCLUDE_BUNDLE_IDS = [
@@ -185,7 +188,10 @@ const GUESS_NAMES = [
         { match: 'Craft',        name: 'pro',                                                id: 'com.lukilabs.craft.pro.annual',             type: 'subscription', strict: false },
         { match: 'Structured',   name: 'pro',                                                id: 'today.structured.pro',                      type: 'subscription', strict: false },
         { match: 'Figma',        name: 'pro',                                                id: 'com.figma.ios.pro',                         type: 'subscription', strict: false },
-        { match: 'Slopes',       name: 'pass',                                               id: 'com.breakthrough.slopes.annual_pass',      type: 'subscription', strict: false }
+        { match: 'Slopes',       name: 'pass',                                               id: 'com.breakthrough.slopes.annual_pass',      type: 'subscription', strict: false },
+        // The Outsiders：product id 已从真实响应核实（display_name "Yearly Regular Outsider Absolute"，
+        // 用户 2026-03-23 有过一年试用后取消）；entitlement 名未核实，用 GUESS_NAMES 候选集注入
+        { match: 'outsiders',    names: GUESS_NAMES,                                        id: 'app.outsiders.subscription.EB.yearly',    type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
@@ -242,11 +248,12 @@ const GUESS_NAMES = [
 
     let matchedAppKey, targetId;
     if (rule) {
-        // 精确命中：按 type 只写一边
+        // 精确命中：按 type 只写一边；entitlement 支持 names 数组（候选集，未核实）或单个 name
+        const entNames = rule.names || [rule.name];
         matchedAppKey = rule.match;
         targetId = rule.id;
-        if (rule.type === 'lifetime') injectLifetime(rule.id, [rule.name]);
-        else injectSubscription(rule.id, [rule.name]);
+        if (rule.type === 'lifetime') injectLifetime(rule.id, entNames);
+        else injectSubscription(rule.id, entNames);
     } else {
         // 盲猜：只走订阅型注入，不写 non_subscriptions，避免同一 product 两边写
         matchedAppKey = BID ? BID.split('.').pop() : ((rawUA.split('/')[0] || "App").split(' ')[0]);
@@ -284,7 +291,7 @@ const GUESS_NAMES = [
         const lastNotify = $.getdata(storageKey) || 0;
         const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
         if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
-            $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2098-12-31`);
+            $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
             $.setdata(Date.now().toString(), storageKey);
             console.log(`[RC] 已发送通知: ${storageKey}`);
         } else {
