@@ -23,6 +23,7 @@
 11. 已知客观限制：RevenueCat Trusted Entitlements（响应签名校验，
     EntitlementVerificationMode）在 ENFORCED 模式下改 body 会失效；
     该功能默认关闭，INFORMATIONAL 模式只上报不拦截
+12. 通知决策加调试日志：发送/节流跳过都会打日志，方便排查"没通知"问题
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -263,9 +264,13 @@ const GUESS_NAMES = [
         const cleanKey = rule.match.replace(/[^a-zA-Z0-9_-]/g, '_');
         const storageKey = `rc_notify_${cleanKey}`;
         const lastNotify = $.getdata(storageKey) || 0;
-        if ((Date.now() - parseInt(lastNotify, 10)) / 36e5 >= NOTIFY_INTERVAL_HOURS) {
+        const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
+        if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
             $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2098-12-31`);
             $.setdata(Date.now().toString(), storageKey);
+            console.log(`[RC] 已发送通知: ${storageKey}`);
+        } else {
+            console.log(`[RC] 通知节流中，跳过 (距上次 ${hoursSince.toFixed(1)}h，阈值 ${NOTIFY_INTERVAL_HOURS}h): ${storageKey}`);
         }
     }
 
