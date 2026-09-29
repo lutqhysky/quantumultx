@@ -24,6 +24,9 @@
     EntitlementVerificationMode）在 ENFORCED 模式下改 body 会失效；
     该功能默认关闭，INFORMATIONAL 模式只上报不拦截
 12. 通知决策加调试日志：发送/节流跳过都会打日志，方便排查"没通知"问题
+13. 通知节流 key 命名空间升级为 rc_notify_v2_，与旧版脚本的节流记录隔离
+14. 非订阅响应诊断：记录顶层 keys；offerings 响应额外抓取真实 platform_product_identifier，
+    用于给未知 App 补充精确规则（只记 key 名，不记 token）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -99,6 +102,20 @@ const GUESS_NAMES = [
     }
 
     if (!obj || !obj.subscriber) {
+        // 诊断：非订阅响应也记录顶层 keys；如果是 offerings，顺手抓出真实 product id，
+        // 用于给未知 App 补充精确规则（只记录 key 名，不记录任何 token/隐私字段）
+        try {
+            const keys = obj ? Object.keys(obj).join(',') : '空body';
+            console.log(`[RC] 非订阅响应，keys=[${keys}]`);
+            const offerings = obj && obj.offerings;
+            if (Array.isArray(offerings)) {
+                const pids = [];
+                offerings.forEach(o => (o.packages || []).forEach(p => {
+                    if (p.platform_product_identifier) pids.push(p.platform_product_identifier);
+                }));
+                if (pids.length) console.log(`[RC] Offerings 真实 product id: ${[...new Set(pids)].join(' | ')}`);
+            }
+        } catch (e) { /* 诊断失败不影响主流程 */ }
         console.log("[RC] 响应体中无 subscriber 对象，跳过修改");
         $done({});
         return;
@@ -259,10 +276,11 @@ const GUESS_NAMES = [
         };
     }
 
-    // 通知节流：只在精确命中时发送，盲猜不再误报
+    // 通知节流：只在精确命中时发送，盲猜不再误报。
+    // key 用 v2 命名空间，与旧版脚本的节流记录隔离，避免旧记录导致长期不通知。
     if (rule) {
         const cleanKey = rule.match.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const storageKey = `rc_notify_${cleanKey}`;
+        const storageKey = `rc_notify_v2_${cleanKey}`;
         const lastNotify = $.getdata(storageKey) || 0;
         const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
         if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
