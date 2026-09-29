@@ -13,9 +13,11 @@
 6. 'Law' 改为词边界严格匹配，避免 Flawless、LawnCare 等误命中
 7. 到期时间改用 UTC 常量 '2099-12-31T23:59:59Z'，与通知文案一致；
    删除"2099 溢出"错误注释（JS Date 上限是 275760 年）
-8. 请求阶段只删真实存在的条件缓存头（if-none-match/if-modified-since）；
-   ETag 是响应头、x-revenuecat-* 不是请求头，原删除逻辑等价于空操作，
-   已移除；同时移除发给服务器的无用 Cache-Control/Pragma
+8. 请求阶段删除条件缓存头（if-none-match/if-modified-since/x-revenuecat-etag），
+   强制服务器回 200 全量响应，避免 304 无 body 导致脚本无从修改；
+   【纠正】此前曾误删 x-revenuecat-etag 处理，抓包证实 RevenueCat SDK 确实
+   在请求中携带该头做条件请求，已恢复删除；
+   同时移除发给服务器的无用 Cache-Control/Pragma
 9. 移除 original_application_version 硬编码补全，避免干扰 App 版本判断
 10. 终身凭证的 entitlement.expires_date 改为 null（RevenueCat 官方规范：
     终身无到期时间，不能写远期时间）；"统一延期"阶段保留终身为 null，
@@ -30,6 +32,8 @@
 15. 规则支持 names 数组（候选 entitlement 集）；新增 The Outsiders 精确规则，
     product 用真实响应核实的 app.outsiders.subscription.EB.yearly（年订阅），entitlement 用候选集
 16. 到期时间常量改为 2099-12-31T23:59:59Z（用户要求）
+17. 请求阶段恢复删除 x-revenuecat-etag（纠正第一轮审查的误判：抓包证实
+    RevenueCat SDK 确实在请求中携带该头做条件请求；不删会命中 304 无 body）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -58,12 +62,12 @@ const GUESS_NAMES = [
     // ---------- 1. 请求阶段：破除 304 缓存 ----------
     if (typeof $response === "undefined") {
         const headers = $request.headers || {};
-        // 只删真实存在的客户端条件缓存头。
-        // 注意：ETag 是响应头，客户端请求里不会有；x-revenuecat-etag /
-        // x-revenuecat-last-receive-time 也不是标准请求头，删了等于没删。
+        // 破除条件缓存：RevenueCat SDK 用 x-revenuecat-etag 做条件请求，
+        // 命中缓存会返回 304（无 body），脚本就改不到响应。删掉它强制回 200 全量。
+        // 标准条件头 If-None-Match / If-Modified-Since 顺手也删。
         for (const k of Object.keys(headers)) {
             const lk = k.toLowerCase();
-            if (lk === 'if-none-match' || lk === 'if-modified-since') {
+            if (lk === 'if-none-match' || lk === 'if-modified-since' || lk === 'x-revenuecat-etag') {
                 delete headers[k];
             }
         }
