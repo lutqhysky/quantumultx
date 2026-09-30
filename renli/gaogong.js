@@ -3,8 +3,8 @@ const $ = new Env("山西人社职称公告");
 // 日志等级
 $.logLevel = ($.getdata("sxzc_debug") === "true") ? "debug" : "info";
 
-// 免责声明
-showDisclaimer();
+// 免责声明（仅调试模式打印，避免 cron 每次运行刷屏）
+if ($.logLevel === "debug") showDisclaimer();
 $.info("日志等级: " + $.logLevel.toUpperCase());
 
 // ========== 配置 ==========
@@ -37,7 +37,7 @@ const Config = {
 };
 
 Config.keywords = Config.keywordsRaw.split("|").map(s => s.trim()).filter(Boolean);
-if (Config.recentDaysOrange < Config.recentDaysRed) Config.recentDaysOrange = 60;
+if (Config.recentDaysOrange < Config.recentDaysRed) Config.recentDaysOrange = Config.recentDaysRed;
 
 $.debug("当前配置: " + $.toStr({
   url: Config.url,
@@ -147,7 +147,7 @@ const CacheKeys = {
   if (recentRed > 0) {
     panelTitle = $.name + " — 🔴" + recentRed + "条近期公告";
   } else if (recentOrange > 0) {
-    panelTitle = $.name + " — 🟠" + recentOrange + "条近60天公告";
+    panelTitle = $.name + " — 🟠" + recentOrange + "条近" + Config.recentDaysOrange + "天公告";
   }
 
   const panelContent = panelList.map((item, idx) => {
@@ -267,6 +267,7 @@ function nowTime() {
 }
 
 function isWorkday() {
+  // 注意：仅按周几判断，未考虑法定节假日调休（调休上班的周日会跳过检查）
   const now = new Date();
   const day = now.getDay();
   return day >= 1 && day <= 5;
@@ -346,13 +347,18 @@ function makeId(item) {
 }
 
 async function httpGet(url) {
-  const { body } = await $.http.get({
+  // 15 秒超时（setTimeout 为毫秒，平台无关；不依赖各平台 $httpClient 的 timeout 参数）
+  const req = $.http.get({
     url: url,
     headers: {
       "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
       "Accept-Language": "zh-CN,zh-Hans;q=0.9"
     }
   });
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error("页面请求超时（15秒）")), 15000)
+  );
+  const { body } = await Promise.race([req, timeout]);
   return body || "";
 }
 
