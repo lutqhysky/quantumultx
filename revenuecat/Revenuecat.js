@@ -37,6 +37,8 @@
 18. offerings 诊断增加包映射输出（$rc_annual/$rc_lifetime 等包标识 -> product id，
     判断订阅/买断的铁证）；盲猜日志的 App 名过滤纯顶级域名
     （thirteendoots.kelo.com 不再显示为 com）；新增 Kelo 精确规则
+19. 新增谜底时钟精确规则：真实 product tech.miidii.MDClock.subscription.year.v1、
+    真实 entitlement 名 Entitlement.Pro 均从服务器响应核实，不再用候选集
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -208,7 +210,11 @@ const GUESS_NAMES = [
         // Kelo：product id 已从 offerings 响应核实（2026-09-30）：
         // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
         // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
-        { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false }
+        { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false },
+        // 谜底时钟：product 与 entitlement 均已从真实响应核实（2026-10-03）：
+        // 真实试用记录 tech.miidii.MDClock.subscription.year.v1（period_type trial），
+        // 真实 entitlement 名为 Entitlement.Pro（注意大小写）；不再用候选集
+        { match: 'miidii',        name: 'Entitlement.Pro',                                   id: 'tech.miidii.MDClock.subscription.year.v1',  type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
