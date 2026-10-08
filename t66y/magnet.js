@@ -53,6 +53,9 @@ if (body) {
     }
   } else {
     // 2. 处理普通 HTML 网页
+    // Miniflux 网页自带 CSP meta 标签（style-src/script-src 仅允许 nonce），会拦截内联样式和 onclick，
+    // 导致注入的卡片无样式。直接移除该标签（私有单用户实例，风险可忽略；Miniflux 自身 UI 不受影响）。
+    body = body.replace(/<meta[^>]*http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '');
     body = handleAllMagnets(body);
   }
 
