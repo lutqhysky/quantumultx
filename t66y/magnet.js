@@ -2,6 +2,16 @@
  * Surge Script: Miniflux & SmartRSS 通用磁力卡片化 (JavBus + 草榴 完美排版版)
  */
 
+// === 磁力卡片样式（与「代表作」磁力页统一：米黄圆角卡片 + 复制磁力按钮） ===
+const CARD_WRAP = 'display:block;margin:12px 0 16px 0;clear:both;';
+const CARD_BOX = 'background:#f7f2e9;border:1px solid #e9e1d2;border-radius:12px;overflow:hidden;';
+const MAG_TEXT = 'padding:12px 14px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;color:#3a3a3a;word-break:break-all;-webkit-user-select:all;user-select:all;';
+const COPY_BTN = 'border-top:1px solid #e9e1d2;padding:11px 14px;color:#c0392b;font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;';
+// 自包含的复制逻辑：不依赖外部 <script>，从相邻 data-mag 元素读取磁链；
+// 复制成功后该行变红底白字并提示「已复制 ✓」
+const COPY_JS = "(function(b){var t=b.parentNode.querySelector('[data-mag]').innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
+
+
 let body = $response ? $response.body : null;
 
 if (body) {
@@ -76,13 +86,14 @@ function parseJavBus(html) {
 
     // 采用带外边距的独立块级卡片，强制换行不粘连
     return `
-      <div style="display: block; margin: 12px 0 16px 0; clear: both;">
+      <div style="${CARD_WRAP}">
         <div style="font-size: 13px; font-weight: bold; color: #24292f; margin-bottom: 6px; line-height: 1.4;">
           🧲 ${title}${badges} <span style="font-size: 11px; color: #888; font-weight: normal;">(${meta})</span>
         </div>
-        <blockquote style="display: block; margin: 0; padding: 8px 10px; border-left: 3.5px solid #2b5797; background: rgba(125, 125, 125, 0.06); border-radius: 0 4px 4px 0;">
-          <code style="display: block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.4; color: #333; word-break: break-all; -webkit-user-select: all; user-select: all;">${magnetUrl}</code>
-        </blockquote>
+        <div style="${CARD_BOX}">
+          <div data-mag style="${MAG_TEXT}">${magnetUrl}</div>
+          <div onclick="${COPY_JS}" style="${COPY_BTN}">复制磁力</div>
+        </div>
       </div>
     `;
   });
@@ -110,11 +121,11 @@ function parseT66y(html) {
       const magnetUrl = `magnet:?xt=urn:btih:${realHash.toUpperCase()}`;
 
       return `
-        <div style="display: block; margin: 16px 0; clear: both;">
-          <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #24292f;">複製代碼</div>
-          <blockquote style="display: block; margin: 0; padding: 8px 12px; border-left: 3.5px solid #2b5797; background: rgba(125, 125, 125, 0.06); border-radius: 0 4px 4px 0;">
-            <code style="display: block; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; color: #333; word-break: break-all; -webkit-user-select: all; user-select: all;">${magnetUrl}</code>
-          </blockquote>
+        <div style="${CARD_WRAP}">
+          <div style="${CARD_BOX}">
+            <div data-mag style="${MAG_TEXT}">${magnetUrl}</div>
+            <div onclick="${COPY_JS}" style="${COPY_BTN}">复制磁力</div>
+          </div>
         </div>
       `;
     });
