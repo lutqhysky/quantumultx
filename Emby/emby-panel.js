@@ -1,11 +1,18 @@
 /**
  * Surge Emby 观影统计 - 自动初始化版
  */
-const apiKey = "123456";
+// API Key 不再硬编码，需通过持久化存储配置（例如使用单独的配置脚本写入 "Emby_Api_Key"）
+const apiKey = $persistentStore.read("Emby_Api_Key");
 
 (async () => {
     let panel = { title: "🎬 Emby 观影统计", icon: "play.tv.fill" };
-    
+
+    if (!apiKey) {
+        panel.content = "未配置 Emby_Api_Key，请先设置";
+        $done(panel);
+        return;
+    }
+
     // 读取持久化数据
     let lastTotal = parseFloat($persistentStore.read("Emby_Last_Total") || "-1");
     let sessionData = parseFloat($persistentStore.read("Emby_Session_Data") || "0");
