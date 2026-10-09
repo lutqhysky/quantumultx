@@ -214,7 +214,9 @@ const GUESS_NAMES = [
         // 谜底时钟：product 与 entitlement 均已从真实响应核实（2026-10-03）：
         // 真实试用记录 tech.miidii.MDClock.subscription.year.v1（period_type trial），
         // 真实 entitlement 名为 Entitlement.Pro（注意大小写）；不再用候选集
-        { match: 'miidii',        name: 'Entitlement.Pro',                                   id: 'tech.miidii.MDClock.subscription.year.v1',  type: 'subscription', strict: false }
+        { match: 'miidii',        name: 'Entitlement.Pro',                                   id: 'tech.miidii.MDClock.subscription.year.v1',  type: 'subscription', strict: false },
+        // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
+        { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
