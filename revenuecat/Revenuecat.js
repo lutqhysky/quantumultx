@@ -39,6 +39,9 @@
     （thirteendoots.kelo.com 不再显示为 com）；新增 Kelo 精确规则
 19. 新增谜底时钟精确规则：真实 product tech.miidii.MDClock.subscription.year.v1、
     真实 entitlement 名 Entitlement.Pro 均从服务器响应核实，不再用候选集
+20. 盲猜增强：GUESS_NAMES 从 11 扩到 24 个常用名；新增 buildGuessNames(BID)，
+    从 BID 有意义片段派生 "<token>.pro/premium/vip/plus/gold/membership"
+    （如 datacalc.pro），去重后注入——DataCalc 这类命名现在可被盲猜命中
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -60,8 +63,31 @@ const EXCLUDE_UA_PREFIXES = [
 // 盲猜用的通用 entitlement 名
 const GUESS_NAMES = [
     'pro', 'premium', 'plus', 'vip', 'all', 'gold',
-    'membership', 'advanced', 'lifetime', 'ultimate', 'super'
+    'membership', 'advanced', 'lifetime', 'ultimate', 'super',
+    'unlock', 'paid', 'full', 'business', 'team', 'family',
+    'member', 'subscriber', 'deluxe', 'prime', 'elite',
+    'premium_yearly', 'pro_yearly'
 ];
+
+// 盲猜候选名构建：静态通用名 + 从 BID 派生的 "<token>.<suffix>"
+// 例如 BID 含 datacalc 时会生成 datacalc.pro / datacalc.premium ……（DataCalc 真实 entitlement 就是 datacalc.pro）
+// token 过滤顶级域名与通用词，避免生成 com.pro 这类无意义候选
+const GUESS_SUFFIXES = ['pro', 'premium', 'vip', 'plus', 'gold', 'membership'];
+const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 'mobile', 'inc', 'ltd', 'beta']);
+
+function buildGuessNames(bid) {
+    const names = GUESS_NAMES.slice();
+    const seen = new Set(names);
+    const tokens = (bid || '').toLowerCase().split('.')
+        .filter(t => t && t.length > 1 && !BID_NOISE.has(t));
+    for (const tok of tokens) {
+        for (const suf of GUESS_SUFFIXES) {
+            const n = tok + '.' + suf;
+            if (!seen.has(n)) { seen.add(n); names.push(n); }
+        }
+    }
+    return names;
+}
 
 (function main() {
     // ---------- 1. 请求阶段：破除 304 缓存 ----------
@@ -287,7 +313,8 @@ const GUESS_NAMES = [
         if (TLD.has(keyFromBid.toLowerCase())) keyFromBid = '';
         matchedAppKey = keyFromBid || ((rawUA.split('/')[0] || "App").split(' ')[0]);
         targetId = BID ? `${BID}.subscription` : `com.${matchedAppKey.toLowerCase()}.subscription`;
-        injectSubscription(targetId, GUESS_NAMES);
+        // 盲猜候选集：静态通用名 + BID 派生（如 datacalc.pro）
+        injectSubscription(targetId, buildGuessNames(BID));
     }
 
     // 统一延期现存 entitlement / subscription（保留原有 product_identifier 与 store 等属性）。
