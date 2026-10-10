@@ -1,5 +1,11 @@
 /**
  * Surge Script: Miniflux & SmartRSS 通用磁力卡片化 (JavBus 表格 + 草榴 rmdown + 裸磁链)
+ *
+ * 双模式：
+ * - HTML 分支（Safari 直接浏览）：米黄圆角卡片 + JS 复制磁力按钮（样式与交互完整）
+ * - JSON 分支（Miniflux / SmartRSS API）：净化器安全版卡片——只用 Miniflux 白名单标签
+ *   （p/strong/pre/a[href]），无 div/span、无内联样式、无 JS；magnet: 在 Miniflux
+ *   validURISchemes 白名单内，<a href="magnet:..."> 可保留，点击直接调用 BT 客户端
  */
 
 // === 磁力卡片样式（与「代表作」磁力页统一：米黄圆角卡片 + 复制磁力按钮） ===
@@ -12,7 +18,7 @@ const COPY_BTN = 'border-top:1px solid #e9e1d2;padding:11px 14px;color:#c0392b;f
 const COPY_JS = "(function(b){var t=b.parentNode.querySelector('[data-mag]').innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
 
 
-// === 通用磁力卡片（米黄圆角 + 复制磁力按钮） ===
+// === 通用磁力卡片（米黄圆角 + 复制磁力按钮，仅 HTML 分支） ===
 function magnetCard(magnetUrl) {
   return `
       <div style="${CARD_WRAP}">
@@ -24,6 +30,25 @@ function magnetCard(magnetUrl) {
     `;
 }
 
+// === 净化器安全版磁力卡片（仅 JSON/Miniflux 分支）===
+// Miniflux 后端净化器会剥离 div/span/button、style/class/on* 属性及 script/style 标签，
+// 因此只用白名单标签与属性。JS 复制不可用，改用 <a href="magnet:"> 点击直调 BT 客户端，
+// 磁链原文放在 <pre> 里长按可手动复制。
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function magnetCardSafe(magnetUrl) {
+  const safe = escHtml(magnetUrl);
+  return `
+      <hr>
+      <p><strong>🧲 磁力连接</strong></p>
+      <pre data-magsafe>${safe}</pre>
+      <p><a href="${safe}">👆 点此调用 BT 客户端打开</a>（长按上方磁链可手动复制）</p>
+    `;
+}
+// 按分支选择卡片构建器
+function cardBuilder(safe) { return safe ? magnetCardSafe : magnetCard; }
+
 
 let body = $response ? $response.body : null;
 
@@ -34,14 +59,14 @@ if (body) {
       let data = JSON.parse(body);
       const processItem = (item) => {
         if (item.content && typeof item.content === 'string') {
-          item.content = handleAllMagnets(item.content);
+          item.content = handleAllMagnets(item.content, true);
         } else if (item.content && item.content.content) {
-          item.content.content = handleAllMagnets(item.content.content);
+          item.content.content = handleAllMagnets(item.content.content, true);
         }
         if (item.summary && typeof item.summary === 'string') {
-          item.summary = handleAllMagnets(item.summary);
+          item.summary = handleAllMagnets(item.summary, true);
         } else if (item.summary && item.summary.content) {
-          item.summary.content = handleAllMagnets(item.summary.content);
+          item.summary.content = handleAllMagnets(item.summary.content, true);
         }
       };
 
@@ -64,17 +89,18 @@ if (body) {
   $done({});
 }
 
-function handleAllMagnets(html) {
+function handleAllMagnets(html, safe) {
   if (!html) return html;
-  html = parseJavBus(html);
-  html = parseT66y(html);
-  html = parsePlainMagnets(html);
+  html = parseJavBus(html, safe);
+  html = parseT66y(html, safe);
+  html = parsePlainMagnets(html, safe);
   return html;
 }
 
 // === 1. JavBus 表格解析与重构 ===
-function parseJavBus(html) {
+function parseJavBus(html, safe) {
   if (!html.includes('magnet:?xt=')) return html;
+  const buildCard = cardBuilder(safe);
 
   // 1. 匹配并重构每一行 <tr>
   const trRegex = /<tr[\s\S]*?<\/tr>/gi;
@@ -97,6 +123,15 @@ function parseJavBus(html) {
     let date = tdList.length >= 3 ? tdList[2][1].replace(/<[^>]+>/g, '').trim() : '';
     const meta = [size, date].filter(Boolean).join(' · ');
 
+    if (safe) {
+      // 净化器安全版标题行：纯文本徽标，无 span/div/style
+      const badges = (isSub ? ' [中字]' : '') + (isHD ? ' [HD]' : '');
+      return `
+      <p><strong>🧲 ${title}${badges} (${meta})</strong></p>
+      ${buildCard(magnetUrl)}
+    `;
+    }
+
     let badges = '';
     if (isSub) badges += ' <span style="color:#ff3b30;font-weight:bold;font-size:11px;">[中字]</span>';
     if (isHD) badges += ' <span style="color:#0a84ff;font-weight:bold;font-size:11px;">[HD]</span>';
@@ -106,7 +141,7 @@ function parseJavBus(html) {
       <div style="font-size: 13px; font-weight: bold; color: #24292f; margin: 12px 0 6px 0; line-height: 1.4; clear: both;">
         🧲 ${title}${badges} <span style="font-size: 11px; color: #888; font-weight: normal;">(${meta})</span>
       </div>
-      ${magnetCard(magnetUrl)}
+      ${buildCard(magnetUrl)}
     `;
   });
 
@@ -121,7 +156,7 @@ function parseJavBus(html) {
 }
 
 // === 2. 草榴 / rmdown 解析 ===
-function parseT66y(html) {
+function parseT66y(html, safe) {
   const rmdownRegex = /(?:<a[^>]*href=["'])?(https?:\/\/(?:www\.)?rmdown\.com\/link\.php\?hash=([a-zA-Z0-9]+))(?:["'][^>]*>[\s\S]*?<\/a>)?/gi;
 
   if (rmdownRegex.test(html)) {
@@ -132,15 +167,16 @@ function parseT66y(html) {
       }
       const magnetUrl = `magnet:?xt=urn:btih:${realHash.toUpperCase()}`;
 
-      return magnetCard(magnetUrl);
+      return cardBuilder(safe)(magnetUrl);
     });
   }
   return html;
 }
 
 // === 3. 裸磁链（纯文本 magnet:?xt=urn:btih:HASH，如 t66y 帖文）卡片化 ===
-function parsePlainMagnets(html) {
+function parsePlainMagnets(html, safe) {
   if (!html || html.indexOf('magnet:?') === -1) return html;
+  const buildCard = cardBuilder(safe);
 
   // 先把 magnet:? 与 xt= 之间的 <br>/换行/分段合并，避免切分器把它们拆到不同文本块
   html = html.replace(/(magnet:\?)\s*((?:<br\s*\/?>|<\/?(?:p|div)[^>]*>)\s*)+(?=xt=urn:btih:)/gi, '$1');
@@ -148,7 +184,7 @@ function parsePlainMagnets(html) {
   // 暂存已生成的卡片（HTML 注释形式），避免重复处理卡片内的磁链；
   // 注释会被切分器视为"标签"而自然跳过
   const stash = [];
-  html = html.replace(/<div data-mag[\s\S]*?<\/div>/gi, (m) => {
+  html = html.replace(/(<div data-mag[\s\S]*?<\/div>|<pre data-magsafe>[\s\S]*?<\/pre>)/gi, (m) => {
     stash.push(m);
     return '<!--MAGSTASH' + (stash.length - 1) + '-->';
   });
@@ -160,7 +196,7 @@ function parsePlainMagnets(html) {
   for (let i = 0; i < parts.length; i += 2) {
     parts[i] = parts[i].replace(magnetRe, (full) => {
       const magnetUrl = full.replace(/\s+/g, '').replace(/<br\s*\/?>/gi, '').replace(/&amp;/gi, '&');
-      return magnetCard(magnetUrl);
+      return buildCard(magnetUrl);
     });
   }
   html = parts.join('');
