@@ -47,6 +47,11 @@
 22. 新增 Snipd 精确规则：entitlement premium、product
     snipd_premium_1y_7199_trial_2w_v2（年订 71.99/2周试用），数据取自上游
     Reheji.js，尚未用 offerings/真实响应核实，待用户实机验证
+23. 盲猜数据驱动升级（422 条真实映射词频统计）：
+    GUESS_NAMES 24 → 40，新增 Pro/Premium/VIP/Plus 大小写变体（合计 65 条样本）
+    及 Pro access/patron/Entitlement.Pro/allaccess 等高频真实名；
+    GUESS_SUFFIXES 新增 lifetime/yearly/annual/forever（真实 entitlement 尾段高频）；
+    BID_NOISE 新增 me、www（bundle-id 纯前缀噪声）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -66,19 +71,27 @@ const EXCLUDE_UA_PREFIXES = [
 ];
 
 // 盲猜用的通用 entitlement 名
+// 数据来源：2026-10-14 对上游 Reheji.js 422 条真实映射的词频统计，
+// pro(134, 含 Pro 31)、premium(70, 含 Premium 28) 占绝对多数，其余按出现频次 >= 2 收录
 const GUESS_NAMES = [
-    'pro', 'premium', 'plus', 'vip', 'all', 'gold',
+    'pro', 'Pro', 'premium', 'Premium', 'plus', 'Plus', 'vip', 'VIP',
+    'all', 'allaccess', 'gold',
     'membership', 'advanced', 'lifetime', 'ultimate', 'super',
     'unlock', 'paid', 'full', 'business', 'team', 'family',
     'member', 'subscriber', 'deluxe', 'prime', 'elite',
-    'premium_yearly', 'pro_yearly'
+    'premium_yearly', 'pro_yearly',
+    'Pro access', 'pro_access', 'premium_access', 'pro_subscription',
+    'All Access', 'AI Plus', 'ProVersionLifeTime', 'pro_lifetime',
+    'pro-iOS', 'patron', 'Entitlement.Pro'
 ];
 
 // 盲猜候选名构建：静态通用名 + 从 BID 派生的 "<token>.<suffix>"
 // 例如 BID 含 datacalc 时会生成 datacalc.pro / datacalc.premium ……（DataCalc 真实 entitlement 就是 datacalc.pro）
 // token 过滤顶级域名与通用词，避免生成 com.pro 这类无意义候选
-const GUESS_SUFFIXES = ['pro', 'premium', 'vip', 'plus', 'gold', 'membership'];
-const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 'mobile', 'inc', 'ltd', 'beta']);
+// 后缀数据来源：422 条真实 entitlement 名尾段统计，pro(21) 居首，lifetime/yearly/annual/forever 为高频尾段
+const GUESS_SUFFIXES = ['pro', 'premium', 'vip', 'plus', 'gold', 'membership', 'lifetime', 'yearly', 'annual', 'forever'];
+// 噪声 token 数据来源：同上 bundle-id token 统计；me(如 me.xgmm.*)、www 为纯前缀噪声
+const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 'mobile', 'inc', 'ltd', 'beta', 'me', 'www']);
 
 function buildGuessNames(bid) {
     const names = GUESS_NAMES.slice();
