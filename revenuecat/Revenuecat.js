@@ -42,6 +42,8 @@
 20. 盲猜增强：GUESS_NAMES 从 11 扩到 24 个常用名；新增 buildGuessNames(BID)，
     从 BID 有意义片段派生 "<token>.pro/premium/vip/plus/gold/membership"
     （如 datacalc.pro），去重后注入——DataCalc 这类命名现在可被盲猜命中
+21. 新增成语日历精确规则：entitlement 名 calendar、product id
+    com.fiachra.DailyIdiomApp.yearly，均已核实（2026-10-14 用户提供）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -242,7 +244,9 @@ function buildGuessNames(bid) {
         // 真实 entitlement 名为 Entitlement.Pro（注意大小写）；不再用候选集
         { match: 'miidii',        name: 'Entitlement.Pro',                                   id: 'tech.miidii.MDClock.subscription.year.v1',  type: 'subscription', strict: false },
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
-        { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false }
+        { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
+        // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
+        { match: 'dailyidiom',    name: 'calendar',                                          id: 'com.fiachra.DailyIdiomApp.yearly',            type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
