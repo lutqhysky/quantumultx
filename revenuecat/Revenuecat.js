@@ -52,6 +52,9 @@
     及 Pro access/patron/Entitlement.Pro/allaccess 等高频真实名；
     GUESS_SUFFIXES 新增 lifetime/yearly/annual/forever（真实 entitlement 尾段高频）；
     BID_NOISE 新增 me、www（bundle-id 纯前缀噪声）
+24. 盲猜派生模式补全：新增 "<token>_<suffix>"（umai_pro 类）与
+    "<全BID>.<suffix>" / "<全BID>_<suffix>"（io.fadel.teleprompterx.pro、
+    com.minardwu.cocam_lifetime 类）；bundle 样本完整盲猜命中率 69.4% → 77.8%
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -96,12 +99,22 @@ const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 
 function buildGuessNames(bid) {
     const names = GUESS_NAMES.slice();
     const seen = new Set(names);
-    const tokens = (bid || '').toLowerCase().split('.')
+    const blo = (bid || '').toLowerCase();
+    const tokens = blo.split('.')
         .filter(t => t && t.length > 1 && !BID_NOISE.has(t));
+    const push = (n) => { if (!seen.has(n)) { seen.add(n); names.push(n); } };
     for (const tok of tokens) {
         for (const suf of GUESS_SUFFIXES) {
-            const n = tok + '.' + suf;
-            if (!seen.has(n)) { seen.add(n); names.push(n); }
+            push(tok + '.' + suf); // datacalc.pro
+            push(tok + '_' + suf); // umai_pro
+        }
+    }
+    // 全 BID 派生：io.fadel.teleprompterx.pro、com.minardwu.cocam_lifetime 这类
+    // entitlement 直接挂在完整 BID 后面的写法（422 样本验证可再 +3 命中）
+    if (blo && blo.indexOf('.') > 0) {
+        for (const suf of GUESS_SUFFIXES) {
+            push(blo + '.' + suf);
+            push(blo + '_' + suf);
         }
     }
     return names;
