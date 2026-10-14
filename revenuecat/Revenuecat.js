@@ -44,6 +44,9 @@
     （如 datacalc.pro），去重后注入——DataCalc 这类命名现在可被盲猜命中
 21. 新增成语日历精确规则：entitlement 名 calendar、product id
     com.fiachra.DailyIdiomApp.yearly，均已核实（2026-10-14 用户提供）
+22. 新增 Snipd 精确规则：entitlement premium、product
+    snipd_premium_1y_7199_trial_2w_v2（年订 71.99/2周试用），数据取自上游
+    Reheji.js，尚未用 offerings/真实响应核实，待用户实机验证
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -246,7 +249,10 @@ function buildGuessNames(bid) {
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
         { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
         // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
-        { match: 'dailyidiom',    name: 'calendar',                                          id: 'com.fiachra.DailyIdiomApp.yearly',            type: 'subscription', strict: false }
+        { match: 'dailyidiom',    name: 'calendar',                                          id: 'com.fiachra.DailyIdiomApp.yearly',            type: 'subscription', strict: false },
+        // Snipd（播客）：entitlement premium、product snipd_premium_1y_7199_trial_2w_v2 取自上游 Reheji.js，
+        // 尚未用 offerings/真实响应核实（2026-10-14 用户要求直接加，待实机验证）
+        { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
