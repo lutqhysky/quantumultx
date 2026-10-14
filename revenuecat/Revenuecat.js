@@ -39,6 +39,7 @@
     （thirteendoots.kelo.com 不再显示为 com）；新增 Kelo 精确规则
 19. 新增谜底时钟精确规则：真实 product tech.miidii.MDClock.subscription.year.v1、
     真实 entitlement 名 Entitlement.Pro 均从服务器响应核实，不再用候选集
+    （2026-10-14 移除，见 25）
 20. 盲猜增强：GUESS_NAMES 从 11 扩到 24 个常用名；新增 buildGuessNames(BID)，
     从 BID 有意义片段派生 "<token>.pro/premium/vip/plus/gold/membership"
     （如 datacalc.pro），去重后注入——DataCalc 这类命名现在可被盲猜命中
@@ -55,6 +56,9 @@
 24. 盲猜派生模式补全：新增 "<token>_<suffix>"（umai_pro 类）与
     "<全BID>.<suffix>" / "<全BID>_<suffix>"（io.fadel.teleprompterx.pro、
     com.minardwu.cocam_lifetime 类）；bundle 样本完整盲猜命中率 69.4% → 77.8%
+25. 移除谜底时钟精确规则（2026-10-14 用户确认）：注入每次成功但 App 始终显示
+    真实试用期时间、会员功能未解锁，判定其门控不走 RevenueCat subscriber 响应
+    （疑似 StoreKit 2 本地交易验证，网络层脚本无法伪造），留着只会误报
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -268,10 +272,6 @@ function buildGuessNames(bid) {
         // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
         // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
         { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false },
-        // 谜底时钟：product 与 entitlement 均已从真实响应核实（2026-10-03）：
-        // 真实试用记录 tech.miidii.MDClock.subscription.year.v1（period_type trial），
-        // 真实 entitlement 名为 Entitlement.Pro（注意大小写）；不再用候选集
-        { match: 'miidii',        name: 'Entitlement.Pro',                                   id: 'tech.miidii.MDClock.subscription.year.v1',  type: 'subscription', strict: false },
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
         { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
         // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
