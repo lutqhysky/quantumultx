@@ -59,6 +59,16 @@
 25. 移除谜底时钟精确规则（2026-10-14 用户确认）：注入每次成功但 App 始终显示
     真实试用期时间、会员功能未解锁，判定其门控不走 RevenueCat subscriber 响应
     （疑似 StoreKit 2 本地交易验证，网络层脚本无法伪造），留着只会误报
+26. 外部审查整改（2026-10-15，用户上传 Revenuecat_js.md 审查报告并逐条核实后执行）：
+    P0 统一延期两处循环展开顺序反转——模板后置、真实值前置，will_renew/is_sandbox/
+    unsubscribe_detected_at 等"已失效信号"被刷成正常订阅状态，只保留真实购买
+    时间与 product_identifier；Vision/Craft/Sofa/Pillow 四条高风险规则加 strict
+    词边界（防 nightvision/visionos/pocketcraft/sleeppillow 类子串误伤）；
+    injectSubscription/injectLifetime 保留真实 purchase_date（报告 5.1，补丁只动
+    统一延期不够，必须动注入函数）；排除名单 UA 前缀加词边界，'forward' 不再
+    误伤 ForwardMail（报告 5.2）。未采纳：盲猜瘦身（命中率 77.8% 优先于十几 KB
+    体积）；修复记录第 11 条表述（官方文档证实默认不拦截，实质正确，报告的
+    "默认开启"说法未能从官方文档证实，不引入）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -155,9 +165,13 @@ function buildGuessNames(bid) {
     const lowerUA = rawUA.toLowerCase();
     const lowerBID = BID.toLowerCase();
 
-    // 黑名单：bundle 精确匹配；UA 按前缀或 "/xxx" 片段匹配
+    // 黑名单：bundle 精确匹配；UA 按前缀（词边界）或 "/xxx" 片段匹配。
+    // 前缀加词边界：'forward' 不再误伤 'ForwardMail/2.0'（2026-10-15 审查 5.2）
     const isExcluded = EXCLUDE_BUNDLE_IDS.includes(lowerBID) ||
-        EXCLUDE_UA_PREFIXES.some(prefix => lowerUA.startsWith(prefix) || lowerUA.includes('/' + prefix));
+        EXCLUDE_UA_PREFIXES.some(prefix => {
+            const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return new RegExp('^' + esc + '\\b').test(lowerUA) || lowerUA.includes('/' + prefix);
+        });
 
     if (isExcluded) {
         console.log(`[RC] 命中排除名单，放行: BID=${BID}, UA=${rawUA}`);
@@ -243,7 +257,7 @@ function buildGuessNames(bid) {
 
     // 精准映射（数组保序；type 决定写 subscriptions 还是 non_subscriptions）
     const MappingRules = [
-        { match: 'Sofa',         name: 'super',                                              id: 'sofa_family_29999_onetime',                 type: 'lifetime',     strict: false },
+        { match: 'Sofa',         name: 'super',                                              id: 'sofa_family_29999_onetime',                 type: 'lifetime',     strict: true },
         { match: 'Welltory',     name: 'pro',                                                id: 'com.welltory.subscription.annual',          type: 'subscription', strict: false },
         { match: 'CineDock',     name: 'CineDock Pro',                                       id: 'cn.ixiaoxiang.video.lifetime',             type: 'lifetime',     strict: false },
         { match: 'FilmNoir',     name: 'plus',                                               id: 'app.filmnoir.appstore.purchases.lifetime', type: 'lifetime',     strict: false },
@@ -254,14 +268,14 @@ function buildGuessNames(bid) {
         { match: 'Law',          name: 'vip',                                                id: 'LawVIPOneYear',                             type: 'subscription', strict: true  },
         { match: 'Darkroom',     name: 'co.bergen.Darkroom.entitlement.allToolsAndFilters',  id: 'darkroom_gold_lifetime',                     type: 'lifetime',     strict: false },
         { match: 'AdGuard Home', name: 'aghrpro',                                            id: 'adguard.home.remote.pro',                   type: 'lifetime',     strict: false },
-        { match: 'Pillow',       name: 'premium',                                            id: 'com.neybox.pillow.premium.year',           type: 'subscription', strict: false },
+        { match: 'Pillow',       name: 'premium',                                            id: 'com.neybox.pillow.premium.year',           type: 'subscription', strict: true },
         { match: 'MoneyThings',  name: 'Premium',                                            id: 'com.lishaohui.cashflow.lifetime',          type: 'lifetime',     strict: false },
         { match: 'Anybox',       name: 'pro',                                                id: 'cc.anybox.Anybox.annual',                   type: 'subscription', strict: false },
         { match: 'ShellBean',    name: 'pro',                                                id: 'com.ningle.shellbean.iap.forever',         type: 'lifetime',     strict: false },
         { match: 'iplayTV',      name: 'com.ll.btplayer.12',                                 id: 'com.ll.btplayer.12',                         type: 'lifetime',     strict: false },
         { match: 'MOZE',         name: 'premium',                                            id: 'moze_pro_yearly',                            type: 'subscription', strict: false },
-        { match: 'Vision',       name: 'pro',                                                id: 'com.vision.yearly_pro',                     type: 'subscription', strict: false },
-        { match: 'Craft',        name: 'pro',                                                id: 'com.lukilabs.craft.pro.annual',             type: 'subscription', strict: false },
+        { match: 'Vision',       name: 'pro',                                                id: 'com.vision.yearly_pro',                     type: 'subscription', strict: true },
+        { match: 'Craft',        name: 'pro',                                                id: 'com.lukilabs.craft.pro.annual',             type: 'subscription', strict: true },
         { match: 'Structured',   name: 'pro',                                                id: 'today.structured.pro',                      type: 'subscription', strict: false },
         { match: 'Figma',        name: 'pro',                                                id: 'com.figma.ios.pro',                         type: 'subscription', strict: false },
         { match: 'Slopes',       name: 'pass',                                               id: 'com.breakthrough.slopes.annual_pass',      type: 'subscription', strict: false },
@@ -298,14 +312,20 @@ function buildGuessNames(bid) {
     }
 
     const injectSubscription = (productId, entNames) => {
+        const exSub = sub.subscriptions[productId] || {};
         sub.subscriptions[productId] = {
-            ...(sub.subscriptions[productId] || {}),
-            ...baseSubscription
+            ...exSub,
+            ...baseSubscription,
+            // 保留真实购买时间（审查 5.1）：模板的 nowStr 不能抹掉用户真实购买记录
+            "original_purchase_date": exSub.original_purchase_date || origStr,
+            "purchase_date": exSub.purchase_date || nowStr
         };
         for (const n of entNames) {
+            const exEnt = sub.entitlements[n] || {};
             sub.entitlements[n] = {
-                ...(sub.entitlements[n] || {}),
+                ...exEnt,
                 ...baseEntitlementSub,
+                "purchase_date": exEnt.purchase_date || nowStr,
                 "product_identifier": productId
             };
         }
@@ -313,9 +333,11 @@ function buildGuessNames(bid) {
 
     const injectLifetime = (productId, entNames) => {
         for (const n of entNames) {
+            const exEnt = sub.entitlements[n] || {};
             sub.entitlements[n] = {
-                ...(sub.entitlements[n] || {}),
+                ...exEnt,
                 ...baseEntitlementLifetime,
+                "purchase_date": exEnt.purchase_date || nowStr,
                 "product_identifier": productId
             };
         }
@@ -353,25 +375,31 @@ function buildGuessNames(bid) {
         injectSubscription(targetId, buildGuessNames(BID));
     }
 
-    // 统一延期现存 entitlement / subscription（保留原有 product_identifier 与 store 等属性）。
-    // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null，
-    // 只把订阅型的延期到远期——否则上一步注入的 lifetime 会在这里被改回远期时间。
+    // 统一延期现存 entitlement / subscription：把"已失效信号"（will_renew=false、
+    // unsubscribe_detected_at、billing_issues_detected_at、is_sandbox=true 等）统一刷成
+    // 正常订阅状态，只保留真实购买时间与 product_identifier。
+    // 注意展开顺序：真实值在前、模板在后，否则真实值会把模板盖掉（2026-10-15 审查发现）。
+    // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null。
     for (const name of Object.keys(sub.entitlements)) {
         const cur = sub.entitlements[name] || {};
         const isLifetime = cur.expires_date === null || cur.expires_date === undefined;
         sub.entitlements[name] = {
-            ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
             ...cur,
+            ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
             "expires_date": isLifetime ? null : FAKE_EXPIRES,
+            "grace_period_expires_date": null,
+            "purchase_date": cur.purchase_date || nowStr,
             "product_identifier": cur.product_identifier || targetId
         };
     }
     for (const pid of Object.keys(sub.subscriptions)) {
         const cur = sub.subscriptions[pid] || {};
         sub.subscriptions[pid] = {
-            ...baseSubscription,
             ...cur,
-            "expires_date": FAKE_EXPIRES
+            ...baseSubscription,
+            "expires_date": FAKE_EXPIRES,
+            "original_purchase_date": cur.original_purchase_date || origStr,
+            "purchase_date": cur.purchase_date || nowStr
         };
     }
 
