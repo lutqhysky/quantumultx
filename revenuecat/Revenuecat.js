@@ -77,6 +77,9 @@
 28. 新增 Nebuwall 精确规则（2026-10-17 用户要求）：entitlement wallpaper_pass、
     product wallpaper_pass_lifetime（买断型），数据取自上游，尚未用 offerings/
     真实响应核实，待实机验证
+29. 新增 PocketTok 精确规则（2026-10-17 用户抓包并确认）：entitlement "pro"、
+    product pockettok.pro.lifetime（买断型），数据取自真实 subscriber 响应
+    （non_subscriptions/other_purchases 均有该产品真实购买记录），已核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -310,7 +313,11 @@ function buildGuessNames(bid) {
         // Nebuwall（壁纸与AI创作）：entitlement wallpaper_pass、product
         // wallpaper_pass_lifetime（买断型），数据取自上游（2026-10-17 用户提供），
         // 尚未用 offerings/真实响应核实；'nebuwall' 为独特品牌词，子串匹配风险低
-        { match: 'nebuwall',      name: 'wallpaper_pass',                                    id: 'wallpaper_pass_lifetime',               type: 'lifetime',     strict: false }
+        { match: 'nebuwall',      name: 'wallpaper_pass',                                    id: 'wallpaper_pass_lifetime',               type: 'lifetime',     strict: false },
+        // PocketTok：entitlement "pro"、product pockettok.pro.lifetime（买断型），
+        // 数据取自用户 2026-10-17 抓包的真实响应（non_subscriptions/other_purchases
+        // 均有该产品真实购买记录），已核实；'pockettok' 为独特品牌词，子串匹配风险低
+        { match: 'pockettok',     name: 'pro',                                               id: 'pockettok.pro.lifetime',               type: 'lifetime',     strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
