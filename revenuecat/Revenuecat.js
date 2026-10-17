@@ -69,6 +69,10 @@
     误伤 ForwardMail（报告 5.2）。未采纳：盲猜瘦身（命中率 77.8% 优先于十几 KB
     体积）；修复记录第 11 条表述（官方文档证实默认不拦截，实质正确，报告的
     "默认开启"说法未能从官方文档证实，不引入）
+27. 新增 Fine Pro 精确规则（2026-10-17 用户要求）：entitlement "Fine Pro"、
+    product fine_subscription_yearly，取自上游 Curtinp118/Scripthub finepro.js
+    v1.1.0，尚未用 offerings/真实响应核实；match 用 strict 词边界（'fine' 为
+    常用词，防子串误伤）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -292,7 +296,11 @@ function buildGuessNames(bid) {
         { match: 'dailyidiom',    name: 'calendar',                                          id: 'com.fiachra.DailyIdiomApp.yearly',            type: 'subscription', strict: false },
         // Snipd（播客）：entitlement premium、product snipd_premium_1y_7199_trial_2w_v2 取自上游 Reheji.js，
         // 尚未用 offerings/真实响应核实（2026-10-14 用户要求直接加，待实机验证）
-        { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false }
+        { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false },
+        // Fine Pro：entitlement "Fine Pro"、product fine_subscription_yearly 取自上游
+        // Curtinp118/Scripthub finepro.js v1.1.0（2026-10-17），尚未用 offerings/真实响应核实；
+        // match 用 strict 词边界——'fine' 是常用英文单词，子串匹配会误伤 define/refine 类 App
+        { match: 'fine',          name: 'Fine Pro',                                          id: 'fine_subscription_yearly',                 type: 'subscription', strict: true  }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
