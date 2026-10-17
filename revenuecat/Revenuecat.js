@@ -74,6 +74,9 @@
     v1.1.0；同日用户实机验证通过：App 显示"生效中"，下次续订 2100年1月1日
     （即注入的 2099-12-31T23:59:59Z），数据确认正确；match 用 strict 词边界
     （'fine' 为常用词，防子串误伤）
+28. 新增 Nebuwall 精确规则（2026-10-17 用户要求）：entitlement wallpaper_pass、
+    product wallpaper_pass_lifetime（买断型），数据取自上游，尚未用 offerings/
+    真实响应核实，待实机验证
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -303,7 +306,11 @@ function buildGuessNames(bid) {
         // App 显示"生效中"，下次续订 2100年1月1日（即注入的 2099-12-31T23:59:59Z），
         // 数据确认正确；开通时间 2023-10-18 为保留的真实购买时间（5.1 修复生效）
         // match 用 strict 词边界——'fine' 是常用英文单词，子串匹配会误伤 define/refine 类 App
-        { match: 'fine',          name: 'Fine Pro',                                          id: 'fine_subscription_yearly',                 type: 'subscription', strict: true  }
+        { match: 'fine',          name: 'Fine Pro',                                          id: 'fine_subscription_yearly',                 type: 'subscription', strict: true  },
+        // Nebuwall（壁纸与AI创作）：entitlement wallpaper_pass、product
+        // wallpaper_pass_lifetime（买断型），数据取自上游（2026-10-17 用户提供），
+        // 尚未用 offerings/真实响应核实；'nebuwall' 为独特品牌词，子串匹配风险低
+        { match: 'nebuwall',      name: 'wallpaper_pass',                                    id: 'wallpaper_pass_lifetime',               type: 'lifetime',     strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
