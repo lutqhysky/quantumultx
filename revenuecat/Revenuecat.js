@@ -71,8 +71,9 @@
     "默认开启"说法未能从官方文档证实，不引入）
 27. 新增 Fine Pro 精确规则（2026-10-17 用户要求）：entitlement "Fine Pro"、
     product fine_subscription_yearly，取自上游 Curtinp118/Scripthub finepro.js
-    v1.1.0，尚未用 offerings/真实响应核实；match 用 strict 词边界（'fine' 为
-    常用词，防子串误伤）
+    v1.1.0；同日用户实机验证通过：App 显示"生效中"，下次续订 2100年1月1日
+    （即注入的 2099-12-31T23:59:59Z），数据确认正确；match 用 strict 词边界
+    （'fine' 为常用词，防子串误伤）
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -298,7 +299,9 @@ function buildGuessNames(bid) {
         // 尚未用 offerings/真实响应核实（2026-10-14 用户要求直接加，待实机验证）
         { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false },
         // Fine Pro：entitlement "Fine Pro"、product fine_subscription_yearly 取自上游
-        // Curtinp118/Scripthub finepro.js v1.1.0（2026-10-17），尚未用 offerings/真实响应核实；
+        // Curtinp118/Scripthub finepro.js v1.1.0（2026-10-17）；2026-10-17 用户实机验证：
+        // App 显示"生效中"，下次续订 2100年1月1日（即注入的 2099-12-31T23:59:59Z），
+        // 数据确认正确；开通时间 2023-10-18 为保留的真实购买时间（5.1 修复生效）
         // match 用 strict 词边界——'fine' 是常用英文单词，子串匹配会误伤 define/refine 类 App
         { match: 'fine',          name: 'Fine Pro',                                          id: 'fine_subscription_yearly',                 type: 'subscription', strict: true  }
     ];
