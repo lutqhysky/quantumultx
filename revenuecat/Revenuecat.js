@@ -80,6 +80,12 @@
 29. 新增 PocketTok 精确规则（2026-10-17 用户抓包并确认）：entitlement "pro"、
     product pockettok.pro.lifetime（买断型），数据取自真实 subscriber 响应
     （non_subscriptions/other_purchases 均有该产品真实购买记录），已核实
+30. ddgksf 映射表第一批（2026-10-18 用户确认）：186 条经程序化比对（去重 11、
+    弃可疑 10、弃短 key 18、跳过盲猜已覆盖 104），取有明确 product id 的 10 条
+    加为精确规则（Accountit/ByePhotos/Photon/Rats Project/LUTCamera/reader/
+    ImageX/ProCamera/NeatNook/jinduoduo），逻辑一行未动；reader 加 strict；
+    jinduoduo 的 mobile_vip 类型待定暂按订阅；Reflix/Fileball 在排除名单跳过，
+    Unfold 数据存疑跳过；均标未核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -317,7 +323,21 @@ function buildGuessNames(bid) {
         // PocketTok：entitlement "pro"、product pockettok.pro.lifetime（买断型），
         // 数据取自用户 2026-10-17 抓包的真实响应（non_subscriptions/other_purchases
         // 均有该产品真实购买记录），已核实；'pockettok' 为独特品牌词，子串匹配风险低
-        { match: 'pockettok',     name: 'pro',                                               id: 'pockettok.pro.lifetime',               type: 'lifetime',     strict: false }
+        { match: 'pockettok',     name: 'pro',                                               id: 'pockettok.pro.lifetime',               type: 'lifetime',     strict: false },
+        // ddgksf 映射表第一批（2026-10-18）：只借数据、逻辑不动；以下均未用真实响应核实。
+        // 类型按 product id 关键词推断（lifetime/forever→买断，yearly/monthly→订阅）
+        { match: 'accountit',     name: 'spenditPlus',                                        id: 'DesignTech.SIA.Spendit.Plus.Lifetime',      type: 'lifetime',     strict: false },
+        { match: 'byephotos',     name: 'ByePhotos access',                                  id: 'com.panicbyte.byephotos.lifetime.promotion', type: 'lifetime',     strict: false },
+        { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: false },
+        { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false },
+        { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false },
+        // 'reader' 为常用词，加 strict 词边界防误伤（如 MyPDFReader）
+        { match: 'reader',        name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
+        { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false },
+        { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
+        { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false },
+        // jinduoduo 的 product 'mobile_vip' 类型推断不明，暂按订阅注入（不影响解锁），待核实
+        { match: 'jinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
