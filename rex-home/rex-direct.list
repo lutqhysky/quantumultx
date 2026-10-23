@@ -1,0 +1,5 @@
+# Rex 首页直连规则（豆瓣域名走直连）
+# 与 rex-proxy.list 配套
+# 策略在 MySelf.sgmodule 的 RULE-SET 引用处指定（DIRECT）
+DOMAIN-SUFFIX,douban.com
+DOMAIN-SUFFIX,doubanio.com
