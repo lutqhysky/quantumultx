@@ -1,0 +1,10 @@
+# Rex 首页代理规则（走代理）
+# 不走代理会装不上、整行空白或没有海报
+# 来源：kenxtbecdi7690/rex-home 官方代理规则说明
+# 策略在 MySelf.sgmodule 的 RULE-SET 引用处指定（国外媒体）
+DOMAIN-SUFFIX,githubusercontent.com
+DOMAIN-SUFFIX,github.com
+DOMAIN-SUFFIX,themoviedb.org
+DOMAIN-SUFFIX,tmdb.org
+DOMAIN,module-host.xtbecdi7690.workers.dev
+DOMAIN,douban-bridge.baran.wang
