@@ -86,6 +86,15 @@
     ImageX/ProCamera/NeatNook/jinduoduo），逻辑一行未动；reader 加 strict；
     jinduoduo 的 mobile_vip 类型待定暂按订阅；Reflix/Fileball 在排除名单跳过，
     Unfold 数据存疑跳过；均标未核实
+31. Reheji.js 第一批（2026-10-31 用户确认）：429 条经程序化比对（重叠 28、
+    排除名单 2、可疑 21、无名 4、短 key 20、盲猜覆盖 245），取 10 条
+    加为精确规则（bundle 区 7 条按 BID 精确匹配：me.capilabs.sleep/
+    com.abighead.Widgets/com.minardwu.cocam/io.fadel.TeleprompterX/
+    com.ausoco.umai/com.voicedream.Voic/com.laser-focused.focus-ios；
+    listua 区 3 条：varacare/SaveLoop/OpsCat），逻辑一行未动；
+    另：UTC 与 ProCam 为子串误判（分别撞上 lutcamera、procamera，非真重叠；
+    UTC 实为已删的谜底数据不得加、ProCam 为独立 App 已回候选），
+    jinduoduo/LUTCamera/Darkroom/MOZE/Vision 两源数据打架暂不动；均标未核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -337,7 +346,19 @@ function buildGuessNames(bid) {
         { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
         { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false },
         // jinduoduo 的 product 'mobile_vip' 类型推断不明，暂按订阅注入（不影响解锁），待核实
-        { match: 'jinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false }
+        { match: 'jinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false },
+        // Reheji.js 第一批（2026-10-31）：只借数据、逻辑不动；以下均未用真实响应核实。
+        // bundle 区按 BID 精确匹配（最稳），listua 区按 UA 片段匹配
+        { match: 'me.capilabs.sleep',           name: 'Capi - Sleep Factors Analysis Unlimited Access', id: 'me.capilabs.sleep.premium.lifetime',     type: 'lifetime',     strict: false },
+        { match: 'com.abighead.Widgets',        name: 'HiWidget.Pro',                                   id: 'com.abighead.Widgets.LifetimePro',     type: 'lifetime',     strict: false },
+        { match: 'com.minardwu.cocam',          name: 'com.minardwu.cocam_lifetime',                     id: 'com.minardwu.cocam_lifetime',           type: 'lifetime',     strict: false },
+        { match: 'io.fadel.TeleprompterX',      name: 'io.fadel.teleprompterx.pro',                     id: 'io.fadel.TeleprompterX.pro.lifetime',   type: 'lifetime',     strict: false },
+        { match: 'com.ausoco.umai',             name: 'umai_pro',                                       id: 'umai_pro_yearly',                       type: 'subscription', strict: false },
+        { match: 'com.voicedream.Voic',         name: 'standard',                                       id: 'vd_annual_79_3daytrial',                 type: 'subscription', strict: false },
+        { match: 'com.laser-focused.focus-ios', name: 'subscribed',                                     id: 'iap.io.masterbuilders.focus.pro_one_year', type: 'subscription', strict: false },
+        { match: 'varacare',                    name: 'varacare_pro',                                   id: 'com.beliveapptech.varacare.lifetime',  type: 'lifetime',     strict: false },
+        { match: 'SaveLoop',                    name: 'Sloop Pro',                                      id: 'com.sloopbrowser.www.plus.Lifetime',    type: 'lifetime',     strict: false },
+        { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
