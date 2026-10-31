@@ -1,13 +1,23 @@
-// JavVerse 去广告 v1.1.0（2026-10-31）
-// v1 教训：广告位由站点 JS 随滚动动态生成，不在初始 HTML 里，纯删静态标记会透传失效。
-// v2 两手抓：
-//   1) 响应体里先删已有的 aria-label="Advertisement" 容器（静态兜底）；
-//   2) 在 </body> 前注入一段盯梢脚本（MutationObserver），广告容器一旦出现在 DOM 里就删，
-//      命中条件：aria-label 含 advertisement（不区分大小写），或含已知广告域链接的容器。
-//   3) 顺带去掉 CSP 响应头，避免内联盯梢脚本被站点 CSP 拦截。
-// 范围：只删广告位，不动 Telegram 频道胶囊。
+// JavVerse 去广告 v1.2.0（2026-10-31）
+// v2 教训：改了 body 却原样带回旧的 Content-Length / Content-Encoding，
+//         浏览器按旧声明读新内容会解码失败 → 整页 "couldn't load"。
+// v3 修复：
+//   1) 只处理 HTML 文档（Content-Type 含 text/html，或 body 像 HTML），
+//      接口 JSON 等一律原样透传，避免误伤；
+//   2) 改完 body 后：删 Content-Encoding / Transfer-Encoding，
+//      Content-Length 按新 body 的 UTF-8 字节数重算；
+//   3) 删 CSP 响应头，保证注入的盯梢脚本不被拦截；
+//   4) 盯梢脚本不变：广告容器一旦出现在 DOM 里就删。
 (function () {
   var body = $response.body || '';
+  var headers = $response.headers || {};
+  function headerVal(name) {
+    for (var k in headers) if (k.toLowerCase() === name) return headers[k];
+    return '';
+  }
+  var ct = headerVal('content-type');
+  var isHtml = /text\/html/i.test(ct) || /^[\s\S]{0,2000}<(html|!doctype)/i.test(body);
+  if (!isHtml) { $done({}); return; }
   var pats = [
     /<aside[^>]*aria-label\s*=\s*(["'])Advertisement\1[^>]*>[\s\S]*?<\/aside>/gi,
     /<div[^>]*aria-label\s*=\s*(["'])Advertisement\1[^>]*>[\s\S]*?<\/div>/gi
@@ -25,10 +35,15 @@
     + '})();<\/script>';
   if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, OBS + '</body>');
   else out += OBS;
-  var headers = $response.headers || {};
+  function byteLen(s) {
+    try { return new TextEncoder().encode(s).length; }
+    catch (e) { return unescape(encodeURIComponent(s)).length; }
+  }
   Object.keys(headers).forEach(function (k) {
     var lk = k.toLowerCase();
-    if (lk === 'content-security-policy' || lk === 'content-security-policy-report-only') delete headers[k];
+    if (lk === 'content-security-policy' || lk === 'content-security-policy-report-only'
+      || lk === 'content-encoding' || lk === 'transfer-encoding' || lk === 'content-length') delete headers[k];
   });
+  headers['Content-Length'] = String(byteLen(out));
   $done({ body: out, headers: headers });
 })();
