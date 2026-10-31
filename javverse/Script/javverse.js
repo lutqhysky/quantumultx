@@ -1,7 +1,7 @@
-// JavVerse 去广告 v1.3.0-diag（2026-10-31，临时诊断版）
-// 与 v1.2.0 逻辑完全一致，只多一处：注入的盯梢脚本会在页面左下角贴一个
-// 10px 小角标 "jv1.3.0"，用于直接确认手机上跑的是不是最新版。
-// 确认后立即推干净版（去掉角标），本版不长期保留。
+// JavVerse 去广告 v1.3.1（2026-10-31，干净版）
+// 与 v1.2.0 逻辑完全一致；诊断版 v1.3.0 的左下角角标已去掉。
+// 修复要点（v1.2.0 起）：只处理 HTML 文档；改完删 Content-Encoding /
+// Transfer-Encoding，Content-Length 按新 body UTF-8 字节数重算；删 CSP。
 (function () {
   var body = $response.body || '';
   var headers = $response.headers || {};
@@ -26,9 +26,6 @@
     + 'var c=a.closest("aside,div");if(c){c.remove();}});}'
     + 'clean();'
     + 'new MutationObserver(clean).observe(document.documentElement,{childList:true,subtree:true});'
-    + 'try{var b=document.createElement("div");b.textContent="jv1.3.0";'
-    + 'b.style.cssText="position:fixed;left:8px;bottom:8px;z-index:2147483647;font-size:10px;color:#fff;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:4px;pointer-events:none;";'
-    + 'document.body.appendChild(b);}catch(e){}'
     + '})();<\/script>';
   if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, OBS + '</body>');
   else out += OBS;
