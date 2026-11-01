@@ -6,6 +6,11 @@
  * - JSON 分支（Miniflux / SmartRSS API）：净化器安全版卡片——只用 Miniflux 白名单标签
  *   （p/strong/pre/a[href]），无 div/span、无内联样式、无 JS；magnet: 在 Miniflux
  *   validURISchemes 白名单内，<a href="magnet:..."> 可保留，点击直接调用 BT 客户端
+ *
+ * 2026-11-01 更新（SmartRSS 全量覆盖）：
+ * - JSON 分支补 Fever API 的 html 字段（Fever 条目正文不在 content，在 html）；
+ * - 补【驗證全碼】兜底：帖子只有 40 位 hash、没有裸磁链时，从 hash 建磁链追加到文末；
+ * - JSON 顶层数组也处理。
  */
 
 // === 磁力卡片样式（与「代表作」磁力页统一：米黄圆角卡片 + 复制磁力按钮） ===
@@ -68,8 +73,13 @@ if (body) {
         } else if (item.summary && item.summary.content) {
           item.summary.content = handleAllMagnets(item.summary.content, true);
         }
+        // Fever API：正文在 html 字段（不是 content），SmartRSS 走 Fever 同步时靠这一条
+        if (item.html && typeof item.html === 'string') {
+          item.html = handleAllMagnets(item.html, true);
+        }
       };
 
+      if (Array.isArray(data)) data.forEach(processItem);
       if (data.items && Array.isArray(data.items)) data.items.forEach(processItem);
       if (data.entries && Array.isArray(data.entries)) data.entries.forEach(processItem);
       body = JSON.stringify(data);
@@ -94,6 +104,7 @@ function handleAllMagnets(html, safe) {
   html = parseJavBus(html, safe);
   html = parseT66y(html, safe);
   html = parsePlainMagnets(html, safe);
+  html = parseVerifyHash(html, safe);
   return html;
 }
 
@@ -204,4 +215,17 @@ function parsePlainMagnets(html, safe) {
   // 还原暂存的卡片
   html = html.replace(/<!--MAGSTASH(\d+)-->/g, (m, id) => stash[+id]);
   return html;
+}
+
+// === 4. 【驗證全碼】兜底：帖子只有 40 位 hash、没有裸磁链/rmdown 链接时，从 hash 建磁链 ===
+// t66y 帖文常只给【驗證全碼】（即 info hash），前面三步都够不着；此时把磁链卡片追加到文末，
+// 保证 SmartRSS 里最下面一定能看到磁力。同一 hash 的磁链已存在时不再追加，避免重复。
+function parseVerifyHash(html, safe) {
+  if (!html) return html;
+  const m = html.match(/【驗[證证]全[碼码]】\s*[：:]\s*([a-fA-F0-9]{40})/);
+  if (!m) return html;
+  const hash = m[1].toLowerCase();
+  if (html.toLowerCase().indexOf('btih:' + hash) !== -1) return html;
+  const magnetUrl = 'magnet:?xt=urn:btih:' + hash.toUpperCase();
+  return html + cardBuilder(safe)(magnetUrl);
 }
