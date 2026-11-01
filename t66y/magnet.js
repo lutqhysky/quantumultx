@@ -21,6 +21,9 @@ const COPY_BTN = 'border-top:1px solid #e9e1d2;padding:11px 14px;color:#c0392b;f
 // 自包含的复制逻辑：不依赖外部 <script>，从相邻 data-mag 元素读取磁链；
 // 复制成功后该行变红底白字并提示「已复制 ✓」
 const COPY_JS = "(function(b){var t=b.parentNode.querySelector('[data-mag]').innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
+// 净化器安全版复制逻辑：从页面第一个 [data-magsafe] 的 <pre> 里读磁链；
+// SmartRSS 若剥离 onclick 则此按钮失效，届时改用长按磁链手动复制（见 magnetCardSafe）
+const COPY_JS_SAFE = "(function(b){var p=document.querySelector('[data-magsafe]');if(!p)return;var t=p.innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
 
 
 // === 通用磁力卡片（米黄圆角 + 复制磁力按钮，仅 HTML 分支） ===
@@ -44,11 +47,26 @@ function escHtml(s) {
 }
 function magnetCardSafe(magnetUrl) {
   const safe = escHtml(magnetUrl);
+  // 让长磁链换行显示、不被屏幕边缘截断：每 16 个可见字符插一个 <wbr>；
+  // <wbr> 不产生任何字符，复制出来的磁链是干净的；跳过 &...; 实体不拆散。
+  const wrapped = (function (s) {
+    let out = '', count = 0, i = 0;
+    while (i < s.length) {
+      if (s[i] === '&') {
+        const semi = s.indexOf(';', i);
+        if (semi !== -1) { out += s.slice(i, semi + 1); i = semi + 1; continue; }
+      }
+      out += s[i]; count++; i++;
+      if (count % 16 === 0) out += '<wbr>';
+    }
+    return out;
+  })(safe);
   return `
       <hr>
       <p><strong>🧲 磁力连接</strong></p>
-      <pre data-magsafe>${safe}</pre>
-      <p><a href="${safe}">👆 点此调用 BT 客户端打开</a>（长按上方磁链可手动复制）</p>
+      <pre data-magsafe style="white-space:pre-wrap;word-break:break-all;overflow-wrap:anywhere;-webkit-user-select:all;user-select:all;">${wrapped}</pre>
+      <p><a href="${safe}">👆 点此调用 BT 客户端打开</a></p>
+      <p><span onclick="${COPY_JS_SAFE}" style="color:#c0392b;font-weight:600;cursor:pointer;">📋 点此复制磁力</span>（长按上方磁链可手动复制）</p>
     `;
 }
 // 按分支选择卡片构建器
