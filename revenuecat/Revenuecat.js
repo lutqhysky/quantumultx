@@ -95,6 +95,10 @@
     另：UTC 与 ProCam 为子串误判（分别撞上 lutcamera、procamera，非真重叠；
     UTC 实为已删的谜底数据不得加、ProCam 为独立 App 已回候选），
     jinduoduo/LUTCamera/Darkroom/MOZE/Vision 两源数据打架暂不动；均标未核实
+32. Reheji.js 第二批（2026-11-03 用户确认）：相对 2026-10-31 快照，bundle 35 条未变、
+    listua 由 394 增至 396 条；过滤后取 1 条加为 UA 片段规则（Readora，entitlement
+    com.chengnayu.readora，product com.chengnayu.readora.permanent，买断）；
+    另一条 PixelSensePocket 因 entitlement 为通用名 pro 已过滤；逻辑一行未动；均标未核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -358,7 +362,9 @@ function buildGuessNames(bid) {
         { match: 'com.laser-focused.focus-ios', name: 'subscribed',                                     id: 'iap.io.masterbuilders.focus.pro_one_year', type: 'subscription', strict: false },
         { match: 'varacare',                    name: 'varacare_pro',                                   id: 'com.beliveapptech.varacare.lifetime',  type: 'lifetime',     strict: false },
         { match: 'SaveLoop',                    name: 'Sloop Pro',                                      id: 'com.sloopbrowser.www.plus.Lifetime',    type: 'lifetime',     strict: false },
-        { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false }
+        { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false },
+        // Reheji.js 第二批（2026-11-03）：listua 区按 UA 片段匹配；未用真实响应核实
+        { match: 'Readora',                     name: 'com.chengnayu.readora',                            id: 'com.chengnayu.readora.permanent',       type: 'lifetime',     strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
