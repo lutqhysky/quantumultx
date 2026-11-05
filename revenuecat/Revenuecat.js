@@ -99,6 +99,10 @@
     listua 由 394 增至 396 条；过滤后取 1 条加为 UA 片段规则（Readora，entitlement
     com.chengnayu.readora，product com.chengnayu.readora.permanent，买断）；
     另一条 PixelSensePocket 因 entitlement 为通用名 pro 已过滤；逻辑一行未动；均标未核实
+33. Reheji.js 第三批（2026-11-06 用户确认）：相对 2026-11-03 快照，bundle 35 条未变、
+    listua 由 396 增至 397 条；过滤后取 1 条加为 UA 片段规则（Island Reader，entitlement
+    BookSpeak Pro，product com.luyaolab.bookspeak.lifetime，买断）；因通用 'reader' 规则会抢先匹配，
+    本条放在 'reader' 规则之前；逻辑一行未动；均标未核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -345,6 +349,10 @@ function buildGuessNames(bid) {
         { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false },
         { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false },
         // 'reader' 为常用词，加 strict 词边界防误伤（如 MyPDFReader）
+        // Reheji.js 第三批（2026-11-06）：listua 区按 UA 片段匹配；未用真实响应核实。
+        // 位置注意：必须放在通用 'reader' 规则之前——first-match-wins，且 'reader' 的 strict 词边界
+        // 仍会匹配 "Island Reader" 的 UA，放后面会被抢先注入 vip2 而失效。
+        { match: 'Island Reader', name: 'BookSpeak Pro',                                     id: 'com.luyaolab.bookspeak.lifetime',            type: 'lifetime',     strict: false },
         { match: 'reader',        name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
         { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false },
         { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
