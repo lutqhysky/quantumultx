@@ -11,6 +11,11 @@
  * - JSON 分支补 Fever API 的 html 字段（Fever 条目正文不在 content，在 html）；
  * - 补【驗證全碼】兜底：帖子只有 40 位 hash、没有裸磁链时，从 hash 建磁链追加到文末；
  * - JSON 顶层数组也处理。
+ *
+ * 2026-11-07 修复（多磁力帖点「复制磁力」跳转外链中转页）：
+ * - parsePlainMagnets 先整段替换 <a> 包裹的磁链（t66y 外链中转 <a href="https://2023.redircdn.com/...">），
+ *   避免卡片嵌进 <a> 里导致点击冒泡跳转；
+ * - 复制按钮 onclick 加 event.stopPropagation()/preventDefault() 兜底。
  */
 
 // === 磁力卡片样式（与「代表作」磁力页统一：米黄圆角卡片 + 复制磁力按钮） ===
@@ -20,10 +25,10 @@ const MAG_TEXT = 'padding:12px 14px;font-family:ui-monospace,Menlo,Consolas,mono
 const COPY_BTN = 'border-top:1px solid #e9e1d2;padding:11px 14px;color:#c0392b;font-size:14px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;';
 // 自包含的复制逻辑：不依赖外部 <script>，从相邻 data-mag 元素读取磁链；
 // 复制成功后该行变红底白字并提示「已复制 ✓」
-const COPY_JS = "(function(b){var t=b.parentNode.querySelector('[data-mag]').innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
+const COPY_JS = "(function(b){try{event.stopPropagation();event.preventDefault();}catch(_){}var t=b.parentNode.querySelector('[data-mag]').innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
 // 净化器安全版复制逻辑：从页面第一个 [data-magsafe] 的 <pre> 里读磁链；
 // SmartRSS 若剥离 onclick 则此按钮失效，届时改用长按磁链手动复制（见 magnetCardSafe）
-const COPY_JS_SAFE = "(function(b){var p=document.querySelector('[data-magsafe]');if(!p)return;var t=p.innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
+const COPY_JS_SAFE = "(function(b){try{event.stopPropagation();event.preventDefault();}catch(_){}var p=document.querySelector('[data-magsafe]');if(!p)return;var t=p.innerText;var ok=false;try{var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.cssText='position:fixed;top:0;left:0;opacity:0;';document.body.appendChild(ta);ta.select();try{ta.setSelectionRange(0,ta.value.length);}catch(_){}ok=document.execCommand('copy');document.body.removeChild(ta);}catch(e){}if(ok){b.style.background='#b8332a';b.style.color='#ffffff';b.textContent='已复制 \u2713';}})(this)";
 
 
 // === 通用磁力卡片（米黄圆角 + 复制磁力按钮，仅 HTML 分支） ===
@@ -209,6 +214,14 @@ function parsePlainMagnets(html, safe) {
 
   // 先把 magnet:? 与 xt= 之间的 <br>/换行/分段合并，避免切分器把它们拆到不同文本块
   html = html.replace(/(magnet:\?)\s*((?:<br\s*\/?>|<\/?(?:p|div)[^>]*>)\s*)+(?=xt=urn:btih:)/gi, '$1');
+
+  // 先处理被 <a> 包裹的磁链：整段 <a>...</a> 替换为卡片，避免卡片嵌进 <a> 里；
+  // 否则点卡片上任何位置都会冒泡到 <a> 触发跳转（如 t66y 外链中转页 2023.redircdn.com）。
+  // 只处理锚内纯磁链的情况（含 &dn= 等参数，锚尾可带 <br>）；锚内还有其他文字的不动。
+  html = html.replace(/<a\b[^>]*>\s*(magnet:\?\s*xt=urn:btih:\s*[a-zA-Z0-9]{40}[^<>\s]*)\s*(?:<br\s*\/?>\s*)*<\/a>/gi, (full, magnet) => {
+    const magnetUrl = magnet.replace(/\s+/g, '').replace(/&amp;/gi, '&');
+    return buildCard(magnetUrl);
+  });
 
   // 暂存已生成的卡片（HTML 注释形式），避免重复处理卡片内的磁链；
   // 注释会被切分器视为"标签"而自然跳过
