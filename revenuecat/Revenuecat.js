@@ -103,6 +103,10 @@
     listua 由 396 增至 397 条；过滤后取 1 条加为 UA 片段规则（Island Reader，entitlement
     BookSpeak Pro，product com.luyaolab.bookspeak.lifetime，买断）；因通用 'reader' 规则会抢先匹配，
     本条放在 'reader' 规则之前；逻辑一行未动；均标未核实
+34. Reheji.js 第四批（2026-11-15 用户确认）：相对 2026-11-12 快照，bundle 35 条未变、
+    listua 由 396 增至 398 条；过滤后取 2 条加为 UA 片段规则（billmate，entitlement
+    Bill Mate Pro，product com.billmate.plus.yearly，按 id 判年订阅；col.or，entitlement
+    Color Plus，product com.color.plus，类型推断不明暂按订阅）；逻辑一行未动；均标未核实
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -372,7 +376,12 @@ function buildGuessNames(bid) {
         { match: 'SaveLoop',                    name: 'Sloop Pro',                                      id: 'com.sloopbrowser.www.plus.Lifetime',    type: 'lifetime',     strict: false },
         { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false },
         // Reheji.js 第二批（2026-11-03）：listua 区按 UA 片段匹配；未用真实响应核实
-        { match: 'Readora',                     name: 'com.chengnayu.readora',                            id: 'com.chengnayu.readora.permanent',       type: 'lifetime',     strict: false }
+        { match: 'Readora',                     name: 'com.chengnayu.readora',                            id: 'com.chengnayu.readora.permanent',       type: 'lifetime',     strict: false },
+        // Reheji.js 第四批（2026-11-15）：listua 区按 UA 片段匹配；未用真实响应核实。
+        // billmate 的 product 含 yearly，按 id 判年订阅；col.or 的 product 无后缀，类型推断不明暂按订阅注入
+        // （不影响解锁），待核实；'billmate'、'col.or' 均为独特品牌词，子串匹配风险低
+        { match: 'billmate',                    name: 'Bill Mate Pro',                                    id: 'com.billmate.plus.yearly',              type: 'subscription', strict: false },
+        { match: 'col.or',                      name: 'Color Plus',                                       id: 'com.color.plus',                        type: 'subscription', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
