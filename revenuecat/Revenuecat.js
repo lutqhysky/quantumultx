@@ -107,6 +107,32 @@
     listua 由 396 增至 398 条；过滤后取 2 条加为 UA 片段规则（billmate，entitlement
     Bill Mate Pro，product com.billmate.plus.yearly，按 id 判年订阅；col.or，entitlement
     Color Plus，product com.color.plus，类型推断不明暂按订阅）；逻辑一行未动；均标未核实
+35. 研究报告 §C 优化第五批（2026-11-16，用户确认按报告实施，逻辑与规则表同步改）：
+    C1 无本地规则时先请求真实 offerings（GET /v1/subscribers/{id}/offerings，同 host
+    派生、复用当前请求头去条件缓存头、不硬编码 key；$task.fetch→$httpClient→$https→$http
+    多引擎回退，超时 4 秒；成功按 packages 注入真实 product id，失败/为空/超时才走
+    盲猜回退；$done 只调用一次，超时与回调共用 settled 标志；仅 /v1/subscribers 请求
+    取 offerings，/v1/receipts 保持原行为）；C2 类型按 product/package id 关键词判定
+    （lifetime/forever/nonconsumable/onetime/one_time/one.time/life_time/permanen/_life/
+    $rc_lifetime→终身，其余→订阅；trial/intro 包非首选）；C3 注入/刷新后统一重算
+    latest_expiration_date、all_expiration_dates_by_product、all_purchase_dates_by_product、
+    all_purchased_product_identifiers、active_subscriptions，request_date 保留原值
+    （缺失才补当前 UTC），management_url 已有默认值兜底，first_seen/original_purchase_date
+    缺失不再伪造（删默认值）；C4 注入项补齐 period_type/ownership_type/store/
+    grace_period_expires_date/refunded_at/auto_resume_date/unsubscribe_detected_at/
+    billing_issues_detected_at/is_sandbox（store 沿用真实接口小写 app_store，报告所写
+    APP_STORE 与接口实际值不符，已核实保留小写）；终身项补 price{amount:0,currency:USD}
+    与 display_name，订阅项不补 price；不伪造 store_transaction_id；C5 Reheji 第五批
+    全表合并（2026-11-16 拉取，与本地快照 md5 一致；新增 93 条 listua 规则，终身 51/
+    订阅 42，strict 36，names 双权益 2 条；来源 @ddm1023，仅供个人研究使用；过滤：
+    重叠 42、排除名单 2、中文编码 key 23、短 key 20、通用名 248、无名 4、存疑 1，
+    均未用真实响应核实）；C6 forbiddenApps（PicSeedClient/ReflixiOS/Pomodoro/MyHabit/
+    Rond/Filebar/Fileball/APTV）命中即放行，offerings/attributes/adservices_attribution
+    请求不改写（offerings 只读日志保留）；C7 请求头剥离：X-RevenueCat-ETag 大小写
+    变体本就由小写比对覆盖（见注释），响应头 ETag 删除需 script-response-header
+    类型、属模块改动，本次未做；C9 终身 null+non_subscriptions、订阅 2099+subscriptions
+    加断言防回归；行为变更：盲猜回退改为单名注入（BID 派生 token.pro 优先，无派生
+    时用 pro），不再注入全部通用名
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -124,6 +150,14 @@ const EXCLUDE_UA_PREFIXES = [
     'lilyfm', 'servercat', 'eplayerx', 'authenticator',
     'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader'
 ];
+// C6：已知会检测/封禁 MITM 的 App（取自 Reheji.js forbiddenApps，2026-11-16），
+// UA 或 bundle 或请求体命中即放行，不改写
+const FORBIDDEN_APPS = [
+    'PicSeedClient', 'ReflixiOS', 'Pomodoro', 'MyHabit',
+    'Rond', 'Filebar', 'Fileball', 'APTV'
+];
+// C1：offerings 请求超时（毫秒）
+const OFFERINGS_TIMEOUT_MS = 4000;
 
 // 盲猜用的通用 entitlement 名
 // 数据来源：2026-10-14 对上游 Reheji.js 422 条真实映射的词频统计，
@@ -172,6 +206,104 @@ function buildGuessNames(bid) {
     return names;
 }
 
+
+// ---------- C2：按 product/package id 判定终身/订阅 ----------
+// lifetime/forever/nonconsumable/onetime/one_time/one.time/life_time/permanen/_life/
+// $rc_lifetime → 终身；其余（含 monthly/yearly/annual/weekly/six_month 与推断不明）→ 订阅
+// （类型推断不明暂按订阅，col.or 先例；不用 Reheji 的 cm 字段，cm 语义未验证）
+function classifyProductType(productId, packageId) {
+    const s = (((productId || '') + ' ' + (packageId || '')).toLowerCase());
+    if (/(lifetime|forever|nonconsumable|onetime|one[._-]time|life_time|life-time|permanen|_life|\$rc_lifetime)/.test(s)) return 'lifetime';
+    return 'subscription';
+}
+// trial/intro 包不作为首选注入对象（period_type=trial 易被 App 特殊处理）
+function isTrialPackage(packageId, productId) {
+    return /(trial|intro)/i.test((packageId || '') + ' ' + (productId || ''));
+}
+// C1：从 offerings 反推 entitlement 名（尽力推断，未核实）
+// 优先级：offering 标识（排除无意义的 default/standard）→ package 标识去 $rc_ 前缀
+// （$rc_monthly 这类纯档期词跳过）→ product id 末段有意义 token；绝不用 $rc_* 直接当权益名
+function deriveEntitlementName(offeringId, packageId, productId) {
+    const off = (offeringId || '').trim();
+    if (off && !/^(default|standard)$/i.test(off)) return off;
+    const pkg = (packageId || '').trim();
+    if (pkg) {
+        const stripped = pkg.replace(/^\$rc_/, '');
+        if (stripped !== pkg) {
+            // $rc_ 前缀的包：只剩档期词（monthly/annual/lifetime…）时无语义，跳过
+            if (!/^(monthly|annual|yearly|weekly|lifetime|six_month|three_month|two_month|one_month)$/i.test(stripped)) return stripped;
+        } else {
+            return pkg; // 自定义包标识本身常有语义（如 premium_monthly），直接用
+        }
+    }
+    // product id 反推：取末段非档期、非纯数字 token
+    const parts = (productId || '').split(/[._]/).filter(Boolean);
+    const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro']);
+    for (let i = parts.length - 1; i >= 0; i--) {
+        const t = parts[i].toLowerCase();
+        if (!DURATION.has(t) && !/^\d+$/.test(t) && t.length > 1) return parts[i];
+    }
+    return 'pro';
+}
+// C1 盲猜回退改为单名注入：BID 派生 token.pro 优先（如 datacalc.pro），无派生时用 pro
+// 取 BID 最后一段有意义 token（通常就是 App 名）；纯顶级域名/纯数字 token 已滤掉
+function pickSingleGuessName(bid) {
+    const blo = (bid || '').toLowerCase();
+    const tokens = blo.split('.').filter(t => t && t.length > 1 && !BID_NOISE.has(t) && !/^\d+$/.test(t));
+    if (tokens.length) return tokens[tokens.length - 1] + '.pro';
+    return 'pro';
+}
+// C1：多引擎 GET：$task.fetch → $httpClient.get → $https.get → $http.get
+// 成功回调 onOk({status, body})；失败 onErr(message)。无任何可用引擎时直接 onErr。
+function httpGetJson(url, headers, onOk, onErr) {
+    const opts = { url: url, headers: headers };
+    try {
+        if (typeof $task !== 'undefined' && $task && typeof $task.fetch === 'function') {
+            const p = $task.fetch(opts);
+            if (p && typeof p.then === 'function') {
+                p.then(resp => {
+                    const code = resp && (resp.statusCode || resp.status);
+                    if (resp && code === 200) onOk({ status: code, body: resp.body });
+                    else onErr('status ' + code);
+                }).catch(e => onErr(String((e && e.message) || e)));
+                return true;
+            }
+        }
+    } catch (e) { /* 掉到下一引擎 */ }
+    try {
+        if (typeof $httpClient !== 'undefined' && $httpClient && typeof $httpClient.get === 'function') {
+            $httpClient.get(opts, (err, resp, body) => {
+                if (err) onErr(String(err));
+                else if (resp && resp.status === 200) onOk({ status: resp.status, body: body });
+                else onErr('status ' + (resp ? resp.status : 'none'));
+            });
+            return true;
+        }
+    } catch (e) { /* 掉到下一引擎 */ }
+    try {
+        if (typeof $https !== 'undefined' && $https && typeof $https.get === 'function') {
+            $https.get(opts, (err, resp, body) => {
+                if (err) onErr(String(err));
+                else if (resp && resp.status === 200) onOk({ status: resp.status, body: body });
+                else onErr('status ' + (resp ? resp.status : 'none'));
+            });
+            return true;
+        }
+    } catch (e) { /* 掉到下一引擎 */ }
+    try {
+        if (typeof $http !== 'undefined' && $http && typeof $http.get === 'function') {
+            $http.get(opts, (err, resp, body) => {
+                if (err) onErr(String(err));
+                else if (resp && resp.status === 200) onOk({ status: resp.status, body: body });
+                else onErr('status ' + (resp ? resp.status : 'none'));
+            });
+            return true;
+        }
+    } catch (e) { /* 无引擎 */ }
+    onErr('no http engine');
+    return false;
+}
+
 (function main() {
     // ---------- 1. 请求阶段：破除 304 缓存 ----------
     if (typeof $response === "undefined") {
@@ -181,6 +313,7 @@ function buildGuessNames(bid) {
         // 标准条件头 If-None-Match / If-Modified-Since 顺手也删。
         for (const k of Object.keys(headers)) {
             const lk = k.toLowerCase();
+            // C7：比对前已转小写，X-RevenueCat-ETag 等大小写变体已覆盖，无需另列
             if (lk === 'if-none-match' || lk === 'if-modified-since' || lk === 'x-revenuecat-etag') {
                 delete headers[k];
             }
@@ -213,6 +346,17 @@ function buildGuessNames(bid) {
 
     if (isExcluded) {
         console.log(`[RC] 命中排除名单，放行: BID=${BID}, UA=${rawUA}`);
+        $done({});
+        return;
+    }
+    // C6：forbiddenApps 命中即放行（UA / bundle / 请求体任一命中）
+    const reqBodyStr = ($request && typeof $request.body === 'string') ? $request.body : '';
+    const isForbidden = FORBIDDEN_APPS.some(a => {
+        const la = a.toLowerCase();
+        return lowerUA.includes(la) || lowerBID.includes(la) || reqBodyStr.toLowerCase().includes(la);
+    });
+    if (isForbidden) {
+        console.log(`[RC] 命中 forbiddenApps，放行: BID=${BID}, UA=${rawUA}`);
         $done({});
         return;
     }
@@ -251,6 +395,15 @@ function buildGuessNames(bid) {
         $done({});
         return;
     }
+    // C6：offerings / attributes / adservices_attribution 请求直接放行，不改写响应
+    // （offerings 的只读日志已在上面 !subscriber 分支保留；attributes POST 会返回
+    // subscriber 对象，需在此拦截，避免误改写）
+    const reqUrl = ($request && $request.url) || '';
+    if (/(offerings|attributes|adservices_attribution)/i.test(reqUrl)) {
+        console.log(`[RC] 放行（offerings/attributes 类请求不改写）: ${reqUrl}`);
+        $done({});
+        return;
+    }
 
     const sub = obj.subscriber;
     const now = new Date();
@@ -261,15 +414,32 @@ function buildGuessNames(bid) {
     // 三套模板分开：entitlement 只含 entitlement 字段。
     // 注意：终身凭证的 expires_date 必须为 null（RevenueCat 官方规范），
     // 不能写远期时间——部分 App 用 expirationDate == nil 判断是否为终身。
+    // C4：补齐次级字段（与订阅项一致；entitlement 对象上多出的字段 SDK 会忽略，仅用于字段完整性）
     const baseEntitlementLifetime = {
         "grace_period_expires_date": null,
         "purchase_date": nowStr,
-        "expires_date": null
+        "expires_date": null,
+        "period_type": "normal",
+        "ownership_type": "PURCHASED",
+        "store": "app_store",
+        "is_sandbox": false,
+        "unsubscribe_detected_at": null,
+        "billing_issues_detected_at": null,
+        "refunded_at": null,
+        "auto_resume_date": null
     };
     const baseEntitlementSub = {
         "grace_period_expires_date": null,
         "purchase_date": nowStr,
-        "expires_date": FAKE_EXPIRES
+        "expires_date": FAKE_EXPIRES,
+        "period_type": "normal",
+        "ownership_type": "PURCHASED",
+        "store": "app_store",
+        "is_sandbox": false,
+        "unsubscribe_detected_at": null,
+        "billing_issues_detected_at": null,
+        "refunded_at": null,
+        "auto_resume_date": null
     };
     const baseSubscription = {
         "expires_date": FAKE_EXPIRES,
@@ -282,15 +452,17 @@ function buildGuessNames(bid) {
         "period_type": "normal",
         "billing_issues_detected_at": null,
         "grace_period_expires_date": null,
-        "unsubscribe_detected_at": null
+        "unsubscribe_detected_at": null,
+        "refunded_at": null,
+        "auto_resume_date": null
     };
 
     // 基础结构补全（不硬编码 original_application_version，避免干扰版本判断）
     sub.subscriptions = sub.subscriptions || {};
     sub.entitlements = sub.entitlements || {};
     sub.non_subscriptions = sub.non_subscriptions || {};
-    sub.original_purchase_date = sub.original_purchase_date || origStr;
-    sub.first_seen = sub.first_seen || origStr;
+    // C3：first_seen / original_purchase_date 保留原值，缺失不伪造
+    // （此前缺失时默认补 3 年前日期，现删除；original_application_version 本就不补，见修复记录 9）
     sub.management_url = sub.management_url || "https://apps.apple.com/account/subscriptions";
 
     // 精准映射（数组保序；type 决定写 subscriptions 还是 non_subscriptions）
@@ -381,7 +553,107 @@ function buildGuessNames(bid) {
         // billmate 的 product 含 yearly，按 id 判年订阅；col.or 的 product 无后缀，类型推断不明暂按订阅注入
         // （不影响解锁），待核实；'billmate'、'col.or' 均为独特品牌词，子串匹配风险低
         { match: 'billmate',                    name: 'Bill Mate Pro',                                    id: 'com.billmate.plus.yearly',              type: 'subscription', strict: false },
-        { match: 'col.or',                      name: 'Color Plus',                                       id: 'com.color.plus',                        type: 'subscription', strict: false }
+        { match: 'col.or',                      name: 'Color Plus',                                       id: 'com.color.plus',                        type: 'subscription', strict: false },
+        // Reheji.js 第五批（2026-11-16 全表合并，来源 @ddm1023，2026-11-13 版，仅供个人研究使用）：
+        // 现有 54 条在前优先（首 match 胜出）；本批 93 条 listua 规则（终身 51 / 订阅 42，
+        // strict 36，names 双权益 2 条），均未用真实响应核实。过滤：重叠 42、排除名单 2、
+        // 中文编码 key 23、短 key 20、通用名 248、无名 4、存疑 1（me.xgmm.note 的 id
+        // 20250203 为日期串）；type 一律按 C2 从 product id 判定（不用 Reheji 的 cm 字段）；
+        // %20 形式（如 Island%20Reader）保留——UA 里 app 名经百分号编码，与本地空格形式
+        // （Island Reader）各覆盖一种 UA 形态；双权益 names 数组的 id 用主 id，idb 未保留
+        { match: 'Island%20Reader',              name: 'BookSpeak Pro',                          id: 'com.luyaolab.bookspeak.lifetime',                  type: 'lifetime', strict: false },
+        { match: 'volix',                        name: 'Device Kit Pro',                         id: 'com.volix.pro',                                    type: 'subscription', strict: true  },
+        { match: 'Speaker%20Cleaner',            name: 'WaterEject Pro',                         id: 'lifetime_water_eject',                             type: 'lifetime', strict: false },
+        { match: 'MusicPlayer',                  name: 'com.zhuangmengting.player',              id: 'com.zhuangmengting.player.permanen',               type: 'lifetime', strict: true  },
+        { match: 'VideoBlur',                    name: 'com.zhuangmengting.blur',                id: 'com.zhuangmengting.blur.pro.permanent',            type: 'lifetime', strict: true  },
+        { match: 'PicPure',                      name: 'PicPure Pro',                            id: 'LifetimeAccess2',                                  type: 'lifetime', strict: true  },
+        { match: 'Image2PDF',                    name: 'Convertly Pro',                          id: 'life_time_id',                                     type: 'lifetime', strict: false },
+        { match: 'OneTT',                        name: 'CloneCam Pro',                           id: 'clonecam.lifetime',                                type: 'lifetime', strict: true  },
+        { match: 'ShowcasePro',                  name: 'ShowcasePro.Ultra',                      id: 'DesignTech.SIA.ShowcasePro.Ultra.Lifetime',        type: 'lifetime', strict: false },
+        { match: 'iOS/3001101',                  name: 'doneitPremium',                          id: 'DesignTech.SIA.Doneit.Premium.Plan.Lifetime',      type: 'lifetime', strict: false },
+        { match: 'Speedometer',                  name: 'SpeedometerLite Pro',                    id: 'speedometerlite_lifetime',                         type: 'lifetime', strict: true  },
+        { match: 'Swish',                        name: 'Swish Pro',                              id: 'swish_pro_lifetime',                               type: 'lifetime', strict: true  },
+        { match: 'PinDou',                       name: 'PinDou Pro',                             id: 'com.pangqing.pindou.pro0',                         type: 'subscription', strict: true  },
+        { match: 'ReverseChallengeSwiftUI',      name: 'ReverseChallenge.Pro',                   id: 'com.abighead.ReverseChallenge.iap.pro',            type: 'subscription', strict: false },
+        { match: 'Ticket%20Lover',               name: 'com.minardwu.ticketlover_lifetime',      id: 'com.minardwu.ticketlover_lifetime',                type: 'lifetime', strict: false },
+        { match: 'rxframe',                      name: 'com.minardwu.rxframe_lifetime',          id: 'com.minardwu.rxframe_lifetime',                    type: 'lifetime', strict: true  },
+        { match: 'TagCamera',                    name: 'TagCamera Pro',                          id: 'com.foxlin.tagcamera.pro.lifetime',                type: 'lifetime', strict: false },
+        { match: 'PhotoAlbumManager',            name: 'picseekpro',                             id: 'ape.lifetime',                                     type: 'lifetime', strict: false },
+        { match: 'weight',                       name: 'Weight Pro',                             id: 'weight.pro.lifetime',                              type: 'lifetime', strict: true  },
+        { match: 'QuietCam',                     name: 'QuietCam Pro',                           id: 'pawelchmiel.quietcam.yearly',                      type: 'subscription', strict: false },
+        { match: 'OrbitFast',                    name: 'Orbit Fast Full',                        id: 'com.fastorbitapps.OrbitFast.premium.lifetime',     type: 'lifetime', strict: false },
+        { match: 'VidCap',                       name: 'io.fadel.vidcap.pro',                    id: 'io.fadel.vidcap.pro.lifetime',                     type: 'lifetime', strict: true  },
+        { match: 'TheGreatMe',                   name: 'The Great Me Pro',                       id: 'thegreatme.forever',                               type: 'lifetime', strict: false },
+        { match: 'ai_music_generator',           name: 'music_generation_yearly_79_99',          id: 'music_generation_yearly_79_99',                    type: 'subscription', strict: false },
+        { match: 'ShouChong',                    name: 'lulemevip',                              id: 'lulemeYears',                                      type: 'subscription', strict: false },
+        { match: 'BeetleADB',                    name: 'beetle_pro',                             id: 'beetle_lifetime_pro',                              type: 'lifetime', strict: false },
+        { match: 'Awake',                        name: 'awake_pro',                              id: 'io.unorderly.awake.pro.lifetime_v1',               type: 'lifetime', strict: true  },
+        { match: 'LaunchTrans',                  name: 'PicChat.Subscribe.Start',                id: 'Yearly.PicChat',                                   type: 'subscription', strict: false },
+        { match: 'stopwatch',                    name: 'remove_ads',                             id: 'hasen_stopwatch_remove_ads',                       type: 'subscription', strict: true  },
+        { match: 'ArchiveList',                  name: 'pro_life',                               id: 'com.jy.ArchiveBox.pro_1',                          type: 'subscription', strict: false },
+        { match: 'AppBox',                       name: 'appbookmark_vip',                        id: 'GAB_Lifetime_VIP',                                 type: 'lifetime', strict: true  },
+        { match: 'Sunlitt',                      name: 'sunlitt.pro',                            id: 'pro.lifetime',                                     type: 'lifetime', strict: true  },
+        { match: 'Moonlitt',                     name: 'moonlitt.pro',                           id: 'moonlitt.pro.lifetime',                            type: 'lifetime', strict: false },
+        { match: 'A%20Widget',                   name: 'all_widgets',                            id: 'all_widgets',                                      type: 'subscription', strict: false },
+        { match: 'AccuFind',                     name: 'accufind_payments',                      id: 'accufind_lifetime',                                type: 'lifetime', strict: false },
+        { match: 'IPCams',                       names: ['pro', 'pro_plus'],                     id: 'ipcams_pro_lifetime',                              type: 'lifetime', strict: true  },
+        { match: 'ArtStage',                     name: 'FullAccess',                             id: 'com.nicdeane.artstage.YearlySubscription',         type: 'subscription', strict: false },
+        { match: 'Infltr',                       name: 'com.Yooshr.infltr.subscriptionPremium',  id: 'com.Yooshr.infltr.everythingForever',              type: 'lifetime', strict: true  },
+        { match: 'Vinyls',                       name: 'AllPro',                                 id: 'com.shi.Vin.lifetime',                             type: 'lifetime', strict: true  },
+        { match: 'Wishy',                        name: 'Wishy Subscription',                     id: 'wishy_lifetime_subscription',                      type: 'lifetime', strict: true  },
+        { match: 'becoming',                     name: 'Strength Pro',                           id: 'strength_membership_lifetime',                     type: 'lifetime', strict: true  },
+        { match: 'Morphose',                     name: 'ProStandard',                            id: 'com.pixery.morphose.yearly',                       type: 'subscription', strict: false },
+        { match: 'Unfold',                       name: 'REDUCED_PRO_YEARLY',                     id: 'UNFOLD_PRO_YEARLY',                                type: 'subscription', strict: true  },
+        { match: 'Binsoo',                       name: 'vibe',                                   id: 'annual',                                           type: 'subscription', strict: true  },
+        { match: 'ChatPub',                      name: 'Unlimited Access',                       id: 'conversationai.annual',                            type: 'subscription', strict: true  },
+        { match: 'quitnow',                      name: 'pro_features',                           id: 'com.eaginsoftware.QuitNow.unlock_all_pro_features', type: 'subscription', strict: true  },
+        { match: 'ChatBot',                      name: 'chatbot_annual',                         id: 'chatbot_annual',                                   type: 'subscription', strict: true  },
+        { match: 'VibeCamera',                   name: 'forever',                                id: 'vibe_pro_forever',                                 type: 'lifetime', strict: false },
+        { match: 'No%20Fusion',                  name: 'LivePhoto',                              id: 'com.grey.nofusion.livephoto',                      type: 'subscription', strict: false },
+        { match: 'Themy',                        name: 'fonts_premium',                          id: 'lifetime',                                         type: 'lifetime', strict: true  },
+        { match: 'FujiLifeStyle',                name: 'FUJIStyle Pro(Year)',                    id: 'FujiStyle2024003',                                 type: 'subscription', strict: false },
+        { match: 'CharingCrossRoad',             name: 'ready_pro',                              id: 'ready_pro_50_1y',                                  type: 'subscription', strict: false },
+        { match: 'ig-bookmarker',                name: 'entitlement',                            id: 'lifetimeID',                                       type: 'lifetime', strict: false },
+        { match: 'CallAnnie',                    name: 'ai.animato.callannie.entitlement.pro0',  id: 'ai.animato.callannie.proyearly1',                  type: 'subscription', strict: false },
+        { match: 'moss-ios',                     name: 'prouser',                                id: 'dpbox_yearly_68',                                  type: 'subscription', strict: false },
+        { match: 'TQBrowser',                    name: 'pro_lt',                                 id: 'com.tk.client.lifetime',                           type: 'lifetime', strict: false },
+        { match: 'DHWaterMarkManager',           name: 'WaterManager_common',                    id: 'lifetimeVIP_001',                                  type: 'lifetime', strict: false },
+        { match: 'MaxWallpaper',                 name: 'maxwallpaper_common',                    id: 'super_forever_vip',                                type: 'lifetime', strict: false },
+        { match: 'Loora',                        name: 'Yearly',                                 id: 'yearly_free_ref_10usd_off',                        type: 'subscription', strict: true  },
+        { match: 'Airmail',                      name: 'Airmail Premium',                        id: 'Airmail_iOS_Yearly_P',                             type: 'subscription', strict: true  },
+        { match: 'ip_tv_react_native',           name: 'Single',                                 id: 'opus.lifetime',                                    type: 'lifetime', strict: false },
+        { match: 'timetrack.io',                 name: 'atimelogger-premium-plus',               id: 'ttio_premium_plus',                                type: 'subscription', strict: false },
+        { match: 'Video%20Teleprompter',         name: 'videoPremium',                           id: 'com.joeallenpro.videoteleprompter.upgrade.yearly_a', type: 'subscription', strict: false },
+        { match: 'rewritingText',                name: 'AIGrammercheckerProAccess',              id: 'sv.aigrammerchecker.com.lifetime',                 type: 'lifetime', strict: false },
+        { match: 'ShellBoxKit',                  name: 'ssh_pro',                                id: 'ShellBoxKit.Year',                                 type: 'subscription', strict: false },
+        { match: 'Whisper',                      name: 'all_features',                           id: 'whisperai_80_y',                                   type: 'subscription', strict: true  },
+        { match: 'AnimeArt',                     name: 'AnimeArt.Gold',                          id: 'WaifuArt.Lifetime',                                type: 'lifetime', strict: false },
+        { match: 'MusicPutty',                   name: 'pro_version',                            id: 'mp_3599_1y',                                       type: 'subscription', strict: false },
+        { match: 'Sex%20Actions',                name: 'Premium Plus',                           id: 'ru.sexactions.subscriptionPromo1',                 type: 'subscription', strict: false },
+        { match: 'LockFlow',                     name: 'unlimited_access',                       id: 'lf_00.00_lifetime',                                type: 'lifetime', strict: false },
+        { match: 'VoiceAI',                      name: 'Special Offer',                          id: 'voiceannualspecial',                               type: 'subscription', strict: true  },
+        { match: 'AIKeyboard',                   name: 'plus_keyboard',                          id: 'aiplus_keyboard_yearly',                           type: 'subscription', strict: false },
+        { match: 'LazyReply',                    name: 'lazyReplyYearlySubscription',            id: 'com.bokhary.lazyreply.yearlyprosubscription',      type: 'subscription', strict: false },
+        { match: 'LazyBoard',                    name: 'lazyboardPro',                           id: 'com.bokhary.magicboard.magicboardpro',             type: 'subscription', strict: false },
+        { match: 'PDF%20Viewer',                 name: 'sub.pro',                                id: 'com.pspdfkit.viewer.sub.pro.yearly',               type: 'subscription', strict: false },
+        { match: 'Persona',                      name: 'unlimited',                              id: 'com.tickettothemoon.video.persona.one.time.purchase', type: 'lifetime', strict: true  },
+        { match: 'easy_chart',                   name: 'unlock all',                             id: 'qgnjs_lifetime',                                   type: 'lifetime', strict: false },
+        { match: 'Tide%20Guide',                 name: 'Tides+',                                 id: 'TideGuidePro_Lifetime_Family_149.99',              type: 'lifetime', strict: false },
+        { match: 'ASKAI',                        names: ['pro', 'pro_plan'],                     id: 'askai_pro',                                        type: 'subscription', strict: true  },
+        { match: 'shipian-ios',                  name: 'vipOffering',                            id: 'shipian_25_forever',                               type: 'lifetime', strict: false },
+        { match: 'tiimo',                        name: 'full_access',                            id: 'lifetime.iap',                                     type: 'lifetime', strict: true  },
+        { match: 'Project%20Delta',              name: 'rc_entitlement_obscura_ultra',           id: 'com.benricemccarthy.obscura4.obscura_ultra_lifetime', type: 'lifetime', strict: false },
+        { match: 'Zettelbox',                    name: 'Power Pack',                             id: 'powerpack_permanent_1',                            type: 'lifetime', strict: false },
+        { match: 'Context_iOS',                  name: 'Context Pro',                            id: 'ctx_sub_1y_sspai_preorder_angel',                  type: 'subscription', strict: false },
+        { match: 'MySticker',                    name: 'mysticker premium',                      id: 'com.miiiao.MySticker.lifetime',                    type: 'lifetime', strict: false },
+        { match: 'Stress',                       name: 'StressWatch Pro',                        id: 'stress_membership_lifetime',                       type: 'lifetime', strict: true  },
+        { match: 'Worrydolls',                   name: 'magicmode',                              id: 'magicmode',                                        type: 'subscription', strict: false },
+        { match: 'Falendar',                     name: 'Falendar+',                              id: 'falendar_68_life',                                 type: 'lifetime', strict: false },
+        { match: 'Alpenglow',                    name: 'newPro',                                 id: 'ProLifetime',                                      type: 'lifetime', strict: false },
+        { match: 'Decision',                     name: 'com.nixwang.decision.entitlements.pro',  id: 'com.nixwang.decision.pro.annual',                  type: 'subscription', strict: true  },
+        { match: 'audiomack-iphone',             name: 'Premium1',                               id: 'com.audiomack.premium.2022',                       type: 'subscription', strict: false },
+        { match: 'MallocVPN',                    name: 'IOS_PRO',                                id: 'malloc_yearly_vpn',                                type: 'subscription', strict: false },
+        { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true  }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
@@ -418,6 +690,12 @@ function buildGuessNames(bid) {
                 "product_identifier": productId
             };
         }
+        // C9 断言：订阅 expires_date 必须为 2099-12-31（只校验本次注入的项，不动真实记录）
+        const s = sub.subscriptions[productId];
+        if (s && s.expires_date !== FAKE_EXPIRES) {
+            console.log(`[RC] C9 断言：订阅 ${productId} expires_date 非 2099，已强制改回`);
+            s.expires_date = FAKE_EXPIRES;
+        }
     };
 
     const injectLifetime = (productId, entNames) => {
@@ -427,7 +705,10 @@ function buildGuessNames(bid) {
                 ...exEnt,
                 ...baseEntitlementLifetime,
                 "purchase_date": exEnt.purchase_date || nowStr,
-                "product_identifier": productId
+                "product_identifier": productId,
+                // C4：终身项补 price 与 display_name（取权益名）
+                "price": { "amount": 0, "currency": "USD" },
+                "display_name": n
             };
         }
         const list = sub.non_subscriptions[productId] || [];
@@ -442,74 +723,222 @@ function buildGuessNames(bid) {
             });
         }
         sub.non_subscriptions[productId] = list;
+        // C9 断言：终身权益 expires_date 必须为 null（只校验本次注入的项，不动真实记录）
+        for (const n of entNames) {
+            const e = sub.entitlements[n];
+            if (e && e.expires_date !== null) {
+                console.log(`[RC] C9 断言：终身权益 ${n} expires_date 非 null，已强制改回 null`);
+                e.expires_date = null;
+            }
+        }
     };
 
     let matchedAppKey, targetId;
-    if (rule) {
-        // 精确命中：按 type 只写一边；entitlement 支持 names 数组（候选集，未核实）或单个 name
-        const entNames = rule.names || [rule.name];
-        matchedAppKey = rule.match;
-        targetId = rule.id;
-        if (rule.type === 'lifetime') injectLifetime(rule.id, entNames);
-        else injectSubscription(rule.id, entNames);
-    } else {
-        // 盲猜：只走订阅型注入，不写 non_subscriptions，避免同一 product 两边写
+    // C1：注入来源标记（日志用）：'exact' 精确规则 / 'offerings' 真实 offerings / 'blind' 单名盲猜
+    let injectSource = 'blind';
+    // $done 只调用一次的守卫（异步 offerings 回调与超时可能竞态）
+    let doneCalled = false;
+    const doneOnce = (arg) => { if (!doneCalled) { doneCalled = true; $done(arg); } };
+
+    // C3：注入/刷新后统一重算派生一致性字段（与 entitlements/subscriptions 保持一致）
+    const recomputeDerivedFields = () => {
+        const subIds = Object.keys(sub.subscriptions);
+        const nonSubIds = Object.keys(sub.non_subscriptions);
+        // latest_expiration_date：全部订阅中最晚的 expires_date；全终身（无订阅）时为 null
+        let latest = null;
+        const allExp = {};
+        const allPur = {};
+        const allPurchased = [];
+        const activeSubs = [];
+        for (const pid of subIds) {
+            const cur = sub.subscriptions[pid] || {};
+            if (cur.expires_date) {
+                allExp[pid] = cur.expires_date;
+                if (!latest || cur.expires_date > latest) latest = cur.expires_date;
+                if (cur.expires_date > nowStr) activeSubs.push(pid);
+            }
+            if (cur.purchase_date) allPur[pid] = cur.purchase_date;
+            if (allPurchased.indexOf(pid) < 0) allPurchased.push(pid);
+        }
+        for (const pid of nonSubIds) {
+            const list = sub.non_subscriptions[pid] || [];
+            for (const e of list) {
+                if (e && e.purchase_date && !allPur[pid]) allPur[pid] = e.purchase_date;
+            }
+            // 终身产品无到期日，按官方语义记 null
+            if (!(pid in allExp)) allExp[pid] = null;
+            if (allPurchased.indexOf(pid) < 0) allPurchased.push(pid);
+        }
+        sub.latest_expiration_date = latest;
+        sub.all_expiration_dates_by_product = allExp;
+        sub.all_purchase_dates_by_product = allPur;
+        sub.all_purchased_product_identifiers = allPurchased;
+        sub.active_subscriptions = activeSubs;
+        // request_date 是服务端取数时间，SDK 用它与 expires_date 比较判 isActive：保留原值，缺失才补
+        if (!sub.request_date) sub.request_date = nowStr;
+        // management_url 已在结构补全时默认给 App Store 链接，此处不重复处理
+    };
+
+    // 收尾：统一延期 → C3 重算 → 通知节流 → 日志 → $done（只调用一次）
+    const finalizeInjection = () => {
+        // 统一延期现存 entitlement / subscription：把"已失效信号"（will_renew=false、
+        // unsubscribe_detected_at、billing_issues_detected_at、is_sandbox=true 等）统一刷成
+        // 正常订阅状态，只保留真实购买时间与 product_identifier。
+        // 注意展开顺序：真实值在前、模板在后，否则真实值会把模板盖掉（2026-10-15 审查发现）。
+        // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null。
+        for (const name of Object.keys(sub.entitlements)) {
+            const cur = sub.entitlements[name] || {};
+            const isLifetime = cur.expires_date === null || cur.expires_date === undefined;
+            sub.entitlements[name] = {
+                ...cur,
+                ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
+                "expires_date": isLifetime ? null : FAKE_EXPIRES,
+                "grace_period_expires_date": null,
+                "purchase_date": cur.purchase_date || nowStr,
+                "product_identifier": cur.product_identifier || targetId
+            };
+        }
+        for (const pid of Object.keys(sub.subscriptions)) {
+            const cur = sub.subscriptions[pid] || {};
+            sub.subscriptions[pid] = {
+                ...cur,
+                ...baseSubscription,
+                "expires_date": FAKE_EXPIRES,
+                "original_purchase_date": cur.original_purchase_date || origStr,
+                "purchase_date": cur.purchase_date || nowStr
+            };
+        }
+        // C3：重算派生一致性字段
+        recomputeDerivedFields();
+
+        // 通知节流：只在精确命中时发送，盲猜/offerings 不再误报。
+        // key 用 v2 命名空间，与旧版脚本的节流记录隔离，避免旧记录导致长期不通知。
+        if (rule) {
+            const cleanKey = rule.match.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const storageKey = `rc_notify_v2_${cleanKey}`;
+            const lastNotify = $.getdata(storageKey) || 0;
+            const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
+            if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
+                $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
+                $.setdata(Date.now().toString(), storageKey);
+                console.log(`[RC] 已发送通知: ${storageKey}`);
+            } else {
+                console.log(`[RC] 通知节流中，跳过 (距上次 ${hoursSince.toFixed(1)}h，阈值 ${NOTIFY_INTERVAL_HOURS}h): ${storageKey}`);
+            }
+        }
+
+        const tag = rule ? ` [精确/${rule.type}]` : (injectSource === 'offerings' ? ' [offerings]' : ' [盲猜]');
+        console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId})${tag}`);
+        doneOnce({ body: JSON.stringify(obj) });
+    };
+
+    // C1 单名盲猜回退（行为变更：不再注入全部通用名，只注入一个最可能的权益名）
+    const injectBlindGuess = () => {
         // BID 取最后一段，但过滤纯顶级域名（如 thirteendoots.kelo.com -> com），此时改用 UA 的 App 名
         const TLD = new Set(['com', 'net', 'org', 'io', 'app', 'dev', 'me', 'co', 'cn']);
         let keyFromBid = BID ? BID.split('.').pop() : '';
         if (TLD.has(keyFromBid.toLowerCase())) keyFromBid = '';
         matchedAppKey = keyFromBid || ((rawUA.split('/')[0] || "App").split(' ')[0]);
         targetId = BID ? `${BID}.subscription` : `com.${matchedAppKey.toLowerCase()}.subscription`;
-        // 盲猜候选集：静态通用名 + BID 派生（如 datacalc.pro）
-        injectSubscription(targetId, buildGuessNames(BID));
-    }
+        const singleName = pickSingleGuessName(BID);
+        injectSource = 'blind';
+        console.log(`[RC] 盲猜回退：单名注入 ${singleName}（${targetId}）`);
+        injectSubscription(targetId, [singleName]);
+    };
 
-    // 统一延期现存 entitlement / subscription：把"已失效信号"（will_renew=false、
-    // unsubscribe_detected_at、billing_issues_detected_at、is_sandbox=true 等）统一刷成
-    // 正常订阅状态，只保留真实购买时间与 product_identifier。
-    // 注意展开顺序：真实值在前、模板在后，否则真实值会把模板盖掉（2026-10-15 审查发现）。
-    // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null。
-    for (const name of Object.keys(sub.entitlements)) {
-        const cur = sub.entitlements[name] || {};
-        const isLifetime = cur.expires_date === null || cur.expires_date === undefined;
-        sub.entitlements[name] = {
-            ...cur,
-            ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
-            "expires_date": isLifetime ? null : FAKE_EXPIRES,
-            "grace_period_expires_date": null,
-            "purchase_date": cur.purchase_date || nowStr,
-            "product_identifier": cur.product_identifier || targetId
-        };
-    }
-    for (const pid of Object.keys(sub.subscriptions)) {
-        const cur = sub.subscriptions[pid] || {};
-        sub.subscriptions[pid] = {
-            ...cur,
-            ...baseSubscription,
-            "expires_date": FAKE_EXPIRES,
-            "original_purchase_date": cur.original_purchase_date || origStr,
-            "purchase_date": cur.purchase_date || nowStr
-        };
-    }
-
-    // 通知节流：只在精确命中时发送，盲猜不再误报。
-    // key 用 v2 命名空间，与旧版脚本的节流记录隔离，避免旧记录导致长期不通知。
     if (rule) {
-        const cleanKey = rule.match.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const storageKey = `rc_notify_v2_${cleanKey}`;
-        const lastNotify = $.getdata(storageKey) || 0;
-        const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
-        if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
-            $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
-            $.setdata(Date.now().toString(), storageKey);
-            console.log(`[RC] 已发送通知: ${storageKey}`);
-        } else {
-            console.log(`[RC] 通知节流中，跳过 (距上次 ${hoursSince.toFixed(1)}h，阈值 ${NOTIFY_INTERVAL_HOURS}h): ${storageKey}`);
-        }
+        // 精确命中：按 type 只写一边；entitlement 支持 names 数组（候选集，未核实）或单个 name；
+        // names 双权益（nameb）同样走 names 数组（id 用主 id，idb 未保留）
+        const entNames = rule.names || [rule.name];
+        matchedAppKey = rule.match;
+        targetId = rule.id;
+        injectSource = 'exact';
+        if (rule.type === 'lifetime') injectLifetime(rule.id, entNames);
+        else injectSubscription(rule.id, entNames);
+        finalizeInjection();
+        return;
     }
 
-    console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId})${rule ? ` [精确/${rule.type}]` : ' [盲猜]'}`);
-    $done({ body: JSON.stringify(obj) });
+    // C1：无本地规则 → 先试真实 offerings，再回退单名盲猜
+    // 只对能取到 app_user_id 的 /v1/subscribers 请求做 offerings 请求；/v1/receipts 保持原行为
+    const subMatch = ($request.url || '').match(/^(https?:\/\/[^\/]+)\/v1\/subscribers\/([^\/\?\s]+)/i);
+    const hasFetchEngine = (typeof $task !== 'undefined' && $task && typeof $task.fetch === 'function')
+        || (typeof $httpClient !== 'undefined' && $httpClient && typeof $httpClient.get === 'function')
+        || (typeof $https !== 'undefined' && $https && typeof $https.get === 'function')
+        || (typeof $http !== 'undefined' && $http && typeof $http.get === 'function');
+    if (!subMatch || !hasFetchEngine) {
+        if (!subMatch) console.log('[RC] 无 app_user_id（receipts 或非 subscribers 请求），跳过 offerings，直接盲猜');
+        else console.log('[RC] 当前环境无可用 fetch 引擎，跳过 offerings，直接盲猜');
+        injectBlindGuess();
+        finalizeInjection();
+        return;
+    }
+    const offeringsUrl = subMatch[1] + '/v1/subscribers/' + subMatch[2] + '/offerings';
+    // 复用当前请求头（去掉条件缓存头，不硬编码任何 key）
+    const offHeaders = {};
+    for (const k of Object.keys(reqHeaders)) {
+        const lk = k.toLowerCase();
+        if (lk === 'if-none-match' || lk === 'if-modified-since' || lk === 'x-revenuecat-etag') continue;
+        offHeaders[k] = reqHeaders[k];
+    }
+    let settled = false;
+    let timer = null;
+    const finishOfferings = (ok, offeringsBody) => {
+        if (settled) return;
+        settled = true;
+        if (timer) { try { clearTimeout(timer); } catch (e) { /* 无定时器 */ } }
+        if (ok && offeringsBody) {
+            try {
+                const offObj = JSON.parse(offeringsBody);
+                const offerings = (offObj && offObj.offerings) || [];
+                let injected = 0;
+                for (const offering of offerings) {
+                    const pkgs = (offering && offering.packages) || [];
+                    // trial/intro 包非首选：先过一遍非 trial 包，若全是 trial 才用 trial 包
+                    const usable = pkgs.filter(p => !isTrialPackage(p.identifier, p.platform_product_identifier));
+                    const chosen = usable.length ? usable : pkgs;
+                    for (const p of chosen) {
+                        const productId = p.platform_product_identifier;
+                        if (!productId) continue;
+                        const entName = deriveEntitlementName(offering.identifier, p.identifier, productId);
+                        const type = classifyProductType(productId, p.identifier);
+                        if (injected === 0) {
+                            matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
+                            targetId = productId;
+                        }
+                        if (type === 'lifetime') injectLifetime(productId, [entName]);
+                        else injectSubscription(productId, [entName]);
+                        injected++;
+                    }
+                }
+                if (injected > 0) {
+                    injectSource = 'offerings';
+                    console.log(`[RC] offerings 反推注入完成：${injected} 个 package（${offeringsUrl}）`);
+                    finalizeInjection();
+                    return;
+                }
+                console.log('[RC] offerings 响应无可用 package，走盲猜回退');
+            } catch (e) {
+                console.log(`[RC] offerings 解析失败，走盲猜回退：${e.message}`);
+            }
+        } else {
+            console.log('[RC] offerings 请求失败/超时，走盲猜回退');
+        }
+        injectBlindGuess();
+        finalizeInjection();
+    };
+    try {
+        if (typeof setTimeout === 'function') {
+            timer = setTimeout(() => finishOfferings(false, null), OFFERINGS_TIMEOUT_MS);
+        } else {
+            console.log('[RC] 当前环境无 setTimeout，offerings 请求无超时保护（依赖引擎自身超时）');
+        }
+    } catch (e) {
+        console.log(`[RC] 定时器不可用，offerings 请求无超时保护：${e.message}`);
+    }
+    httpGetJson(offeringsUrl, offHeaders,
+        (resp) => finishOfferings(true, resp.body),
+        (err) => { console.log(`[RC] offerings 请求失败：${err}`); finishOfferings(false, null); });
     return;
 })();
 
