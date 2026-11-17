@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-修复记录（2026-11-16）：
+修复记录（2026-11-17）：
 1. AdGuard%20Home → AdGuard Home：UA 头里是空格不是 %20，原规则永
    远匹配不上，现已修复
 2. 通知只在精确命中 MappingRules 时发送；盲猜路径只打日志，不再
@@ -133,6 +133,25 @@
     类型、属模块改动，本次未做；C9 终身 null+non_subscriptions、订阅 2099+subscriptions
     加断言防回归；行为变更：盲猜回退改为单名注入（BID 派生 token.pro 优先，无派生
     时用 pro），不再注入全部通用名
+36. 外部审查整改第二轮（2026-11-17，用户上传审查报告、主代理逐条核实后执行）：
+    P0#1 finishOfferings 改为只选一个最优包（全部 offering 的全部 package 先滤
+    trial/intro 包，全是 trial 才用 trial 包；打分 lifetime=3、yearly/annual=2、
+    其他=1，取最高分、平局取先遇到的一个；只注入该包，matchedAppKey/targetId
+    只由此包设定；日志改为记录选中的单个 package）；P0#2 finalizeInjection 删掉
+    product_identifier 的 || targetId 兜底，真实 entitlement 保留自身 product_identifier
+    （缺失不伪造）；P0#3 无 setTimeout 环境直接放弃 offerings、走盲猜，不发起
+    http 请求（QX 老版本异步请求无内置超时，会 hang 住 $done 永不触发）；P1#5
+    injectLifetime 删掉 entitlement 上的 price/display_name（官方 EntitlementInfo
+    与 non_subscriptions 字段表均无此二字段，不移到 non_subscriptions 里）；
+    P1#6 offerings 注入成功可通知（开关 OFFERINGS_NOTIFY，默认开；单独节流 key
+    rc_notify_v2_off_<App>，12 小时，文案按本次注入实际类型区分终身/订阅）；
+    P1#7 recomputeDerivedFields 的过期日比较改 Date 比较（NaN 跳过）；P2#9 safeTest
+    strict 改手动边界检查（\b 只对 ASCII 生效；词字符含 CJK：汉字/扩展/假名/韩文）。
+    否决不做：P1#4 entitlement_verification 字段在 subscriber 响应里不存在（Trusted
+    Entitlements 模式是 SDK 侧配置、验证结果是 SDK 侧枚举，响应体无法得知），不加
+    死代码；P2#8 规则表拆 BID/UA 两表暂缓（147 条重排需全量审计、无功能收益）；
+    P2#10 GUESS_NAMES 带空格名是真实 entitlement 统计结果，不是 bug；P2#11 origStr
+    固定 3 年前（“App 会校验”无来源），不改
 **************************************/
 
 const $ = new Env("RevenueCat_Pro");
@@ -158,6 +177,8 @@ const FORBIDDEN_APPS = [
 ];
 // C1：offerings 请求超时（毫秒）
 const OFFERINGS_TIMEOUT_MS = 4000;
+// P1#6：offerings 路径通知开关（offerings 属“半精确”，注入成功可单独通知；改为 false 关闭）
+const OFFERINGS_NOTIFY = true;
 
 // 盲猜用的通用 entitlement 名
 // 数据来源：2026-10-14 对上游 Reheji.js 422 条真实映射的词频统计，
@@ -657,11 +678,25 @@ function httpGetJson(url, headers, onOk, onErr) {
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
+    // P2#9：\b 只对 ASCII 词字符生效，中文 key 上 strict 等于失效；改为手动边界检查
+    // 词字符 = ASCII 字母数字下划线 + CJK（汉字 \u4e00-\u9fff、扩展 \u3400-\u4dbf、
+    // 日文假名 \u3040-\u30ff、韩文 \uac00-\ud7a3）；前后都不是词字符（或串首/串尾）才算命中
+    const isWordChar = (ch) => /[A-Za-z0-9_]/.test(ch)
+        || (ch >= '\u4e00' && ch <= '\u9fff') || (ch >= '\u3400' && ch <= '\u4dbf')
+        || (ch >= '\u3040' && ch <= '\u30ff') || (ch >= '\uac00' && ch <= '\ud7a3');
     const safeTest = (pattern, text, strict) => {
         if (!text) return false;
         const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const src = strict ? `\\b${escaped}\\b` : escaped;
-        return new RegExp(src, 'i').test(text);
+        if (!strict) return new RegExp(escaped, 'i').test(text);
+        const re = new RegExp(escaped, 'gi');
+        let m;
+        while ((m = re.exec(text)) !== null) {
+            const before = m.index > 0 ? text[m.index - 1] : '';
+            const after = m.index + m[0].length < text.length ? text[m.index + m[0].length] : '';
+            if (!isWordChar(before) && !isWordChar(after)) return true;
+            if (m[0].length === 0) re.lastIndex++; // 防御零长匹配死循环（规则 match 均非空）
+        }
+        return false;
     };
 
     let rule = null;
@@ -705,10 +740,9 @@ function httpGetJson(url, headers, onOk, onErr) {
                 ...exEnt,
                 ...baseEntitlementLifetime,
                 "purchase_date": exEnt.purchase_date || nowStr,
-                "product_identifier": productId,
-                // C4：终身项补 price 与 display_name（取权益名）
-                "price": { "amount": 0, "currency": "USD" },
-                "display_name": n
+                "product_identifier": productId
+                // P1#5：官方 EntitlementInfo 与 non_subscriptions 字段表均无 price/display_name，
+                // 本轮曾按 Reheji 做法补过，已删掉（SDK 解码时会忽略未知字段，删掉更干净）
             };
         }
         const list = sub.non_subscriptions[productId] || [];
@@ -736,6 +770,8 @@ function httpGetJson(url, headers, onOk, onErr) {
     let matchedAppKey, targetId;
     // C1：注入来源标记（日志用）：'exact' 精确规则 / 'offerings' 真实 offerings / 'blind' 单名盲猜
     let injectSource = 'blind';
+    // P1#6：offerings 路径本次注入的实际类型（lifetime/subscription），通知文案用
+    let injectedOfferingsType = null;
     // $done 只调用一次的守卫（异步 offerings 回调与超时可能竞态）
     let doneCalled = false;
     const doneOnce = (arg) => { if (!doneCalled) { doneCalled = true; $done(arg); } };
@@ -746,6 +782,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         const nonSubIds = Object.keys(sub.non_subscriptions);
         // latest_expiration_date：全部订阅中最晚的 expires_date；全终身（无订阅）时为 null
         let latest = null;
+        let latestDate = null; // P1#7：latest 的 Date 形式，用于 Date 比较
         const allExp = {};
         const allPur = {};
         const allPurchased = [];
@@ -754,8 +791,12 @@ function httpGetJson(url, headers, onOk, onErr) {
             const cur = sub.subscriptions[pid] || {};
             if (cur.expires_date) {
                 allExp[pid] = cur.expires_date;
-                if (!latest || cur.expires_date > latest) latest = cur.expires_date;
-                if (cur.expires_date > nowStr) activeSubs.push(pid);
+                // P1#7：ISO 字符串比较改 Date 比较，解析失败（NaN）跳过不参与
+                const expDate = new Date(cur.expires_date);
+                if (!isNaN(expDate.getTime())) {
+                    if (!latestDate || expDate > latestDate) { latestDate = expDate; latest = cur.expires_date; }
+                    if (expDate > now) activeSubs.push(pid);
+                }
             }
             if (cur.purchase_date) allPur[pid] = cur.purchase_date;
             if (allPurchased.indexOf(pid) < 0) allPurchased.push(pid);
@@ -795,7 +836,10 @@ function httpGetJson(url, headers, onOk, onErr) {
                 "expires_date": isLifetime ? null : FAKE_EXPIRES,
                 "grace_period_expires_date": null,
                 "purchase_date": cur.purchase_date || nowStr,
-                "product_identifier": cur.product_identifier || targetId
+                // P0#2：去掉 || targetId 兜底——injectLifetime/injectSubscription 已给注入项
+                // 写死 product_identifier；无 product_identifier 的真实 entitlement 不伪造，
+                // 缺失时 JSON.stringify 会自动去掉 undefined 键
+                "product_identifier": cur.product_identifier
             };
         }
         for (const pid of Object.keys(sub.subscriptions)) {
@@ -824,6 +868,23 @@ function httpGetJson(url, headers, onOk, onErr) {
                 console.log(`[RC] 已发送通知: ${storageKey}`);
             } else {
                 console.log(`[RC] 通知节流中，跳过 (距上次 ${hoursSince.toFixed(1)}h，阈值 ${NOTIFY_INTERVAL_HOURS}h): ${storageKey}`);
+            }
+        }
+
+        // P1#6：offerings 属“半精确”，注入成功时也可通知（开关 OFFERINGS_NOTIFY）；
+        // 单独节流 key（rc_notify_v2_off_<App>），与精确规则的 key 隔离，同样 12 小时节流；
+        // 文案按本次注入的实际类型（injectedOfferingsType）区分终身/订阅
+        if (!rule && injectSource === 'offerings' && OFFERINGS_NOTIFY) {
+            const cleanKey = (matchedAppKey || 'App').replace(/[^a-zA-Z0-9_-]/g, '_');
+            const storageKey = `rc_notify_v2_off_${cleanKey}`;
+            const lastNotify = $.getdata(storageKey) || 0;
+            const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
+            if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
+                $.notify(`🎉 ${matchedAppKey} 授权更新`, `已安全注入${injectedOfferingsType === 'lifetime' ? '终身' : '永久'}凭证`, injectedOfferingsType === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
+                $.setdata(Date.now().toString(), storageKey);
+                console.log(`[RC] 已发送通知（offerings）: ${storageKey}`);
+            } else {
+                console.log(`[RC] 通知节流中（offerings），跳过 (距上次 ${hoursSince.toFixed(1)}h，阈值 ${NOTIFY_INTERVAL_HOURS}h): ${storageKey}`);
             }
         }
 
@@ -891,29 +952,38 @@ function httpGetJson(url, headers, onOk, onErr) {
             try {
                 const offObj = JSON.parse(offeringsBody);
                 const offerings = (offObj && offObj.offerings) || [];
-                let injected = 0;
+                // P0#1：只选一个最优包——收集全部 offering 的全部 package（记所属 offering 标识），
+                // 先滤 trial/intro 包（全是 trial 才用 trial 包），再打分：lifetime=3、yearly/annual=2、
+                // 其他=1，取最高分、平局取先遇到的一个；绝不遍历全部注入
+                const allPkgs = [];
                 for (const offering of offerings) {
                     const pkgs = (offering && offering.packages) || [];
-                    // trial/intro 包非首选：先过一遍非 trial 包，若全是 trial 才用 trial 包
-                    const usable = pkgs.filter(p => !isTrialPackage(p.identifier, p.platform_product_identifier));
-                    const chosen = usable.length ? usable : pkgs;
-                    for (const p of chosen) {
-                        const productId = p.platform_product_identifier;
-                        if (!productId) continue;
-                        const entName = deriveEntitlementName(offering.identifier, p.identifier, productId);
-                        const type = classifyProductType(productId, p.identifier);
-                        if (injected === 0) {
-                            matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
-                            targetId = productId;
-                        }
-                        if (type === 'lifetime') injectLifetime(productId, [entName]);
-                        else injectSubscription(productId, [entName]);
-                        injected++;
-                    }
+                    for (const p of pkgs) allPkgs.push({ offeringId: offering.identifier, pkg: p });
                 }
-                if (injected > 0) {
+                const nonTrial = allPkgs.filter(({ pkg }) => !isTrialPackage(pkg.identifier, pkg.platform_product_identifier));
+                const candidates = nonTrial.length ? nonTrial : allPkgs;
+                let best = null;
+                let bestScore = -1;
+                for (const { offeringId, pkg } of candidates) {
+                    const pid = pkg.platform_product_identifier;
+                    if (!pid) continue;
+                    const t = classifyProductType(pid, pkg.identifier);
+                    let score = 1;
+                    if (t === 'lifetime') score = 3;
+                    else if (/yearly|annual/i.test(pid + ' ' + pkg.identifier)) score = 2;
+                    if (score > bestScore) { bestScore = score; best = { offeringId, pkg }; }
+                }
+                if (best) {
+                    const productId = best.pkg.platform_product_identifier;
+                    const entName = deriveEntitlementName(best.offeringId, best.pkg.identifier, productId);
+                    const type = classifyProductType(productId, best.pkg.identifier);
+                    matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
+                    targetId = productId;
+                    injectedOfferingsType = type;
                     injectSource = 'offerings';
-                    console.log(`[RC] offerings 反推注入完成：${injected} 个 package（${offeringsUrl}）`);
+                    if (type === 'lifetime') injectLifetime(productId, [entName]);
+                    else injectSubscription(productId, [entName]);
+                    console.log(`[RC] offerings 反推注入完成：选中 ${type} 包 ${productId}（${best.pkg.identifier}，${offeringsUrl}）`);
                     finalizeInjection();
                     return;
                 }
@@ -927,14 +997,21 @@ function httpGetJson(url, headers, onOk, onErr) {
         injectBlindGuess();
         finalizeInjection();
     };
+    // P0#3：无 setTimeout 的环境没有任何超时保护（httpGetJson 未给任何引擎传 timeout 参数），
+    // QX 老版本异步请求无内置超时，卡住会 hang 住、$done 永不触发——直接放弃 offerings，走盲猜
+    if (typeof setTimeout !== 'function') {
+        console.log('[RC] 当前环境无 setTimeout，放弃 offerings，直接盲猜');
+        injectBlindGuess();
+        finalizeInjection();
+        return;
+    }
     try {
-        if (typeof setTimeout === 'function') {
-            timer = setTimeout(() => finishOfferings(false, null), OFFERINGS_TIMEOUT_MS);
-        } else {
-            console.log('[RC] 当前环境无 setTimeout，offerings 请求无超时保护（依赖引擎自身超时）');
-        }
+        timer = setTimeout(() => finishOfferings(false, null), OFFERINGS_TIMEOUT_MS);
     } catch (e) {
-        console.log(`[RC] 定时器不可用，offerings 请求无超时保护：${e.message}`);
+        console.log(`[RC] 定时器不可用，放弃 offerings，直接盲猜：${e.message}`);
+        injectBlindGuess();
+        finalizeInjection();
+        return;
     }
     httpGetJson(offeringsUrl, offHeaders,
         (resp) => finishOfferings(true, resp.body),
