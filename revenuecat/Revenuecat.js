@@ -1,159 +1,15 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-修复记录（2026-11-17）：
-1. AdGuard%20Home → AdGuard Home：UA 头里是空格不是 %20，原规则永
-   远匹配不上，现已修复
-2. 通知只在精确命中 MappingRules 时发送；盲猜路径只打日志，不再
-   误报"已注入永久凭证"
-3. 所有 $done 后补 return，避免跨引擎（QX/Loon/Stash）double-$done
-4. 拆分 entitlement / subscription 两套模板：entitlement 不再混入
-   will_renew、period_type 等订阅专属字段
-5. 规则表新增 type 字段：lifetime 只写 non_subscriptions，subscription
-   只写 subscriptions；同一 product 不再两边同时写
-6. 'Law' 改为词边界严格匹配，避免 Flawless、LawnCare 等误命中
-7. 到期时间改用 UTC 常量 '2099-12-31T23:59:59Z'，与通知文案一致；
-   删除"2099 溢出"错误注释（JS Date 上限是 275760 年）
-8. 请求阶段删除条件缓存头（if-none-match/if-modified-since/x-revenuecat-etag），
-   强制服务器回 200 全量响应，避免 304 无 body 导致脚本无从修改；
-   【纠正】此前曾误删 x-revenuecat-etag 处理，抓包证实 RevenueCat SDK 确实
-   在请求中携带该头做条件请求，已恢复删除；
-   同时移除发给服务器的无用 Cache-Control/Pragma
-9. 移除 original_application_version 硬编码补全，避免干扰 App 版本判断
-10. 终身凭证的 entitlement.expires_date 改为 null（RevenueCat 官方规范：
-    终身无到期时间，不能写远期时间）；"统一延期"阶段保留终身为 null，
-    只延期订阅型，避免把刚注入的 lifetime 又改回远期时间
-11. 已知客观限制：RevenueCat Trusted Entitlements（响应签名校验，
-    EntitlementVerificationMode）在 ENFORCED 模式下改 body 会失效；
-    该功能默认关闭，INFORMATIONAL 模式只上报不拦截
-12. 通知决策加调试日志：发送/节流跳过都会打日志，方便排查"没通知"问题
-13. 通知节流 key 命名空间升级为 rc_notify_v2_，与旧版脚本的节流记录隔离
-14. 非订阅响应诊断：记录顶层 keys；offerings 响应额外抓取真实 platform_product_identifier，
-    用于给未知 App 补充精确规则（只记 key 名，不记 token）
-15. 规则支持 names 数组（候选 entitlement 集）；新增 The Outsiders 精确规则，
-    product 用真实响应核实的 app.outsiders.subscription.EB.yearly（年订阅），entitlement 用候选集
-16. 到期时间常量改为 2099-12-31T23:59:59Z（用户要求）
-17. 请求阶段恢复删除 x-revenuecat-etag（纠正第一轮审查的误判：抓包证实
-    RevenueCat SDK 确实在请求中携带该头做条件请求；不删会命中 304 无 body）
-18. offerings 诊断增加包映射输出（$rc_annual/$rc_lifetime 等包标识 -> product id，
-    判断订阅/买断的铁证）；盲猜日志的 App 名过滤纯顶级域名
-    （thirteendoots.kelo.com 不再显示为 com）；新增 Kelo 精确规则
-19. 新增谜底时钟精确规则：真实 product tech.miidii.MDClock.subscription.year.v1、
-    真实 entitlement 名 Entitlement.Pro 均从服务器响应核实，不再用候选集
-    （2026-10-14 移除，见 25）
-20. 盲猜增强：GUESS_NAMES 从 11 扩到 24 个常用名；新增 buildGuessNames(BID)，
-    从 BID 有意义片段派生 "<token>.pro/premium/vip/plus/gold/membership"
-    （如 datacalc.pro），去重后注入——DataCalc 这类命名现在可被盲猜命中
-21. 新增成语日历精确规则：entitlement 名 calendar、product id
-    com.fiachra.DailyIdiomApp.yearly，均已核实（2026-10-14 用户提供）
-22. 新增 Snipd 精确规则：entitlement premium、product
-    snipd_premium_1y_7199_trial_2w_v2（年订 71.99/2周试用），数据取自上游
-    Reheji.js，尚未用 offerings/真实响应核实，待用户实机验证
-23. 盲猜数据驱动升级（422 条真实映射词频统计）：
-    GUESS_NAMES 24 → 40，新增 Pro/Premium/VIP/Plus 大小写变体（合计 65 条样本）
-    及 Pro access/patron/Entitlement.Pro/allaccess 等高频真实名；
-    GUESS_SUFFIXES 新增 lifetime/yearly/annual/forever（真实 entitlement 尾段高频）；
-    BID_NOISE 新增 me、www（bundle-id 纯前缀噪声）
-24. 盲猜派生模式补全：新增 "<token>_<suffix>"（umai_pro 类）与
-    "<全BID>.<suffix>" / "<全BID>_<suffix>"（io.fadel.teleprompterx.pro、
-    com.minardwu.cocam_lifetime 类）；bundle 样本完整盲猜命中率 69.4% → 77.8%
-25. 移除谜底时钟精确规则（2026-10-14 用户确认）：注入每次成功但 App 始终显示
-    真实试用期时间、会员功能未解锁，判定其门控不走 RevenueCat subscriber 响应
-    （疑似 StoreKit 2 本地交易验证，网络层脚本无法伪造），留着只会误报
-26. 外部审查整改（2026-10-15，用户上传 Revenuecat_js.md 审查报告并逐条核实后执行）：
-    P0 统一延期两处循环展开顺序反转——模板后置、真实值前置，will_renew/is_sandbox/
-    unsubscribe_detected_at 等"已失效信号"被刷成正常订阅状态，只保留真实购买
-    时间与 product_identifier；Vision/Craft/Sofa/Pillow 四条高风险规则加 strict
-    词边界（防 nightvision/visionos/pocketcraft/sleeppillow 类子串误伤）；
-    injectSubscription/injectLifetime 保留真实 purchase_date（报告 5.1，补丁只动
-    统一延期不够，必须动注入函数）；排除名单 UA 前缀加词边界，'forward' 不再
-    误伤 ForwardMail（报告 5.2）。未采纳：盲猜瘦身（命中率 77.8% 优先于十几 KB
-    体积）；修复记录第 11 条表述（官方文档证实默认不拦截，实质正确，报告的
-    "默认开启"说法未能从官方文档证实，不引入）
-27. 新增 Fine Pro 精确规则（2026-10-17 用户要求）：entitlement "Fine Pro"、
-    product fine_subscription_yearly，取自上游 Curtinp118/Scripthub finepro.js
-    v1.1.0；同日用户实机验证通过：App 显示"生效中"，下次续订 2100年1月1日
-    （即注入的 2099-12-31T23:59:59Z），数据确认正确；match 用 strict 词边界
-    （'fine' 为常用词，防子串误伤）
-28. 新增 Nebuwall 精确规则（2026-10-17 用户要求）：entitlement wallpaper_pass、
-    product wallpaper_pass_lifetime（买断型），数据取自上游，尚未用 offerings/
-    真实响应核实，待实机验证
-29. 新增 PocketTok 精确规则（2026-10-17 用户抓包并确认）：entitlement "pro"、
-    product pockettok.pro.lifetime（买断型），数据取自真实 subscriber 响应
-    （non_subscriptions/other_purchases 均有该产品真实购买记录），已核实
-30. ddgksf 映射表第一批（2026-10-18 用户确认）：186 条经程序化比对（去重 11、
-    弃可疑 10、弃短 key 18、跳过盲猜已覆盖 104），取有明确 product id 的 10 条
-    加为精确规则（Accountit/ByePhotos/Photon/Rats Project/LUTCamera/reader/
-    ImageX/ProCamera/NeatNook/jinduoduo），逻辑一行未动；reader 加 strict；
-    jinduoduo 的 mobile_vip 类型待定暂按订阅；Reflix/Fileball 在排除名单跳过，
-    Unfold 数据存疑跳过；均标未核实
-31. Reheji.js 第一批（2026-10-31 用户确认）：429 条经程序化比对（重叠 28、
-    排除名单 2、可疑 21、无名 4、短 key 20、盲猜覆盖 245），取 10 条
-    加为精确规则（bundle 区 7 条按 BID 精确匹配：me.capilabs.sleep/
-    com.abighead.Widgets/com.minardwu.cocam/io.fadel.TeleprompterX/
-    com.ausoco.umai/com.voicedream.Voic/com.laser-focused.focus-ios；
-    listua 区 3 条：varacare/SaveLoop/OpsCat），逻辑一行未动；
-    另：UTC 与 ProCam 为子串误判（分别撞上 lutcamera、procamera，非真重叠；
-    UTC 实为已删的谜底数据不得加、ProCam 为独立 App 已回候选），
-    jinduoduo/LUTCamera/Darkroom/MOZE/Vision 两源数据打架暂不动；均标未核实
-32. Reheji.js 第二批（2026-11-03 用户确认）：相对 2026-10-31 快照，bundle 35 条未变、
-    listua 由 394 增至 396 条；过滤后取 1 条加为 UA 片段规则（Readora，entitlement
-    com.chengnayu.readora，product com.chengnayu.readora.permanent，买断）；
-    另一条 PixelSensePocket 因 entitlement 为通用名 pro 已过滤；逻辑一行未动；均标未核实
-33. Reheji.js 第三批（2026-11-06 用户确认）：相对 2026-11-03 快照，bundle 35 条未变、
-    listua 由 396 增至 397 条；过滤后取 1 条加为 UA 片段规则（Island Reader，entitlement
-    BookSpeak Pro，product com.luyaolab.bookspeak.lifetime，买断）；因通用 'reader' 规则会抢先匹配，
-    本条放在 'reader' 规则之前；逻辑一行未动；均标未核实
-34. Reheji.js 第四批（2026-11-15 用户确认）：相对 2026-11-12 快照，bundle 35 条未变、
-    listua 由 396 增至 398 条；过滤后取 2 条加为 UA 片段规则（billmate，entitlement
-    Bill Mate Pro，product com.billmate.plus.yearly，按 id 判年订阅；col.or，entitlement
-    Color Plus，product com.color.plus，类型推断不明暂按订阅）；逻辑一行未动；均标未核实
-35. 研究报告 §C 优化第五批（2026-11-16，用户确认按报告实施，逻辑与规则表同步改）：
-    C1 无本地规则时先请求真实 offerings（GET /v1/subscribers/{id}/offerings，同 host
-    派生、复用当前请求头去条件缓存头、不硬编码 key；$task.fetch→$httpClient→$https→$http
-    多引擎回退，超时 4 秒；成功按 packages 注入真实 product id，失败/为空/超时才走
-    盲猜回退；$done 只调用一次，超时与回调共用 settled 标志；仅 /v1/subscribers 请求
-    取 offerings，/v1/receipts 保持原行为）；C2 类型按 product/package id 关键词判定
-    （lifetime/forever/nonconsumable/onetime/one_time/one.time/life_time/permanen/_life/
-    $rc_lifetime→终身，其余→订阅；trial/intro 包非首选）；C3 注入/刷新后统一重算
-    latest_expiration_date、all_expiration_dates_by_product、all_purchase_dates_by_product、
-    all_purchased_product_identifiers、active_subscriptions，request_date 保留原值
-    （缺失才补当前 UTC），management_url 已有默认值兜底，first_seen/original_purchase_date
-    缺失不再伪造（删默认值）；C4 注入项补齐 period_type/ownership_type/store/
-    grace_period_expires_date/refunded_at/auto_resume_date/unsubscribe_detected_at/
-    billing_issues_detected_at/is_sandbox（store 沿用真实接口小写 app_store，报告所写
-    APP_STORE 与接口实际值不符，已核实保留小写）；终身项补 price{amount:0,currency:USD}
-    与 display_name，订阅项不补 price；不伪造 store_transaction_id；C5 Reheji 第五批
-    全表合并（2026-11-16 拉取，与本地快照 md5 一致；新增 93 条 listua 规则，终身 51/
-    订阅 42，strict 36，names 双权益 2 条；来源 @ddm1023，仅供个人研究使用；过滤：
-    重叠 42、排除名单 2、中文编码 key 23、短 key 20、通用名 248、无名 4、存疑 1，
-    均未用真实响应核实）；C6 forbiddenApps（PicSeedClient/ReflixiOS/Pomodoro/MyHabit/
-    Rond/Filebar/Fileball/APTV）命中即放行，offerings/attributes/adservices_attribution
-    请求不改写（offerings 只读日志保留）；C7 请求头剥离：X-RevenueCat-ETag 大小写
-    变体本就由小写比对覆盖（见注释），响应头 ETag 删除需 script-response-header
-    类型、属模块改动，本次未做；C9 终身 null+non_subscriptions、订阅 2099+subscriptions
-    加断言防回归；行为变更：盲猜回退改为单名注入（BID 派生 token.pro 优先，无派生
-    时用 pro），不再注入全部通用名
-36. 外部审查整改第二轮（2026-11-17，用户上传审查报告、主代理逐条核实后执行）：
-    P0#1 finishOfferings 改为只选一个最优包（全部 offering 的全部 package 先滤
-    trial/intro 包，全是 trial 才用 trial 包；打分 lifetime=3、yearly/annual=2、
-    其他=1，取最高分、平局取先遇到的一个；只注入该包，matchedAppKey/targetId
-    只由此包设定；日志改为记录选中的单个 package）；P0#2 finalizeInjection 删掉
-    product_identifier 的 || targetId 兜底，真实 entitlement 保留自身 product_identifier
-    （缺失不伪造）；P0#3 无 setTimeout 环境直接放弃 offerings、走盲猜，不发起
-    http 请求（QX 老版本异步请求无内置超时，会 hang 住 $done 永不触发）；P1#5
-    injectLifetime 删掉 entitlement 上的 price/display_name（官方 EntitlementInfo
-    与 non_subscriptions 字段表均无此二字段，不移到 non_subscriptions 里）；
-    P1#6 offerings 注入成功可通知（开关 OFFERINGS_NOTIFY，默认开；单独节流 key
-    rc_notify_v2_off_<App>，12 小时，文案按本次注入实际类型区分终身/订阅）；
-    P1#7 recomputeDerivedFields 的过期日比较改 Date 比较（NaN 跳过）；P2#9 safeTest
-    strict 改手动边界检查（\b 只对 ASCII 生效；词字符含 CJK：汉字/扩展/假名/韩文）。
-    否决不做：P1#4 entitlement_verification 字段在 subscriber 响应里不存在（Trusted
-    Entitlements 模式是 SDK 侧配置、验证结果是 SDK 侧枚举，响应体无法得知），不加
-    死代码；P2#8 规则表拆 BID/UA 两表暂缓（147 条重排需全量审计、无功能收益）；
-    P2#10 GUESS_NAMES 带空格名是真实 entitlement 统计结果，不是 bug；P2#11 origStr
-    固定 3 年前（“App 会校验”无来源），不改
+版本：2026-11-17（精简发布版）
+规则：147 条精确规则（部分来自上游导入，标未核实）
+行为：无本地规则时请求真实 offerings 反推权益名与 product id；
+      盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
+      订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
+已知限制：Trusted Entitlements ENFORCED 模式下改写失效；部分 App
+      走 StoreKit 2 本地校验，脚本无法处理。
+完整变更历史：见 GitHub 提交记录（lutqhysky/quantumultx mylove 分支
+      revenuecat/Revenuecat.js）。
 **************************************/
-
 const $ = new Env("RevenueCat_Pro");
 const NOTIFY_INTERVAL_HOURS = 12;
 // 到期时间用 UTC 常量，与通知文案"有效期至：2099-12-31"一致
@@ -483,7 +339,7 @@ function httpGetJson(url, headers, onOk, onErr) {
     sub.entitlements = sub.entitlements || {};
     sub.non_subscriptions = sub.non_subscriptions || {};
     // C3：first_seen / original_purchase_date 保留原值，缺失不伪造
-    // （此前缺失时默认补 3 年前日期，现删除；original_application_version 本就不补，见修复记录 9）
+    // （此前缺失时默认补 3 年前日期，现删除；original_application_version 本就不补）
     sub.management_url = sub.management_url || "https://apps.apple.com/account/subscriptions";
 
     // 精准映射（数组保序；type 决定写 subscriptions 还是 non_subscriptions）
