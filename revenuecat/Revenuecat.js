@@ -5,8 +5,10 @@
 行为：无本地规则时请求真实 offerings 反推权益名与 product id；
       盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
       订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
-已知限制：Trusted Entitlements ENFORCED 模式下改写失效；部分 App
+已知限制：Trusted Entitlements ENFORCED 模式下改写失效；INFORMATIONAL
+      模式下是否生效取决于 App 是否检查验证结果，不保证生效；部分 App
       走 StoreKit 2 本地校验，脚本无法处理。
+免责声明：仅供个人研究使用。
 完整变更历史：见 GitHub 提交记录（lutqhysky/quantumultx mylove 分支
       revenuecat/Revenuecat.js）。
 **************************************/
