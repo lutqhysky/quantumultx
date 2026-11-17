@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-17 11:17（精简发布版）
+版本：2026-11-17 15:56（精简发布版）
 规则：147 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id；
       盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
@@ -53,37 +53,8 @@ const GUESS_NAMES = [
     'pro-iOS', 'patron', 'Entitlement.Pro'
 ];
 
-// 盲猜候选名构建：静态通用名 + 从 BID 派生的 "<token>.<suffix>"
-// 例如 BID 含 datacalc 时会生成 datacalc.pro / datacalc.premium ……（DataCalc 真实 entitlement 就是 datacalc.pro）
-// token 过滤顶级域名与通用词，避免生成 com.pro 这类无意义候选
-// 后缀数据来源：422 条真实 entitlement 名尾段统计，pro(21) 居首，lifetime/yearly/annual/forever 为高频尾段
-const GUESS_SUFFIXES = ['pro', 'premium', 'vip', 'plus', 'gold', 'membership', 'lifetime', 'yearly', 'annual', 'forever'];
 // 噪声 token 数据来源：同上 bundle-id token 统计；me(如 me.xgmm.*)、www 为纯前缀噪声
 const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 'mobile', 'inc', 'ltd', 'beta', 'me', 'www']);
-
-function buildGuessNames(bid) {
-    const names = GUESS_NAMES.slice();
-    const seen = new Set(names);
-    const blo = (bid || '').toLowerCase();
-    const tokens = blo.split('.')
-        .filter(t => t && t.length > 1 && !BID_NOISE.has(t));
-    const push = (n) => { if (!seen.has(n)) { seen.add(n); names.push(n); } };
-    for (const tok of tokens) {
-        for (const suf of GUESS_SUFFIXES) {
-            push(tok + '.' + suf); // datacalc.pro
-            push(tok + '_' + suf); // umai_pro
-        }
-    }
-    // 全 BID 派生：io.fadel.teleprompterx.pro、com.minardwu.cocam_lifetime 这类
-    // entitlement 直接挂在完整 BID 后面的写法（422 样本验证可再 +3 命中）
-    if (blo && blo.indexOf('.') > 0) {
-        for (const suf of GUESS_SUFFIXES) {
-            push(blo + '.' + suf);
-            push(blo + '_' + suf);
-        }
-    }
-    return names;
-}
 
 
 // ---------- C2：按 product/package id 判定终身/订阅 ----------
@@ -124,7 +95,7 @@ function deriveEntitlementName(offeringId, packageId, productId) {
     }
     return 'pro';
 }
-// C1 盲猜回退改为单名注入：BID 派生 token.pro 优先（如 datacalc.pro），无派生时用 pro
+// C1 盲猜回退改为单名注入：BID 派生 token.pro 优先（如 datacalc.pro），无派生时用 pro（422 条真实 entitlement 名尾段统计，pro 居首）
 // 取 BID 最后一段有意义 token（通常就是 App 名）；纯顶级域名/纯数字 token 已滤掉
 function pickSingleGuessName(bid) {
     const blo = (bid || '').toLowerCase();
