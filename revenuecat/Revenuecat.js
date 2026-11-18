@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 20:36（精简发布版）
+版本：2026-11-18 20:47（精简发布版）
 规则：149 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
       （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
@@ -392,18 +392,18 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'Slopes',       name: 'pass',                                               id: 'com.breakthrough.slopes.annual_pass',      type: 'subscription', strict: false },
         // The Outsiders：product id 已从真实响应核实（display_name "Yearly Regular Outsider Absolute"，
         // 用户 2026-03-23 有过一年试用后取消）；entitlement 名未核实，用 GUESS_NAMES 候选集注入
-        { match: 'outsiders',    names: GUESS_NAMES,                                        id: 'app.outsiders.subscription.EB.yearly',    type: 'subscription', strict: false },
+        { match: 'outsiders',    names: GUESS_NAMES,                                        id: 'app.outsiders.subscription.EB.yearly',    type: 'subscription', strict: false, verified: false },
         // Kelo：product id 已从 offerings 响应核实（2026-09-30）：
         // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
         // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
-        { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false },
+        { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false, verified: false },
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
         { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
         // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
         { match: 'dailyidiom',    name: 'calendar',                                          id: 'com.fiachra.DailyIdiomApp.yearly',            type: 'subscription', strict: false },
         // Snipd（播客）：entitlement premium、product snipd_premium_1y_7199_trial_2w_v2 取自上游 Reheji.js，
         // 尚未用 offerings/真实响应核实（2026-10-14 用户要求直接加，待实机验证）
-        { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false },
+        { match: 'snipd',         name: 'premium',                                           id: 'snipd_premium_1y_7199_trial_2w_v2',          type: 'subscription', strict: false, verified: false },
         // Fine Pro：entitlement "Fine Pro"、product fine_subscription_yearly 取自上游
         // Curtinp118/Scripthub finepro.js v1.1.0（2026-10-17）；2026-10-17 用户实机验证：
         // App 显示"生效中"，下次续订 2100年1月1日（即注入的 2099-12-31T23:59:59Z），
@@ -413,50 +413,50 @@ function httpGetJson(url, headers, onOk, onErr) {
         // Nebuwall（壁纸与AI创作）：entitlement wallpaper_pass、product
         // wallpaper_pass_lifetime（买断型），数据取自上游（2026-10-17 用户提供），
         // 尚未用 offerings/真实响应核实；'nebuwall' 为独特品牌词，子串匹配风险低
-        { match: 'nebuwall',      name: 'wallpaper_pass',                                    id: 'wallpaper_pass_lifetime',               type: 'lifetime',     strict: false },
+        { match: 'nebuwall',      name: 'wallpaper_pass',                                    id: 'wallpaper_pass_lifetime',               type: 'lifetime',     strict: false, verified: false },
         // PocketTok：entitlement "pro"、product pockettok.pro.lifetime（买断型），
         // 数据取自用户 2026-10-17 抓包的真实响应（non_subscriptions/other_purchases
         // 均有该产品真实购买记录），已核实；'pockettok' 为独特品牌词，子串匹配风险低
         { match: 'pockettok',     name: 'pro',                                               id: 'pockettok.pro.lifetime',               type: 'lifetime',     strict: false },
         // ddgksf 映射表第一批（2026-10-18）：只借数据、逻辑不动；以下均未用真实响应核实。
         // 类型按 product id 关键词推断（lifetime/forever→买断，yearly/monthly→订阅）
-        { match: 'accountit',     name: 'spenditPlus',                                        id: 'DesignTech.SIA.Spendit.Plus.Lifetime',      type: 'lifetime',     strict: false },
-        { match: 'byephotos',     name: 'ByePhotos access',                                  id: 'com.panicbyte.byephotos.lifetime.promotion', type: 'lifetime',     strict: false },
-        { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: false },
-        { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false },
-        { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false },
+        { match: 'accountit',     name: 'spenditPlus',                                        id: 'DesignTech.SIA.Spendit.Plus.Lifetime',      type: 'lifetime',     strict: false, verified: false },
+        { match: 'byephotos',     name: 'ByePhotos access',                                  id: 'com.panicbyte.byephotos.lifetime.promotion', type: 'lifetime',     strict: false, verified: false },
+        { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: false, verified: false },
+        { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false, verified: false },
+        { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false, verified: false },
         // 'reader' 为常用词：2026-11-18 改为 'valo.reader'（BID 精确指向 Valo Reader），
         // 'MyPDF Reader'/'PDF Reader Pro'/'com.moondrop.reader' 不再误伤；
         // 注：'valo.reader' 含字面点号，只能靠 BID 命中（UA 是 Valo Reader 空格形式，不匹配），
         // 故另补一条 UA 形式规则；Reheji.js 第三批（2026-11-06），未用真实响应核实。
         // 'Island Reader' 规则仍放前面（顺序无害，'valo.reader' 已不会抢它的 UA）。
-        { match: 'Island Reader', name: 'BookSpeak Pro',                                     id: 'com.luyaolab.bookspeak.lifetime',            type: 'lifetime',     strict: false },
-        { match: 'valo.reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
-        { match: 'Valo Reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: false },
-        { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false },
-        { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
-        { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false },
+        { match: 'Island Reader', name: 'BookSpeak Pro',                                     id: 'com.luyaolab.bookspeak.lifetime',            type: 'lifetime',     strict: false, verified: false },
+        { match: 'valo.reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true, verified: false },
+        { match: 'Valo Reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: false, verified: false },
+        { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false, verified: false },
+        { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false, verified: false },
+        { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false, verified: false },
         // pinduoduo（2026-11-18 修正：原 match 'jinduoduo' 为拼写错，bundle id 已核实 com.xunmeng.pinduoduo；product 'mobile_vip' 类型推断不明，暂按订阅注入，待核实）
-        { match: 'pinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false },
+        { match: 'pinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false, verified: false },
         // Reheji.js 第一批（2026-10-31）：只借数据、逻辑不动；以下均未用真实响应核实。
         // bundle 区按 BID 精确匹配（最稳），listua 区按 UA 片段匹配
-        { match: 'me.capilabs.sleep',           name: 'Capi - Sleep Factors Analysis Unlimited Access', id: 'me.capilabs.sleep.premium.lifetime',     type: 'lifetime',     strict: false },
-        { match: 'com.abighead.Widgets',        name: 'HiWidget.Pro',                                   id: 'com.abighead.Widgets.LifetimePro',     type: 'lifetime',     strict: false },
-        { match: 'com.minardwu.cocam',          name: 'com.minardwu.cocam_lifetime',                     id: 'com.minardwu.cocam_lifetime',           type: 'lifetime',     strict: false },
-        { match: 'io.fadel.TeleprompterX',      name: 'io.fadel.teleprompterx.pro',                     id: 'io.fadel.TeleprompterX.pro.lifetime',   type: 'lifetime',     strict: false },
-        { match: 'com.ausoco.umai',             name: 'umai_pro',                                       id: 'umai_pro_yearly',                       type: 'subscription', strict: false },
-        { match: 'com.voicedream.Voic',         name: 'standard',                                       id: 'vd_annual_79_3daytrial',                 type: 'subscription', strict: false },
-        { match: 'com.laser-focused.focus-ios', name: 'subscribed',                                     id: 'iap.io.masterbuilders.focus.pro_one_year', type: 'subscription', strict: false },
-        { match: 'varacare',                    name: 'varacare_pro',                                   id: 'com.beliveapptech.varacare.lifetime',  type: 'lifetime',     strict: false },
-        { match: 'SaveLoop',                    name: 'Sloop Pro',                                      id: 'com.sloopbrowser.www.plus.Lifetime',    type: 'lifetime',     strict: false },
-        { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false },
+        { match: 'me.capilabs.sleep',           name: 'Capi - Sleep Factors Analysis Unlimited Access', id: 'me.capilabs.sleep.premium.lifetime',     type: 'lifetime',     strict: false, verified: false },
+        { match: 'com.abighead.Widgets',        name: 'HiWidget.Pro',                                   id: 'com.abighead.Widgets.LifetimePro',     type: 'lifetime',     strict: false, verified: false },
+        { match: 'com.minardwu.cocam',          name: 'com.minardwu.cocam_lifetime',                     id: 'com.minardwu.cocam_lifetime',           type: 'lifetime',     strict: false, verified: false },
+        { match: 'io.fadel.TeleprompterX',      name: 'io.fadel.teleprompterx.pro',                     id: 'io.fadel.TeleprompterX.pro.lifetime',   type: 'lifetime',     strict: false, verified: false },
+        { match: 'com.ausoco.umai',             name: 'umai_pro',                                       id: 'umai_pro_yearly',                       type: 'subscription', strict: false, verified: false },
+        { match: 'com.voicedream.Voic',         name: 'standard',                                       id: 'vd_annual_79_3daytrial',                 type: 'subscription', strict: false, verified: false },
+        { match: 'com.laser-focused.focus-ios', name: 'subscribed',                                     id: 'iap.io.masterbuilders.focus.pro_one_year', type: 'subscription', strict: false, verified: false },
+        { match: 'varacare',                    name: 'varacare_pro',                                   id: 'com.beliveapptech.varacare.lifetime',  type: 'lifetime',     strict: false, verified: false },
+        { match: 'SaveLoop',                    name: 'Sloop Pro',                                      id: 'com.sloopbrowser.www.plus.Lifetime',    type: 'lifetime',     strict: false, verified: false },
+        { match: 'OpsCat',                      name: 'OpsCat - Server Monitor & SSH Pro',              id: 'LifetimeAccessOps',                       type: 'lifetime',     strict: false, verified: false },
         // Reheji.js 第二批（2026-11-03）：listua 区按 UA 片段匹配；未用真实响应核实
-        { match: 'Readora',                     name: 'com.chengnayu.readora',                            id: 'com.chengnayu.readora.permanent',       type: 'lifetime',     strict: false },
+        { match: 'Readora',                     name: 'com.chengnayu.readora',                            id: 'com.chengnayu.readora.permanent',       type: 'lifetime',     strict: false, verified: false },
         // Reheji.js 第四批（2026-11-15）：listua 区按 UA 片段匹配；未用真实响应核实。
         // billmate 的 product 含 yearly，按 id 判年订阅；col.or 的 product 无后缀，类型推断不明暂按订阅注入
         // （不影响解锁），待核实；'billmate'、'col.or' 均为独特品牌词，子串匹配风险低
-        { match: 'billmate',                    name: 'Bill Mate Pro',                                    id: 'com.billmate.plus.yearly',              type: 'subscription', strict: false },
-        { match: 'col.or',                      name: 'Color Plus',                                       id: 'com.color.plus',                        type: 'subscription', strict: false },
+        { match: 'billmate',                    name: 'Bill Mate Pro',                                    id: 'com.billmate.plus.yearly',              type: 'subscription', strict: false, verified: false },
+        { match: 'col.or',                      name: 'Color Plus',                                       id: 'com.color.plus',                        type: 'subscription', strict: false, verified: false },
         // Reheji.js 第五批（2026-11-16 全表合并，来源 @ddm1023，2026-11-13 版，仅供个人研究使用）：
         // 现有 54 条在前优先（首 match 胜出）；本批 93 条 listua 规则（终身 51 / 订阅 42，
         // strict 36，names 双权益 2 条），均未用真实响应核实。过滤：重叠 42、排除名单 2、
@@ -464,99 +464,99 @@ function httpGetJson(url, headers, onOk, onErr) {
         // 20250203 为日期串）；type 一律按 C2 从 product id 判定（不用 Reheji 的 cm 字段）；
         // %20 形式（如 Island%20Reader）保留——UA 里 app 名经百分号编码，与本地空格形式
         // （Island Reader）各覆盖一种 UA 形态；双权益 names 数组的 id 用主 id，idb 未保留
-        { match: 'Island%20Reader',              name: 'BookSpeak Pro',                          id: 'com.luyaolab.bookspeak.lifetime',                  type: 'lifetime', strict: false },
-        { match: 'volix',                        name: 'Device Kit Pro',                         id: 'com.volix.pro',                                    type: 'subscription', strict: true  },
-        { match: 'Speaker%20Cleaner',            name: 'WaterEject Pro',                         id: 'lifetime_water_eject',                             type: 'lifetime', strict: false },
-        { match: 'MusicPlayer',                  name: 'com.zhuangmengting.player',              id: 'com.zhuangmengting.player.permanen',               type: 'lifetime', strict: true  },
-        { match: 'VideoBlur',                    name: 'com.zhuangmengting.blur',                id: 'com.zhuangmengting.blur.pro.permanent',            type: 'lifetime', strict: true  },
-        { match: 'PicPure',                      name: 'PicPure Pro',                            id: 'LifetimeAccess2',                                  type: 'lifetime', strict: true  },
-        { match: 'Image2PDF',                    name: 'Convertly Pro',                          id: 'life_time_id',                                     type: 'lifetime', strict: false },
-        { match: 'OneTT',                        name: 'CloneCam Pro',                           id: 'clonecam.lifetime',                                type: 'lifetime', strict: true  },
-        { match: 'ShowcasePro',                  name: 'ShowcasePro.Ultra',                      id: 'DesignTech.SIA.ShowcasePro.Ultra.Lifetime',        type: 'lifetime', strict: false },
-        { match: 'iOS/3001101',                  name: 'doneitPremium',                          id: 'DesignTech.SIA.Doneit.Premium.Plan.Lifetime',      type: 'lifetime', strict: false },
-        { match: 'Speedometer',                  name: 'SpeedometerLite Pro',                    id: 'speedometerlite_lifetime',                         type: 'lifetime', strict: true  },
-        { match: 'Swish',                        name: 'Swish Pro',                              id: 'swish_pro_lifetime',                               type: 'lifetime', strict: true  },
-        { match: 'PinDou',                       name: 'PinDou Pro',                             id: 'com.pangqing.pindou.pro0',                         type: 'subscription', strict: true  },
-        { match: 'ReverseChallengeSwiftUI',      name: 'ReverseChallenge.Pro',                   id: 'com.abighead.ReverseChallenge.iap.pro',            type: 'subscription', strict: false },
-        { match: 'Ticket%20Lover',               name: 'com.minardwu.ticketlover_lifetime',      id: 'com.minardwu.ticketlover_lifetime',                type: 'lifetime', strict: false },
-        { match: 'rxframe',                      name: 'com.minardwu.rxframe_lifetime',          id: 'com.minardwu.rxframe_lifetime',                    type: 'lifetime', strict: true  },
-        { match: 'TagCamera',                    name: 'TagCamera Pro',                          id: 'com.foxlin.tagcamera.pro.lifetime',                type: 'lifetime', strict: false },
-        { match: 'PhotoAlbumManager',            name: 'picseekpro',                             id: 'ape.lifetime',                                     type: 'lifetime', strict: false },
-        { match: 'weight',                       name: 'Weight Pro',                             id: 'weight.pro.lifetime',                              type: 'lifetime', strict: true  },
-        { match: 'QuietCam',                     name: 'QuietCam Pro',                           id: 'pawelchmiel.quietcam.yearly',                      type: 'subscription', strict: false },
-        { match: 'OrbitFast',                    name: 'Orbit Fast Full',                        id: 'com.fastorbitapps.OrbitFast.premium.lifetime',     type: 'lifetime', strict: false },
-        { match: 'VidCap',                       name: 'io.fadel.vidcap.pro',                    id: 'io.fadel.vidcap.pro.lifetime',                     type: 'lifetime', strict: true  },
-        { match: 'TheGreatMe',                   name: 'The Great Me Pro',                       id: 'thegreatme.forever',                               type: 'lifetime', strict: false },
-        { match: 'ai_music_generator',           name: 'music_generation_yearly_79_99',          id: 'music_generation_yearly_79_99',                    type: 'subscription', strict: false },
-        { match: 'ShouChong',                    name: 'lulemevip',                              id: 'lulemeYears',                                      type: 'subscription', strict: false },
-        { match: 'BeetleADB',                    name: 'beetle_pro',                             id: 'beetle_lifetime_pro',                              type: 'lifetime', strict: false },
-        { match: 'Awake',                        name: 'awake_pro',                              id: 'io.unorderly.awake.pro.lifetime_v1',               type: 'lifetime', strict: true  },
-        { match: 'LaunchTrans',                  name: 'PicChat.Subscribe.Start',                id: 'Yearly.PicChat',                                   type: 'subscription', strict: false },
-        { match: 'stopwatch',                    name: 'remove_ads',                             id: 'hasen_stopwatch_remove_ads',                       type: 'subscription', strict: true  },
-        { match: 'ArchiveList',                  name: 'pro_life',                               id: 'com.jy.ArchiveBox.pro_1',                          type: 'subscription', strict: false },
-        { match: 'AppBox',                       name: 'appbookmark_vip',                        id: 'GAB_Lifetime_VIP',                                 type: 'lifetime', strict: true  },
-        { match: 'Sunlitt',                      name: 'sunlitt.pro',                            id: 'pro.lifetime',                                     type: 'lifetime', strict: true  },
-        { match: 'Moonlitt',                     name: 'moonlitt.pro',                           id: 'moonlitt.pro.lifetime',                            type: 'lifetime', strict: false },
-        { match: 'A%20Widget',                   name: 'all_widgets',                            id: 'all_widgets',                                      type: 'subscription', strict: false },
-        { match: 'AccuFind',                     name: 'accufind_payments',                      id: 'accufind_lifetime',                                type: 'lifetime', strict: false },
-        { match: 'IPCams',                       names: ['pro', 'pro_plus'],                     id: 'ipcams_pro_lifetime',                              type: 'lifetime', strict: true  },
-        { match: 'ArtStage',                     name: 'FullAccess',                             id: 'com.nicdeane.artstage.YearlySubscription',         type: 'subscription', strict: false },
-        { match: 'Infltr',                       name: 'com.Yooshr.infltr.subscriptionPremium',  id: 'com.Yooshr.infltr.everythingForever',              type: 'lifetime', strict: true  },
-        { match: 'Vinyls',                       name: 'AllPro',                                 id: 'com.shi.Vin.lifetime',                             type: 'lifetime', strict: true  },
-        { match: 'Wishy',                        name: 'Wishy Subscription',                     id: 'wishy_lifetime_subscription',                      type: 'lifetime', strict: true  },
-        { match: 'becoming',                     name: 'Strength Pro',                           id: 'strength_membership_lifetime',                     type: 'lifetime', strict: true  },
-        { match: 'Morphose',                     name: 'ProStandard',                            id: 'com.pixery.morphose.yearly',                       type: 'subscription', strict: false },
-        { match: 'Unfold',                       name: 'REDUCED_PRO_YEARLY',                     id: 'UNFOLD_PRO_YEARLY',                                type: 'subscription', strict: true  },
-        { match: 'Binsoo',                       name: 'vibe',                                   id: 'annual',                                           type: 'subscription', strict: true  },
-        { match: 'ChatPub',                      name: 'Unlimited Access',                       id: 'conversationai.annual',                            type: 'subscription', strict: true  },
-        { match: 'quitnow',                      name: 'pro_features',                           id: 'com.eaginsoftware.QuitNow.unlock_all_pro_features', type: 'subscription', strict: true  },
-        { match: 'ChatBot',                      name: 'chatbot_annual',                         id: 'chatbot_annual',                                   type: 'subscription', strict: true  },
-        { match: 'VibeCamera',                   name: 'forever',                                id: 'vibe_pro_forever',                                 type: 'lifetime', strict: false },
-        { match: 'No%20Fusion',                  name: 'LivePhoto',                              id: 'com.grey.nofusion.livephoto',                      type: 'subscription', strict: false },
-        { match: 'Themy',                        name: 'fonts_premium',                          id: 'lifetime',                                         type: 'lifetime', strict: true  },
-        { match: 'FujiLifeStyle',                name: 'FUJIStyle Pro(Year)',                    id: 'FujiStyle2024003',                                 type: 'subscription', strict: false },
-        { match: 'CharingCrossRoad',             name: 'ready_pro',                              id: 'ready_pro_50_1y',                                  type: 'subscription', strict: false },
-        { match: 'ig-bookmarker',                name: 'entitlement',                            id: 'lifetimeID',                                       type: 'lifetime', strict: false },
-        { match: 'CallAnnie',                    name: 'ai.animato.callannie.entitlement.pro0',  id: 'ai.animato.callannie.proyearly1',                  type: 'subscription', strict: false },
-        { match: 'moss-ios',                     name: 'prouser',                                id: 'dpbox_yearly_68',                                  type: 'subscription', strict: false },
-        { match: 'TQBrowser',                    name: 'pro_lt',                                 id: 'com.tk.client.lifetime',                           type: 'lifetime', strict: false },
-        { match: 'DHWaterMarkManager',           name: 'WaterManager_common',                    id: 'lifetimeVIP_001',                                  type: 'lifetime', strict: false },
-        { match: 'MaxWallpaper',                 name: 'maxwallpaper_common',                    id: 'super_forever_vip',                                type: 'lifetime', strict: false },
-        { match: 'Loora',                        name: 'Yearly',                                 id: 'yearly_free_ref_10usd_off',                        type: 'subscription', strict: true  },
-        { match: 'Airmail',                      name: 'Airmail Premium',                        id: 'Airmail_iOS_Yearly_P',                             type: 'subscription', strict: true  },
-        { match: 'ip_tv_react_native',           name: 'Single',                                 id: 'opus.lifetime',                                    type: 'lifetime', strict: false },
-        { match: 'timetrack.io',                 name: 'atimelogger-premium-plus',               id: 'ttio_premium_plus',                                type: 'subscription', strict: false },
-        { match: 'Video%20Teleprompter',         name: 'videoPremium',                           id: 'com.joeallenpro.videoteleprompter.upgrade.yearly_a', type: 'subscription', strict: false },
-        { match: 'rewritingText',                name: 'AIGrammercheckerProAccess',              id: 'sv.aigrammerchecker.com.lifetime',                 type: 'lifetime', strict: false },
-        { match: 'ShellBoxKit',                  name: 'ssh_pro',                                id: 'ShellBoxKit.Year',                                 type: 'subscription', strict: false },
-        { match: 'Whisper',                      name: 'all_features',                           id: 'whisperai_80_y',                                   type: 'subscription', strict: true  },
-        { match: 'AnimeArt',                     name: 'AnimeArt.Gold',                          id: 'WaifuArt.Lifetime',                                type: 'lifetime', strict: false },
-        { match: 'MusicPutty',                   name: 'pro_version',                            id: 'mp_3599_1y',                                       type: 'subscription', strict: false },
-        { match: 'Sex%20Actions',                name: 'Premium Plus',                           id: 'ru.sexactions.subscriptionPromo1',                 type: 'subscription', strict: false },
-        { match: 'LockFlow',                     name: 'unlimited_access',                       id: 'lf_00.00_lifetime',                                type: 'lifetime', strict: false },
-        { match: 'VoiceAI',                      name: 'Special Offer',                          id: 'voiceannualspecial',                               type: 'subscription', strict: true  },
-        { match: 'AIKeyboard',                   name: 'plus_keyboard',                          id: 'aiplus_keyboard_yearly',                           type: 'subscription', strict: false },
-        { match: 'LazyReply',                    name: 'lazyReplyYearlySubscription',            id: 'com.bokhary.lazyreply.yearlyprosubscription',      type: 'subscription', strict: false },
-        { match: 'LazyBoard',                    name: 'lazyboardPro',                           id: 'com.bokhary.magicboard.magicboardpro',             type: 'subscription', strict: false },
-        { match: 'PDF%20Viewer',                 name: 'sub.pro',                                id: 'com.pspdfkit.viewer.sub.pro.yearly',               type: 'subscription', strict: false },
-        { match: 'Persona',                      name: 'unlimited',                              id: 'com.tickettothemoon.video.persona.one.time.purchase', type: 'lifetime', strict: true  },
-        { match: 'easy_chart',                   name: 'unlock all',                             id: 'qgnjs_lifetime',                                   type: 'lifetime', strict: false },
-        { match: 'Tide%20Guide',                 name: 'Tides+',                                 id: 'TideGuidePro_Lifetime_Family_149.99',              type: 'lifetime', strict: false },
-        { match: 'ASKAI',                        names: ['pro', 'pro_plan'],                     id: 'askai_pro',                                        type: 'subscription', strict: true  },
-        { match: 'shipian-ios',                  name: 'vipOffering',                            id: 'shipian_25_forever',                               type: 'lifetime', strict: false },
-        { match: 'tiimo',                        name: 'full_access',                            id: 'lifetime.iap',                                     type: 'lifetime', strict: true  },
-        { match: 'Project%20Delta',              name: 'rc_entitlement_obscura_ultra',           id: 'com.benricemccarthy.obscura4.obscura_ultra_lifetime', type: 'lifetime', strict: false },
-        { match: 'Zettelbox',                    name: 'Power Pack',                             id: 'powerpack_permanent_1',                            type: 'lifetime', strict: false },
-        { match: 'Context_iOS',                  name: 'Context Pro',                            id: 'ctx_sub_1y_sspai_preorder_angel',                  type: 'subscription', strict: false },
-        { match: 'MySticker',                    name: 'mysticker premium',                      id: 'com.miiiao.MySticker.lifetime',                    type: 'lifetime', strict: false },
-        { match: 'Stress',                       name: 'StressWatch Pro',                        id: 'stress_membership_lifetime',                       type: 'lifetime', strict: true  },
-        { match: 'Worrydolls',                   name: 'magicmode',                              id: 'magicmode',                                        type: 'subscription', strict: false },
-        { match: 'Falendar',                     name: 'Falendar+',                              id: 'falendar_68_life',                                 type: 'lifetime', strict: false },
-        { match: 'Alpenglow',                    name: 'newPro',                                 id: 'ProLifetime',                                      type: 'lifetime', strict: false },
-        { match: 'Decision',                     name: 'com.nixwang.decision.entitlements.pro',  id: 'com.nixwang.decision.pro.annual',                  type: 'subscription', strict: true  },
-        { match: 'audiomack-iphone',             name: 'Premium1',                               id: 'com.audiomack.premium.2022',                       type: 'subscription', strict: false },
-        { match: 'MallocVPN',                    name: 'IOS_PRO',                                id: 'malloc_yearly_vpn',                                type: 'subscription', strict: false },
-        { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true  },
+        { match: 'Island%20Reader',              name: 'BookSpeak Pro',                          id: 'com.luyaolab.bookspeak.lifetime',                  type: 'lifetime', strict: false, verified: false },
+        { match: 'volix',                        name: 'Device Kit Pro',                         id: 'com.volix.pro',                                    type: 'subscription', strict: true, verified: false },
+        { match: 'Speaker%20Cleaner',            name: 'WaterEject Pro',                         id: 'lifetime_water_eject',                             type: 'lifetime', strict: false, verified: false },
+        { match: 'MusicPlayer',                  name: 'com.zhuangmengting.player',              id: 'com.zhuangmengting.player.permanen',               type: 'lifetime', strict: true, verified: false },
+        { match: 'VideoBlur',                    name: 'com.zhuangmengting.blur',                id: 'com.zhuangmengting.blur.pro.permanent',            type: 'lifetime', strict: true, verified: false },
+        { match: 'PicPure',                      name: 'PicPure Pro',                            id: 'LifetimeAccess2',                                  type: 'lifetime', strict: true, verified: false },
+        { match: 'Image2PDF',                    name: 'Convertly Pro',                          id: 'life_time_id',                                     type: 'lifetime', strict: false, verified: false },
+        { match: 'OneTT',                        name: 'CloneCam Pro',                           id: 'clonecam.lifetime',                                type: 'lifetime', strict: true, verified: false },
+        { match: 'ShowcasePro',                  name: 'ShowcasePro.Ultra',                      id: 'DesignTech.SIA.ShowcasePro.Ultra.Lifetime',        type: 'lifetime', strict: false, verified: false },
+        { match: 'iOS/3001101',                  name: 'doneitPremium',                          id: 'DesignTech.SIA.Doneit.Premium.Plan.Lifetime',      type: 'lifetime', strict: false, verified: false },
+        { match: 'Speedometer',                  name: 'SpeedometerLite Pro',                    id: 'speedometerlite_lifetime',                         type: 'lifetime', strict: true, verified: false },
+        { match: 'Swish',                        name: 'Swish Pro',                              id: 'swish_pro_lifetime',                               type: 'lifetime', strict: true, verified: false },
+        { match: 'PinDou',                       name: 'PinDou Pro',                             id: 'com.pangqing.pindou.pro0',                         type: 'subscription', strict: true, verified: false },
+        { match: 'ReverseChallengeSwiftUI',      name: 'ReverseChallenge.Pro',                   id: 'com.abighead.ReverseChallenge.iap.pro',            type: 'subscription', strict: false, verified: false },
+        { match: 'Ticket%20Lover',               name: 'com.minardwu.ticketlover_lifetime',      id: 'com.minardwu.ticketlover_lifetime',                type: 'lifetime', strict: false, verified: false },
+        { match: 'rxframe',                      name: 'com.minardwu.rxframe_lifetime',          id: 'com.minardwu.rxframe_lifetime',                    type: 'lifetime', strict: true, verified: false },
+        { match: 'TagCamera',                    name: 'TagCamera Pro',                          id: 'com.foxlin.tagcamera.pro.lifetime',                type: 'lifetime', strict: false, verified: false },
+        { match: 'PhotoAlbumManager',            name: 'picseekpro',                             id: 'ape.lifetime',                                     type: 'lifetime', strict: false, verified: false },
+        { match: 'weight',                       name: 'Weight Pro',                             id: 'weight.pro.lifetime',                              type: 'lifetime', strict: true, verified: false },
+        { match: 'QuietCam',                     name: 'QuietCam Pro',                           id: 'pawelchmiel.quietcam.yearly',                      type: 'subscription', strict: false, verified: false },
+        { match: 'OrbitFast',                    name: 'Orbit Fast Full',                        id: 'com.fastorbitapps.OrbitFast.premium.lifetime',     type: 'lifetime', strict: false, verified: false },
+        { match: 'VidCap',                       name: 'io.fadel.vidcap.pro',                    id: 'io.fadel.vidcap.pro.lifetime',                     type: 'lifetime', strict: true, verified: false },
+        { match: 'TheGreatMe',                   name: 'The Great Me Pro',                       id: 'thegreatme.forever',                               type: 'lifetime', strict: false, verified: false },
+        { match: 'ai_music_generator',           name: 'music_generation_yearly_79_99',          id: 'music_generation_yearly_79_99',                    type: 'subscription', strict: false, verified: false },
+        { match: 'ShouChong',                    name: 'lulemevip',                              id: 'lulemeYears',                                      type: 'subscription', strict: false, verified: false },
+        { match: 'BeetleADB',                    name: 'beetle_pro',                             id: 'beetle_lifetime_pro',                              type: 'lifetime', strict: false, verified: false },
+        { match: 'Awake',                        name: 'awake_pro',                              id: 'io.unorderly.awake.pro.lifetime_v1',               type: 'lifetime', strict: true, verified: false },
+        { match: 'LaunchTrans',                  name: 'PicChat.Subscribe.Start',                id: 'Yearly.PicChat',                                   type: 'subscription', strict: false, verified: false },
+        { match: 'stopwatch',                    name: 'remove_ads',                             id: 'hasen_stopwatch_remove_ads',                       type: 'subscription', strict: true, verified: false },
+        { match: 'ArchiveList',                  name: 'pro_life',                               id: 'com.jy.ArchiveBox.pro_1',                          type: 'subscription', strict: false, verified: false },
+        { match: 'AppBox',                       name: 'appbookmark_vip',                        id: 'GAB_Lifetime_VIP',                                 type: 'lifetime', strict: true, verified: false },
+        { match: 'Sunlitt',                      name: 'sunlitt.pro',                            id: 'pro.lifetime',                                     type: 'lifetime', strict: true, verified: false },
+        { match: 'Moonlitt',                     name: 'moonlitt.pro',                           id: 'moonlitt.pro.lifetime',                            type: 'lifetime', strict: false, verified: false },
+        { match: 'A%20Widget',                   name: 'all_widgets',                            id: 'all_widgets',                                      type: 'subscription', strict: false, verified: false },
+        { match: 'AccuFind',                     name: 'accufind_payments',                      id: 'accufind_lifetime',                                type: 'lifetime', strict: false, verified: false },
+        { match: 'IPCams',                       names: ['pro', 'pro_plus'],                     id: 'ipcams_pro_lifetime',                              type: 'lifetime', strict: true, verified: false },
+        { match: 'ArtStage',                     name: 'FullAccess',                             id: 'com.nicdeane.artstage.YearlySubscription',         type: 'subscription', strict: false, verified: false },
+        { match: 'Infltr',                       name: 'com.Yooshr.infltr.subscriptionPremium',  id: 'com.Yooshr.infltr.everythingForever',              type: 'lifetime', strict: true, verified: false },
+        { match: 'Vinyls',                       name: 'AllPro',                                 id: 'com.shi.Vin.lifetime',                             type: 'lifetime', strict: true, verified: false },
+        { match: 'Wishy',                        name: 'Wishy Subscription',                     id: 'wishy_lifetime_subscription',                      type: 'lifetime', strict: true, verified: false },
+        { match: 'becoming',                     name: 'Strength Pro',                           id: 'strength_membership_lifetime',                     type: 'lifetime', strict: true, verified: false },
+        { match: 'Morphose',                     name: 'ProStandard',                            id: 'com.pixery.morphose.yearly',                       type: 'subscription', strict: false, verified: false },
+        { match: 'Unfold',                       name: 'REDUCED_PRO_YEARLY',                     id: 'UNFOLD_PRO_YEARLY',                                type: 'subscription', strict: true, verified: false },
+        { match: 'Binsoo',                       name: 'vibe',                                   id: 'annual',                                           type: 'subscription', strict: true, verified: false },
+        { match: 'ChatPub',                      name: 'Unlimited Access',                       id: 'conversationai.annual',                            type: 'subscription', strict: true, verified: false },
+        { match: 'quitnow',                      name: 'pro_features',                           id: 'com.eaginsoftware.QuitNow.unlock_all_pro_features', type: 'subscription', strict: true, verified: false },
+        { match: 'ChatBot',                      name: 'chatbot_annual',                         id: 'chatbot_annual',                                   type: 'subscription', strict: true, verified: false },
+        { match: 'VibeCamera',                   name: 'forever',                                id: 'vibe_pro_forever',                                 type: 'lifetime', strict: false, verified: false },
+        { match: 'No%20Fusion',                  name: 'LivePhoto',                              id: 'com.grey.nofusion.livephoto',                      type: 'subscription', strict: false, verified: false },
+        { match: 'Themy',                        name: 'fonts_premium',                          id: 'lifetime',                                         type: 'lifetime', strict: true, verified: false },
+        { match: 'FujiLifeStyle',                name: 'FUJIStyle Pro(Year)',                    id: 'FujiStyle2024003',                                 type: 'subscription', strict: false, verified: false },
+        { match: 'CharingCrossRoad',             name: 'ready_pro',                              id: 'ready_pro_50_1y',                                  type: 'subscription', strict: false, verified: false },
+        { match: 'ig-bookmarker',                name: 'entitlement',                            id: 'lifetimeID',                                       type: 'lifetime', strict: false, verified: false },
+        { match: 'CallAnnie',                    name: 'ai.animato.callannie.entitlement.pro0',  id: 'ai.animato.callannie.proyearly1',                  type: 'subscription', strict: false, verified: false },
+        { match: 'moss-ios',                     name: 'prouser',                                id: 'dpbox_yearly_68',                                  type: 'subscription', strict: false, verified: false },
+        { match: 'TQBrowser',                    name: 'pro_lt',                                 id: 'com.tk.client.lifetime',                           type: 'lifetime', strict: false, verified: false },
+        { match: 'DHWaterMarkManager',           name: 'WaterManager_common',                    id: 'lifetimeVIP_001',                                  type: 'lifetime', strict: false, verified: false },
+        { match: 'MaxWallpaper',                 name: 'maxwallpaper_common',                    id: 'super_forever_vip',                                type: 'lifetime', strict: false, verified: false },
+        { match: 'Loora',                        name: 'Yearly',                                 id: 'yearly_free_ref_10usd_off',                        type: 'subscription', strict: true, verified: false },
+        { match: 'Airmail',                      name: 'Airmail Premium',                        id: 'Airmail_iOS_Yearly_P',                             type: 'subscription', strict: true, verified: false },
+        { match: 'ip_tv_react_native',           name: 'Single',                                 id: 'opus.lifetime',                                    type: 'lifetime', strict: false, verified: false },
+        { match: 'timetrack.io',                 name: 'atimelogger-premium-plus',               id: 'ttio_premium_plus',                                type: 'subscription', strict: false, verified: false },
+        { match: 'Video%20Teleprompter',         name: 'videoPremium',                           id: 'com.joeallenpro.videoteleprompter.upgrade.yearly_a', type: 'subscription', strict: false, verified: false },
+        { match: 'rewritingText',                name: 'AIGrammercheckerProAccess',              id: 'sv.aigrammerchecker.com.lifetime',                 type: 'lifetime', strict: false, verified: false },
+        { match: 'ShellBoxKit',                  name: 'ssh_pro',                                id: 'ShellBoxKit.Year',                                 type: 'subscription', strict: false, verified: false },
+        { match: 'Whisper',                      name: 'all_features',                           id: 'whisperai_80_y',                                   type: 'subscription', strict: true, verified: false },
+        { match: 'AnimeArt',                     name: 'AnimeArt.Gold',                          id: 'WaifuArt.Lifetime',                                type: 'lifetime', strict: false, verified: false },
+        { match: 'MusicPutty',                   name: 'pro_version',                            id: 'mp_3599_1y',                                       type: 'subscription', strict: false, verified: false },
+        { match: 'Sex%20Actions',                name: 'Premium Plus',                           id: 'ru.sexactions.subscriptionPromo1',                 type: 'subscription', strict: false, verified: false },
+        { match: 'LockFlow',                     name: 'unlimited_access',                       id: 'lf_00.00_lifetime',                                type: 'lifetime', strict: false, verified: false },
+        { match: 'VoiceAI',                      name: 'Special Offer',                          id: 'voiceannualspecial',                               type: 'subscription', strict: true, verified: false },
+        { match: 'AIKeyboard',                   name: 'plus_keyboard',                          id: 'aiplus_keyboard_yearly',                           type: 'subscription', strict: false, verified: false },
+        { match: 'LazyReply',                    name: 'lazyReplyYearlySubscription',            id: 'com.bokhary.lazyreply.yearlyprosubscription',      type: 'subscription', strict: false, verified: false },
+        { match: 'LazyBoard',                    name: 'lazyboardPro',                           id: 'com.bokhary.magicboard.magicboardpro',             type: 'subscription', strict: false, verified: false },
+        { match: 'PDF%20Viewer',                 name: 'sub.pro',                                id: 'com.pspdfkit.viewer.sub.pro.yearly',               type: 'subscription', strict: false, verified: false },
+        { match: 'Persona',                      name: 'unlimited',                              id: 'com.tickettothemoon.video.persona.one.time.purchase', type: 'lifetime', strict: true, verified: false },
+        { match: 'easy_chart',                   name: 'unlock all',                             id: 'qgnjs_lifetime',                                   type: 'lifetime', strict: false, verified: false },
+        { match: 'Tide%20Guide',                 name: 'Tides+',                                 id: 'TideGuidePro_Lifetime_Family_149.99',              type: 'lifetime', strict: false, verified: false },
+        { match: 'ASKAI',                        names: ['pro', 'pro_plan'],                     id: 'askai_pro',                                        type: 'subscription', strict: true, verified: false },
+        { match: 'shipian-ios',                  name: 'vipOffering',                            id: 'shipian_25_forever',                               type: 'lifetime', strict: false, verified: false },
+        { match: 'tiimo',                        name: 'full_access',                            id: 'lifetime.iap',                                     type: 'lifetime', strict: true, verified: false },
+        { match: 'Project%20Delta',              name: 'rc_entitlement_obscura_ultra',           id: 'com.benricemccarthy.obscura4.obscura_ultra_lifetime', type: 'lifetime', strict: false, verified: false },
+        { match: 'Zettelbox',                    name: 'Power Pack',                             id: 'powerpack_permanent_1',                            type: 'lifetime', strict: false, verified: false },
+        { match: 'Context_iOS',                  name: 'Context Pro',                            id: 'ctx_sub_1y_sspai_preorder_angel',                  type: 'subscription', strict: false, verified: false },
+        { match: 'MySticker',                    name: 'mysticker premium',                      id: 'com.miiiao.MySticker.lifetime',                    type: 'lifetime', strict: false, verified: false },
+        { match: 'Stress',                       name: 'StressWatch Pro',                        id: 'stress_membership_lifetime',                       type: 'lifetime', strict: true, verified: false },
+        { match: 'Worrydolls',                   name: 'magicmode',                              id: 'magicmode',                                        type: 'subscription', strict: false, verified: false },
+        { match: 'Falendar',                     name: 'Falendar+',                              id: 'falendar_68_life',                                 type: 'lifetime', strict: false, verified: false },
+        { match: 'Alpenglow',                    name: 'newPro',                                 id: 'ProLifetime',                                      type: 'lifetime', strict: false, verified: false },
+        { match: 'Decision',                     name: 'com.nixwang.decision.entitlements.pro',  id: 'com.nixwang.decision.pro.annual',                  type: 'subscription', strict: true, verified: false },
+        { match: 'audiomack-iphone',             name: 'Premium1',                               id: 'com.audiomack.premium.2022',                       type: 'subscription', strict: false, verified: false },
+        { match: 'MallocVPN',                    name: 'IOS_PRO',                                id: 'malloc_yearly_vpn',                                type: 'subscription', strict: false, verified: false },
+        { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true, verified: false },
         { match: 'markbuy',                      name: 'premium',                                id: 'com.markbuy.plus',                                 type: 'lifetime', strict: false }
     ];
 
@@ -655,6 +655,8 @@ function httpGetJson(url, headers, onOk, onErr) {
     let injectSource = 'blind';
     // P1#6：offerings 路径本次注入的实际类型（lifetime/subscription），通知文案用
     let injectedOfferingsType = null;
+    // 本次注入的 entitlement 名（日志用）：精确规则取 rule.names/name，offerings 取候选名组，盲猜取单名
+    let injectedEntNames = [];
     // $done 只调用一次的守卫（异步 offerings 回调与超时可能竞态）
     let doneCalled = false;
     const doneOnce = (arg) => { if (!doneCalled) { doneCalled = true; $done(arg); } };
@@ -746,7 +748,13 @@ function httpGetJson(url, headers, onOk, onErr) {
             const lastNotify = $.getdata(storageKey) || 0;
             const hoursSince = (Date.now() - (parseInt(lastNotify, 10) || 0)) / 36e5;
             if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
-                $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
+                if (rule.verified === false) {
+                    // 未核实规则：名字/product 来自上游表，未用真实响应核实，App 未必认；
+                    // 不写“已安全注入”，改发候选权益名 + 待 App 确认（与 offerings 通知同款文案）
+                    $.notify(`🎉 ${rule.match} 授权更新`, `已注入${rule.type === 'lifetime' ? '终身' : '永久'}候选权益名`, rule.type === 'lifetime' ? `待 App 确认 · 终身有效` : `待 App 确认 · 有效期至：2099-12-31`);
+                } else {
+                    $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
+                }
                 $.setdata(Date.now().toString(), storageKey);
                 console.log(`[RC] 已发送通知: ${storageKey}`);
             } else {
@@ -773,7 +781,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         }
 
         const tag = rule ? ` [精确/${rule.type}]` : (injectSource === 'offerings' ? ' [offerings]' : ' [盲猜]');
-        console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId})${tag}`);
+        console.log(`[RC] 注入完成: ${matchedAppKey} (${targetId}) [${injectedEntNames.join(', ')}]${tag}`);
         doneOnce({ body: JSON.stringify(obj) });
     };
 
@@ -786,6 +794,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         matchedAppKey = keyFromBid || ((rawUA.split('/')[0] || "App").split(' ')[0]);
         targetId = BID ? `${BID}.subscription` : `com.${matchedAppKey.toLowerCase()}.subscription`;
         const singleName = pickSingleGuessName(BID);
+        injectedEntNames = [singleName];
         injectSource = 'blind';
         console.log(`[RC] 盲猜回退：单名注入 ${singleName}（${targetId}）`);
         injectSubscription(targetId, [singleName]);
@@ -795,6 +804,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         // 精确命中：按 type 只写一边；entitlement 支持 names 数组（候选集，未核实）或单个 name；
         // names 双权益（nameb）同样走 names 数组（id 用主 id，idb 未保留）
         const entNames = rule.names || [rule.name];
+        injectedEntNames = entNames;
         matchedAppKey = rule.match;
         targetId = rule.id;
         injectSource = 'exact';
@@ -867,6 +877,7 @@ function httpGetJson(url, headers, onOk, onErr) {
                     // 同名时去重为 1 个；盲猜路径仍只注单名（不动）
                     const guessName = pickSingleGuessName(BID);
                     const entNames = guessName === entName ? [entName] : [entName, guessName];
+                    injectedEntNames = entNames;
                     const type = classifyProductType(productId, best.pkg.identifier);
                     matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
                     targetId = productId;
