@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 11:30（精简发布版）
+版本：2026-11-18 11:41（精简发布版）
 规则：148 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
       （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
@@ -70,6 +70,11 @@ function classifyProductType(productId, packageId) {
 function isTrialPackage(packageId, productId) {
     return /(trial|intro)/i.test((packageId || '') + ' ' + (productId || ''));
 }
+// 消耗型商品（钻石/金币/点数）不产生 entitlement，选包阶段直接排除
+// 只按段匹配（consumable/coins/gems/credits）；items 不收（太宽），coinpack 类无分隔符复合词不收
+function isConsumablePkg(productId) {
+    return /(^|[._-])(consumable|coins?|gems?|credits?)([._-]|$)/i.test(productId || '');
+}
 // C1：从 offerings 反推 entitlement 名（尽力推断，未核实）
 // 优先级：offering 标识（排除无意义的 default/standard）→ package 标识去 $rc_ 前缀
 // （$rc_monthly 这类纯档期词跳过）→ product id 末段有意义 token；绝不用 $rc_* 直接当权益名
@@ -79,7 +84,7 @@ function isTrialPackage(packageId, productId) {
 // 实在没好名字回退 pickSingleGuessName(BID)，与盲猜路径保持一致。大小写保留原样
 // （offering/product 的大小写是开发者的真实命名信号，统一小写会丢信息，见 F11 不采纳）。
 // 档期词集与 deriveEntitlementName、pickSingleGuessName 共用
-const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro', 'forever', 'permanent', 'one_time', 'onetime', 'life_time', 'life-time', 'permanen', 'unlimited', 'unlimited_access', 'nonconsumable', 'non_consumable', 'consumable', 'buyout', 'one_off', 'never_expire', 'unlock_all']);
+const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro', 'forever', 'permanent', 'one_time', 'onetime', 'life_time', 'life-time', 'permanen', 'unlimited', 'unlimited_access', 'nonconsumable', 'non_consumable', 'consumable', 'buyout', 'one_off', 'never_expire', 'unlock_all', 'one-time', 'pro-yearly', 'never-expire', 'unlimited-access', 'six-month', 'three-month', 'two-month', 'one-month']);
 const OFFER_NOISE = new Set(['default', 'standard', 'annual', 'monthly', 'yearly', 'weekly', 'sale', 'promo', 'promotion', 'trial', 'intro', 'main', 'all', 'full', 'subscription', 'subscriptions', 'buy', 'purchase', 'order']);
 // 权益词直返：token 本身就是常见权益名时（pro/premium/vip/plus/gold/unlock）直接用，
 // 不再拼 .pro，也不被片段判断滤掉；'all' 不在内（它是噪声词，见 OFFER_NOISE）
@@ -119,9 +124,10 @@ function deriveEntitlementName(offeringId, packageId, productId, bid) {
     };
     for (let i = parts.length - 1; i >= 0; i--) {
         let t = parts[i];
-        // 剥版本后缀（pro1/prov1 → pro；纯版本号 v1/v2 整段跳过）
+        // 剥版本后缀：带 v 的版本号（v1/v12）或带分隔符的数字（pro-1/pro_2）才剥；
+        // ps5/xbox360/iphone15 不动（代价：pro1/app2 类不带分隔符的尾号不再剥）
         if (i === parts.length - 1) {
-            const strippedVer = t.replace(/[._-]?v?\d+$/i, '');
+            const strippedVer = t.replace(/[._-]?v\d+$/i, '').replace(/[._-]\d+$/, '');
             if (strippedVer) t = strippedVer;
             else continue;
         }
@@ -840,9 +846,11 @@ function httpGetJson(url, headers, onOk, onErr) {
                 }
                 const nonTrial = allPkgs.filter(({ pkg }) => !isTrialPackage(pkg.identifier, pkg.platform_product_identifier));
                 const candidates = nonTrial.length ? nonTrial : allPkgs;
+                // 消耗型商品不产生 entitlement，选包阶段直接排除（全是消耗型时 usable 为空 → best 仍为 null → 走盲猜回退）
+                const usable = candidates.filter(({ pkg }) => !isConsumablePkg(pkg.platform_product_identifier));
                 let best = null;
                 let bestScore = -1;
-                for (const { offeringId, pkg } of candidates) {
+                for (const { offeringId, pkg } of usable) {
                     const pid = pkg.platform_product_identifier;
                     if (!pid) continue;
                     const t = classifyProductType(pid, pkg.identifier);
