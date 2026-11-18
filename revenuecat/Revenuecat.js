@@ -1,10 +1,11 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 20:47（精简发布版）
+版本：2026-11-18 21:51（精简发布版）
 规则：149 条精确规则（部分来自上游导入，标未核实）
-行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
-      （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
-      non_subscriptions、订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
+行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
+      一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
+      仍只有最优包一个；盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
+      订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
 已知限制：Trusted Entitlements ENFORCED 模式下改写失效；INFORMATIONAL
       模式下是否生效取决于 App 是否检查验证结果，不保证生效；部分 App
       走 StoreKit 2 本地校验，脚本无法处理。
@@ -84,7 +85,7 @@ function isConsumablePkg(productId) {
 // 实在没好名字回退 pickSingleGuessName(BID)，与盲猜路径保持一致。大小写保留原样
 // （offering/product 的大小写是开发者的真实命名信号，统一小写会丢信息，见 F11 不采纳）。
 // 档期词集与 deriveEntitlementName、pickSingleGuessName 共用
-const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro', 'forever', 'permanent', 'one_time', 'onetime', 'life_time', 'life-time', 'permanen', 'unlimited', 'unlimited_access', 'nonconsumable', 'non_consumable', 'consumable', 'buyout', 'one_off', 'never_expire', 'unlock_all', 'one-time', 'pro-yearly', 'never-expire', 'unlimited-access', 'six-month', 'three-month', 'two-month', 'one-month']);
+const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro', 'forever', 'permanent', 'one_time', 'onetime', 'life_time', 'life-time', 'permanen', 'unlimited', 'unlimited_access', 'nonconsumable', 'non_consumable', 'consumable', 'buyout', 'one_off', 'never_expire', 'unlock_all', 'one-time', 'pro-yearly', 'never-expire', 'unlimited-access', 'six-month', 'three-month', 'two-month', 'one-month', 'year', 'month', 'quarter', 'week', 'day']);
 const OFFER_NOISE = new Set(['default', 'standard', 'annual', 'monthly', 'yearly', 'weekly', 'sale', 'promo', 'promotion', 'trial', 'intro', 'main', 'all', 'full', 'subscription', 'subscriptions', 'buy', 'purchase', 'order']);
 // 权益词直返：token 本身就是常见权益名时（pro/premium/vip/plus/gold/unlock）直接用，
 // 不再拼 .pro，也不被片段判断滤掉；'all' 不在内（它是噪声词，见 OFFER_NOISE）
@@ -847,9 +848,10 @@ function httpGetJson(url, headers, onOk, onErr) {
             try {
                 const offObj = JSON.parse(offeringsBody);
                 const offerings = (offObj && offObj.offerings) || [];
-                // P0#1：只选一个最优包——收集全部 offering 的全部 package（记所属 offering 标识），
+                // P0#1：只注入一个最优包——收集全部 offering 的全部 package（记所属 offering 标识），
                 // 先滤 trial/intro 包（全是 trial 才用 trial 包），再打分：lifetime=3、yearly/annual=2、
-                // 其他=1，取最高分、平局取先遇到的一个；绝不遍历全部注入
+                // 其他=1，取最高分、平局取先遇到的一个；注入的产品只有一个（记录 44：候选名改从
+                // 全部可用包各推一个，产品仍只注最优包）
                 const allPkgs = [];
                 for (const offering of offerings) {
                     const pkgs = (offering && offering.packages) || [];
@@ -872,11 +874,19 @@ function httpGetJson(url, headers, onOk, onErr) {
                 }
                 if (best) {
                     const productId = best.pkg.platform_product_identifier;
-                    const entName = deriveEntitlementName(best.offeringId, best.pkg.identifier, productId, BID);
-                    // 候选名组（2026-11-18 用户拍板）：offerings 路径注 2 个名——推导名 + token.pro 回退，
-                    // 同名时去重为 1 个；盲猜路径仍只注单名（不动）
+                    // 候选名组（2026-11-18 用户拍板；记录 44 扩展）：offerings 路径从全部可用包各
+                    // 推导一个名（最优包的在首位，去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；
+                    // 注入的产品仍只有最优包一个；盲猜路径仍只注单名（不动）
+                    const derivedNames = [deriveEntitlementName(best.offeringId, best.pkg.identifier, productId, BID)];
+                    for (const { offeringId, pkg } of usable) {
+                        if (derivedNames.length >= 4) break;
+                        if (!pkg.platform_product_identifier) continue;
+                        const n = deriveEntitlementName(offeringId, pkg.identifier, pkg.platform_product_identifier, BID);
+                        if (n && !derivedNames.includes(n)) derivedNames.push(n);
+                    }
                     const guessName = pickSingleGuessName(BID);
-                    const entNames = guessName === entName ? [entName] : [entName, guessName];
+                    const entNames = [...derivedNames];
+                    if (!entNames.includes(guessName)) entNames.push(guessName);
                     injectedEntNames = entNames;
                     const type = classifyProductType(productId, best.pkg.identifier);
                     matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
