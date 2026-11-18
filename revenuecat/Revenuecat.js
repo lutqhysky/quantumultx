@@ -1,7 +1,7 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 11:41（精简发布版）
-规则：148 条精确规则（部分来自上游导入，标未核实）
+版本：2026-11-18 20:36（精简发布版）
+规则：149 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
       （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
       non_subscriptions、订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
@@ -556,7 +556,8 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'Decision',                     name: 'com.nixwang.decision.entitlements.pro',  id: 'com.nixwang.decision.pro.annual',                  type: 'subscription', strict: true  },
         { match: 'audiomack-iphone',             name: 'Premium1',                               id: 'com.audiomack.premium.2022',                       type: 'subscription', strict: false },
         { match: 'MallocVPN',                    name: 'IOS_PRO',                                id: 'malloc_yearly_vpn',                                type: 'subscription', strict: false },
-        { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true  }
+        { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true  },
+        { match: 'markbuy',                      name: 'premium',                                id: 'com.markbuy.plus',                                 type: 'lifetime', strict: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
