@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-17 15:56（精简发布版）
+版本：2026-11-18 10:37（精简发布版）
 规则：147 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id；
       盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
@@ -63,7 +63,7 @@ const BID_NOISE = new Set(['com', 'net', 'org', 'io', 'co', 'cn', 'app', 'ios', 
 // （类型推断不明暂按订阅，col.or 先例；不用 Reheji 的 cm 字段，cm 语义未验证）
 function classifyProductType(productId, packageId) {
     const s = (((productId || '') + ' ' + (packageId || '')).toLowerCase());
-    if (/(lifetime|forever|nonconsumable|onetime|one[._-]time|life_time|life-time|permanen|_life|\$rc_lifetime)/.test(s)) return 'lifetime';
+    if (/(lifetime|forever|nonconsumable|onetime|one[._-]time|life_time|life-time|permanen|_life|unlock_all|one_off|buyout|never_expire|\$rc_lifetime)/.test(s)) return 'lifetime';
     return 'subscription';
 }
 // trial/intro 包不作为首选注入对象（period_type=trial 易被 App 特殊处理）
@@ -73,33 +73,51 @@ function isTrialPackage(packageId, productId) {
 // C1：从 offerings 反推 entitlement 名（尽力推断，未核实）
 // 优先级：offering 标识（排除无意义的 default/standard）→ package 标识去 $rc_ 前缀
 // （$rc_monthly 这类纯档期词跳过）→ product id 末段有意义 token；绝不用 $rc_* 直接当权益名
-function deriveEntitlementName(offeringId, packageId, productId) {
+// C1：offerings 反推权益名——三道闸 + 回退盲猜（2026-11-18 第六份外部评审 F1，6 例全对）：
+// ① offering id 先过噪声黑名单（档期词/通用词无语义）；② package 先剥档期后缀再判；
+// ③ product token 再滤档期词/通用词/BID 自身 token（产品名里常混 App 名，如 exampleapp）；
+// 实在没好名字回退 pickSingleGuessName(BID)，与盲猜路径保持一致。大小写保留原样
+// （offering/product 的大小写是开发者的真实命名信号，统一小写会丢信息，见 F11 不采纳）。
+// 档期词集与 deriveEntitlementName、pickSingleGuessName 共用
+const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro']);
+const OFFER_NOISE = new Set(['default', 'standard', 'annual', 'monthly', 'yearly', 'weekly', 'sale', 'promo', 'promotion', 'trial', 'intro', 'main', 'all', 'full', 'subscription', 'subscriptions']);
+function deriveEntitlementName(offeringId, packageId, productId, bid) {
     const off = (offeringId || '').trim();
-    if (off && !/^(default|standard)$/i.test(off)) return off;
+    if (off && !OFFER_NOISE.has(off.toLowerCase())) return off;
     const pkg = (packageId || '').trim();
     if (pkg) {
         const stripped = pkg.replace(/^\$rc_/, '');
-        if (stripped !== pkg) {
-            // $rc_ 前缀的包：只剩档期词（monthly/annual/lifetime…）时无语义，跳过
-            if (!/^(monthly|annual|yearly|weekly|lifetime|six_month|three_month|two_month|one_month)$/i.test(stripped)) return stripped;
-        } else {
-            return pkg; // 自定义包标识本身常有语义（如 premium_monthly），直接用
+        // 自定义包：先剥尾部档期后缀（premium_monthly → premium），再判噪声
+        const bare = stripped.replace(/[_-]?(monthly|annual|yearly|weekly|lifetime|forever|permanent)$/i, '');
+        if (bare && !OFFER_NOISE.has(bare.toLowerCase())) return bare;
+        if (stripped !== pkg && !OFFER_NOISE.has(stripped.toLowerCase())
+            && !/^(monthly|annual|yearly|weekly|lifetime|six_month|three_month|two_month|one_month)$/i.test(stripped)) {
+            return stripped;
         }
     }
-    // product id 反推：取末段非档期、非纯数字 token
+    // product id 反推：取末段非档期、非纯数字、非通用词、非 BID 自身 token
     const parts = (productId || '').split(/[._]/).filter(Boolean);
-    const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro']);
+    const bidTokens = new Set((bid || '').toLowerCase().split('.').filter(t => t && t.length > 1));
+    // App 名 token 常与产品 token 拼合（如 BID 的 example 与产品里的 exampleapp）：长 token（≥5 字符）按子串判
+    const isBidLike = (t) => {
+        for (const b of bidTokens) {
+            if (b.length >= 5 && (t.includes(b) || b.includes(t))) return true;
+        }
+        return false;
+    };
     for (let i = parts.length - 1; i >= 0; i--) {
         const t = parts[i].toLowerCase();
-        if (!DURATION.has(t) && !/^\d+$/.test(t) && t.length > 1) return parts[i];
+        if (!DURATION.has(t) && !/^\d+$/.test(t) && t.length > 1
+            && !BID_NOISE.has(t) && !OFFER_NOISE.has(t) && !bidTokens.has(t) && !isBidLike(t)) return parts[i];
     }
-    return 'pro';
+    // ★ 关键：与盲猜路径保持一致，回退到 <token>.pro
+    return pickSingleGuessName(bid);
 }
 // C1 盲猜回退改为单名注入：BID 派生 token.pro 优先（如 datacalc.pro），无派生时用 pro（422 条真实 entitlement 名尾段统计，pro 居首）
-// 取 BID 最后一段有意义 token（通常就是 App 名）；纯顶级域名/纯数字 token 已滤掉
+// 取 BID 最后一段有意义 token（通常就是 App 名）；纯顶级域名/纯数字/档期词 token 已滤掉（2026-11-18 F10）
 function pickSingleGuessName(bid) {
     const blo = (bid || '').toLowerCase();
-    const tokens = blo.split('.').filter(t => t && t.length > 1 && !BID_NOISE.has(t) && !/^\d+$/.test(t));
+    const tokens = blo.split('.').filter(t => t && t.length > 1 && !BID_NOISE.has(t) && !DURATION.has(t) && !/^\d+$/.test(t));
     if (tokens.length) return tokens[tokens.length - 1] + '.pro';
     return 'pro';
 }
@@ -107,9 +125,11 @@ function pickSingleGuessName(bid) {
 // 成功回调 onOk({status, body})；失败 onErr(message)。无任何可用引擎时直接 onErr。
 function httpGetJson(url, headers, onOk, onErr) {
     const opts = { url: url, headers: headers };
+    // R1：给支持超时的引擎传 timeout（setTimeout 兜底仍在）；$https/$http 不传，避免不认该选项
+    const optsWithTimeout = { url: url, headers: headers, timeout: OFFERINGS_TIMEOUT_MS };
     try {
         if (typeof $task !== 'undefined' && $task && typeof $task.fetch === 'function') {
-            const p = $task.fetch(opts);
+            const p = $task.fetch(optsWithTimeout);
             if (p && typeof p.then === 'function') {
                 p.then(resp => {
                     const code = resp && (resp.statusCode || resp.status);
@@ -122,7 +142,7 @@ function httpGetJson(url, headers, onOk, onErr) {
     } catch (e) { /* 掉到下一引擎 */ }
     try {
         if (typeof $httpClient !== 'undefined' && $httpClient && typeof $httpClient.get === 'function') {
-            $httpClient.get(opts, (err, resp, body) => {
+            $httpClient.get(optsWithTimeout, (err, resp, body) => {
                 if (err) onErr(String(err));
                 else if (resp && resp.status === 200) onOk({ status: resp.status, body: body });
                 else onErr('status ' + (resp ? resp.status : 'none'));
@@ -297,6 +317,8 @@ function httpGetJson(url, headers, onOk, onErr) {
         "purchase_date": nowStr,
         "ownership_type": "PURCHASED",
         "store": "app_store",
+        // 官方订阅示例含 store_transaction_id（真实值为商店交易号）；注入值留空串，仅补字段存在
+        "store_transaction_id": "",
         "is_sandbox": false,
         "will_renew": true,
         "period_type": "normal",
@@ -374,17 +396,17 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: false },
         { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false },
         { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false },
-        // 'reader' 为常用词，加 strict 词边界防误伤（如 MyPDFReader）
+        // 'reader' 为常用词：2026-11-18 改为 'valo.reader'（BID 精确指向 Valo Reader），
+        // 'MyPDF Reader'/'PDF Reader Pro'/'com.moondrop.reader' 不再误伤；
         // Reheji.js 第三批（2026-11-06）：listua 区按 UA 片段匹配；未用真实响应核实。
-        // 位置注意：必须放在通用 'reader' 规则之前——first-match-wins，且 'reader' 的 strict 词边界
-        // 仍会匹配 "Island Reader" 的 UA，放后面会被抢先注入 vip2 而失效。
+        // 'Island Reader' 规则仍放前面（顺序无害，'valo.reader' 已不会抢它的 UA）。
         { match: 'Island Reader', name: 'BookSpeak Pro',                                     id: 'com.luyaolab.bookspeak.lifetime',            type: 'lifetime',     strict: false },
-        { match: 'reader',        name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
+        { match: 'valo.reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
         { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false },
         { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
         { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false },
-        // jinduoduo 的 product 'mobile_vip' 类型推断不明，暂按订阅注入（不影响解锁），待核实
-        { match: 'jinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false },
+        // pinduoduo（2026-11-18 修正：原 match 'jinduoduo' 为拼写错，bundle id 已核实 com.xunmeng.pinduoduo；product 'mobile_vip' 类型推断不明，暂按订阅注入，待核实）
+        { match: 'pinduoduo',     name: 'jinduoduoapp',                                      id: 'mobile_vip',                                  type: 'subscription', strict: false },
         // Reheji.js 第一批（2026-10-31）：只借数据、逻辑不动；以下均未用真实响应核实。
         // bundle 区按 BID 精确匹配（最稳），listua 区按 UA 片段匹配
         { match: 'me.capilabs.sleep',           name: 'Capi - Sleep Factors Analysis Unlimited Access', id: 'me.capilabs.sleep.premium.lifetime',     type: 'lifetime',     strict: false },
@@ -575,8 +597,8 @@ function httpGetJson(url, headers, onOk, onErr) {
             };
         }
         const list = sub.non_subscriptions[productId] || [];
-        // 去重：同一 product 只保留一条注入记录
-        if (!list.some(e => e && e.id === productId)) {
+        // 去重：已有真实购买记录时不追加（真实条目的 id 是交易号，不等于 product id，旧判据恒不成立）
+        if (list.length === 0) {
             list.push({
                 "id": productId,
                 "is_sandbox": false,
@@ -690,7 +712,7 @@ function httpGetJson(url, headers, onOk, onErr) {
             const cleanKey = rule.match.replace(/[^a-zA-Z0-9_-]/g, '_');
             const storageKey = `rc_notify_v2_${cleanKey}`;
             const lastNotify = $.getdata(storageKey) || 0;
-            const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
+            const hoursSince = (Date.now() - (parseInt(lastNotify, 10) || 0)) / 36e5;
             if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
                 $.notify(`🎉 ${rule.match} 授权更新`, `已安全注入${rule.type === 'lifetime' ? '终身' : '永久'}凭证`, rule.type === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
                 $.setdata(Date.now().toString(), storageKey);
@@ -707,7 +729,7 @@ function httpGetJson(url, headers, onOk, onErr) {
             const cleanKey = (matchedAppKey || 'App').replace(/[^a-zA-Z0-9_-]/g, '_');
             const storageKey = `rc_notify_v2_off_${cleanKey}`;
             const lastNotify = $.getdata(storageKey) || 0;
-            const hoursSince = (Date.now() - parseInt(lastNotify, 10)) / 36e5;
+            const hoursSince = (Date.now() - (parseInt(lastNotify, 10) || 0)) / 36e5;
             if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
                 $.notify(`🎉 ${matchedAppKey} 授权更新`, `已安全注入${injectedOfferingsType === 'lifetime' ? '终身' : '永久'}凭证`, injectedOfferingsType === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
                 $.setdata(Date.now().toString(), storageKey);
@@ -763,6 +785,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         finalizeInjection();
         return;
     }
+    // R3：URL 由 $request.url 正则重建，query string 被丢弃——RevenueCat 该接口不用 query，无影响（前提记录）
     const offeringsUrl = subMatch[1] + '/v1/subscribers/' + subMatch[2] + '/offerings';
     // 复用当前请求头（去掉条件缓存头，不硬编码任何 key）
     const offHeaders = {};
@@ -804,7 +827,7 @@ function httpGetJson(url, headers, onOk, onErr) {
                 }
                 if (best) {
                     const productId = best.pkg.platform_product_identifier;
-                    const entName = deriveEntitlementName(best.offeringId, best.pkg.identifier, productId);
+                    const entName = deriveEntitlementName(best.offeringId, best.pkg.identifier, productId, BID);
                     const type = classifyProductType(productId, best.pkg.identifier);
                     matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
                     targetId = productId;
