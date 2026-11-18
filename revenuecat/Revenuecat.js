@@ -1,10 +1,10 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 10:37（精简发布版）
+版本：2026-11-18 10:50（精简发布版）
 规则：147 条精确规则（部分来自上游导入，标未核实）
-行为：无本地规则时请求真实 offerings 反推权益名与 product id；
-      盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
-      订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
+行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
+      （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
+      non_subscriptions、订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
 已知限制：Trusted Entitlements ENFORCED 模式下改写失效；INFORMATIONAL
       模式下是否生效取决于 App 是否检查验证结果，不保证生效；部分 App
       走 StoreKit 2 本地校验，脚本无法处理。
@@ -828,13 +828,17 @@ function httpGetJson(url, headers, onOk, onErr) {
                 if (best) {
                     const productId = best.pkg.platform_product_identifier;
                     const entName = deriveEntitlementName(best.offeringId, best.pkg.identifier, productId, BID);
+                    // 候选名组（2026-11-18 用户拍板）：offerings 路径注 2 个名——推导名 + token.pro 回退，
+                    // 同名时去重为 1 个；盲猜路径仍只注单名（不动）
+                    const guessName = pickSingleGuessName(BID);
+                    const entNames = guessName === entName ? [entName] : [entName, guessName];
                     const type = classifyProductType(productId, best.pkg.identifier);
                     matchedAppKey = BID || ((rawUA.split('/')[0] || 'App').split(' ')[0]);
                     targetId = productId;
                     injectedOfferingsType = type;
                     injectSource = 'offerings';
-                    if (type === 'lifetime') injectLifetime(productId, [entName]);
-                    else injectSubscription(productId, [entName]);
+                    if (type === 'lifetime') injectLifetime(productId, entNames);
+                    else injectSubscription(productId, entNames);
                     console.log(`[RC] offerings 反推注入完成：选中 ${type} 包 ${productId}（${best.pkg.identifier}，${offeringsUrl}）`);
                     finalizeInjection();
                     return;
