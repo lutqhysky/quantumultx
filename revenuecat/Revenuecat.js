@@ -1,7 +1,7 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 10:50（精简发布版）
-规则：147 条精确规则（部分来自上游导入，标未核实）
+版本：2026-11-18 11:30（精简发布版）
+规则：148 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，注 2 个候选名
       （推导名 + token.pro，同名去重）；盲猜回退只注一个最可能权益名；终身写
       non_subscriptions、订阅写 subscriptions；精确命中与 offerings 注入发通知（12h 节流）。
@@ -79,36 +79,57 @@ function isTrialPackage(packageId, productId) {
 // 实在没好名字回退 pickSingleGuessName(BID)，与盲猜路径保持一致。大小写保留原样
 // （offering/product 的大小写是开发者的真实命名信号，统一小写会丢信息，见 F11 不采纳）。
 // 档期词集与 deriveEntitlementName、pickSingleGuessName 共用
-const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro']);
-const OFFER_NOISE = new Set(['default', 'standard', 'annual', 'monthly', 'yearly', 'weekly', 'sale', 'promo', 'promotion', 'trial', 'intro', 'main', 'all', 'full', 'subscription', 'subscriptions']);
+const DURATION = new Set(['monthly', 'annual', 'yearly', 'weekly', 'lifetime', 'sixmonth', 'six_month', 'threemonth', 'three_month', 'onemonth', 'one_month', 'twomonth', 'two_month', 'trial', 'intro', 'forever', 'permanent', 'one_time', 'onetime', 'life_time', 'life-time', 'permanen', 'unlimited', 'unlimited_access', 'nonconsumable', 'non_consumable', 'consumable', 'buyout', 'one_off', 'never_expire', 'unlock_all']);
+const OFFER_NOISE = new Set(['default', 'standard', 'annual', 'monthly', 'yearly', 'weekly', 'sale', 'promo', 'promotion', 'trial', 'intro', 'main', 'all', 'full', 'subscription', 'subscriptions', 'buy', 'purchase', 'order']);
+// 权益词直返：token 本身就是常见权益名时（pro/premium/vip/plus/gold/unlock）直接用，
+// 不再拼 .pro，也不被片段判断滤掉；'all' 不在内（它是噪声词，见 OFFER_NOISE）
+const ENT_WORDS = new Set(['pro', 'premium', 'vip', 'plus', 'gold', 'unlock']);
 function deriveEntitlementName(offeringId, packageId, productId, bid) {
     const off = (offeringId || '').trim();
     if (off && !OFFER_NOISE.has(off.toLowerCase())) return off;
     const pkg = (packageId || '').trim();
     if (pkg) {
         const stripped = pkg.replace(/^\$rc_/, '');
-        // 自定义包：先剥尾部档期后缀（premium_monthly → premium），再判噪声
+        // 自定义包：先剥尾部档期后缀（premium_monthly → premium），再判噪声与档期词
         const bare = stripped.replace(/[_-]?(monthly|annual|yearly|weekly|lifetime|forever|permanent)$/i, '');
-        if (bare && !OFFER_NOISE.has(bare.toLowerCase())) return bare;
+        if (bare && !OFFER_NOISE.has(bare.toLowerCase()) && !DURATION.has(bare.toLowerCase())) return bare;
         if (stripped !== pkg && !OFFER_NOISE.has(stripped.toLowerCase())
-            && !/^(monthly|annual|yearly|weekly|lifetime|six_month|three_month|two_month|one_month)$/i.test(stripped)) {
+            && !DURATION.has(stripped.toLowerCase())) {
             return stripped;
         }
     }
     // product id 反推：取末段非档期、非纯数字、非通用词、非 BID 自身 token
-    const parts = (productId || '').split(/[._]/).filter(Boolean);
+    // '_' 复合 token（如 one_time、lifetime_v1）先按 [._] 切分；其片段（如 time、v1）同样判为噪声
+    const raw = (productId || '').split('.').filter(Boolean);
+    const joined = new Set();
+    for (const q of raw) if (q.includes('_')) joined.add(q.toLowerCase());
+    const isFragment = (f) => {
+        for (const j of joined) if (j.length > f.length && j.includes(f)) return true;
+        return false;
+    };
+    const parts = raw.join('.').split(/[._]/).filter(Boolean);
     const bidTokens = new Set((bid || '').toLowerCase().split('.').filter(t => t && t.length > 1));
     // App 名 token 常与产品 token 拼合（如 BID 的 example 与产品里的 exampleapp）：长 token（≥5 字符）按子串判
     const isBidLike = (t) => {
         for (const b of bidTokens) {
-            if (b.length >= 5 && (t.includes(b) || b.includes(t))) return true;
+            if (b.length >= 5 && t.includes(b)) return true;   // t 含 b
+            if (t.length >= 5 && b.includes(t)) return true;   // b 含 t（要求 t 也够长）
         }
         return false;
     };
     for (let i = parts.length - 1; i >= 0; i--) {
-        const t = parts[i].toLowerCase();
-        if (!DURATION.has(t) && !/^\d+$/.test(t) && t.length > 1
-            && !BID_NOISE.has(t) && !OFFER_NOISE.has(t) && !bidTokens.has(t) && !isBidLike(t)) return parts[i];
+        let t = parts[i];
+        // 剥版本后缀（pro1/prov1 → pro；纯版本号 v1/v2 整段跳过）
+        if (i === parts.length - 1) {
+            const strippedVer = t.replace(/[._-]?v?\d+$/i, '');
+            if (strippedVer) t = strippedVer;
+            else continue;
+        }
+        const lt = t.toLowerCase();
+        if (ENT_WORDS.has(lt)) return t;  // 权益词直返（pro/premium/vip/plus/gold/unlock），不走片段判断
+        if (!DURATION.has(lt) && !/^\d+$/.test(lt) && lt.length > 1
+            && !BID_NOISE.has(lt) && !OFFER_NOISE.has(lt)
+            && !bidTokens.has(lt) && !isBidLike(lt) && !isFragment(lt)) return t;
     }
     // ★ 关键：与盲猜路径保持一致，回退到 <token>.pro
     return pickSingleGuessName(bid);
@@ -118,8 +139,10 @@ function deriveEntitlementName(offeringId, packageId, productId, bid) {
 function pickSingleGuessName(bid) {
     const blo = (bid || '').toLowerCase();
     const tokens = blo.split('.').filter(t => t && t.length > 1 && !BID_NOISE.has(t) && !DURATION.has(t) && !/^\d+$/.test(t));
-    if (tokens.length) return tokens[tokens.length - 1] + '.pro';
-    return 'pro';
+    if (!tokens.length) return 'pro';
+    const last = tokens[tokens.length - 1];
+    if (ENT_WORDS.has(last)) return last;  // BID 末段本身就是权益名（如 com.readme.pro），不拼成 pro.pro
+    return last + '.pro';
 }
 // C1：多引擎 GET：$task.fetch → $httpClient.get → $https.get → $http.get
 // 成功回调 onOk({status, body})；失败 onErr(message)。无任何可用引擎时直接 onErr。
@@ -398,10 +421,12 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false },
         // 'reader' 为常用词：2026-11-18 改为 'valo.reader'（BID 精确指向 Valo Reader），
         // 'MyPDF Reader'/'PDF Reader Pro'/'com.moondrop.reader' 不再误伤；
-        // Reheji.js 第三批（2026-11-06）：listua 区按 UA 片段匹配；未用真实响应核实。
+        // 注：'valo.reader' 含字面点号，只能靠 BID 命中（UA 是 Valo Reader 空格形式，不匹配），
+        // 故另补一条 UA 形式规则；Reheji.js 第三批（2026-11-06），未用真实响应核实。
         // 'Island Reader' 规则仍放前面（顺序无害，'valo.reader' 已不会抢它的 UA）。
         { match: 'Island Reader', name: 'BookSpeak Pro',                                     id: 'com.luyaolab.bookspeak.lifetime',            type: 'lifetime',     strict: false },
         { match: 'valo.reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: true  },
+        { match: 'Valo Reader',   name: 'vip2',                                              id: 'com.valo.reader.vip2.year',                  type: 'subscription', strict: false },
         { match: 'imagex',        name: 'imagex.pro.ios',                                    id: 'imagex.pro.ios.lifetime',                    type: 'lifetime',     strict: false },
         { match: 'procamera',     names: ['private_lightbox_entitlement','san_fran_entitlement','pro_camera_up_entitlement','procamera_full_entitlement'], id: 'com.cocologics.ProCamera.Up.Yearly', type: 'subscription', strict: false },
         { match: 'neatnook',      name: 'com.neatnook.pro',                                  id: 'com.neatnook.pro.forever',                   type: 'lifetime',     strict: false },
@@ -724,14 +749,15 @@ function httpGetJson(url, headers, onOk, onErr) {
 
         // P1#6：offerings 属“半精确”，注入成功时也可通知（开关 OFFERINGS_NOTIFY）；
         // 单独节流 key（rc_notify_v2_off_<App>），与精确规则的 key 隔离，同样 12 小时节流；
-        // 文案按本次注入的实际类型（injectedOfferingsType）区分终身/订阅
+        // 文案按本次注入的实际类型（injectedOfferingsType）区分终身/订阅；
+        // 文案标明是“候选权益名”（名字是推导的，App 未必认），不写“已安全注入”
         if (!rule && injectSource === 'offerings' && OFFERINGS_NOTIFY) {
             const cleanKey = (matchedAppKey || 'App').replace(/[^a-zA-Z0-9_-]/g, '_');
             const storageKey = `rc_notify_v2_off_${cleanKey}`;
             const lastNotify = $.getdata(storageKey) || 0;
             const hoursSince = (Date.now() - (parseInt(lastNotify, 10) || 0)) / 36e5;
             if (hoursSince >= NOTIFY_INTERVAL_HOURS) {
-                $.notify(`🎉 ${matchedAppKey} 授权更新`, `已安全注入${injectedOfferingsType === 'lifetime' ? '终身' : '永久'}凭证`, injectedOfferingsType === 'lifetime' ? `终身有效` : `有效期至：2099-12-31`);
+                $.notify(`🎉 ${matchedAppKey} 授权更新`, `已注入${injectedOfferingsType === 'lifetime' ? '终身' : '永久'}候选权益名`, injectedOfferingsType === 'lifetime' ? `待 App 确认 · 终身有效` : `待 App 确认 · 有效期至：2099-12-31`);
                 $.setdata(Date.now().toString(), storageKey);
                 console.log(`[RC] 已发送通知（offerings）: ${storageKey}`);
             } else {
