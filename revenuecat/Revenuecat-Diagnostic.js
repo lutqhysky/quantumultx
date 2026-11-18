@@ -2,40 +2,28 @@
  * ============================================
  * Revenuecat-Diagnostic.js
  *
- * 版本：1.0.0
- * 用途：RevenueCat 响应只读诊断
+ * Version: 1.0.1
+ * Platform: Surge iOS
+ * Type: http-response
  *
- * 设计原则：
- * 1. 只读取响应，不修改响应内容
- * 2. 不创建、不修改订阅权益
- * 3. 不发起额外网络请求
- * 4. 不记录账号、Token、完整响应内容
- * 5. 诊断失败不能影响原始请求
+ * 功能：
+ * 1. 读取 HTTP 响应状态
+ * 2. 检查响应体是否存在
+ * 3. 检查 JSON 是否能够正常解析
+ * 4. 记录 JSON 顶层字段名称
+ * 5. 记录 Surge 运行环境
  *
- * 目标客户端：
- * Quantumult X / Surge
- *
- * 注意：尚未经过真实设备实测。
+ * 安全原则：
+ * 不修改响应状态、响应头或响应体。
+ * 不读取或输出账号、Token、订阅权益具体内容。
+ * 不发起额外网络请求。
  * ============================================
  */
-/* ---------- 1. 基础配置 ---------- */
-// 是否开启控制台日志
-var DEBUG = true;
-// 脚本名称
+/* ---------- 1. 基础设置 ---------- */
 var SCRIPT_NAME = "Revenuecat-Diagnostic";
-// 版本号
-var VERSION = "1.0.0";
-/* ---------- 2. 防止重复结束 ---------- */
-var isDone = false;
-function finish() {
-    if (isDone) {
-        return;
-    }
-    isDone = true;
-    // 空对象表示不主动修改响应
-    $done({});
-}
-/* ---------- 3. 日志管理 ---------- */
+var VERSION = "1.0.1";
+var DEBUG = true;
+/* ---------- 2. 日志函数 ---------- */
 function log(message) {
     if (!DEBUG) {
         return;
@@ -45,74 +33,58 @@ function log(message) {
             "[" + SCRIPT_NAME + "] " + message
         );
     } catch (e) {
-        // 日志失败不影响主流程
+        // 日志失败不影响请求
     }
 }
-/* ---------- 4. 运行环境检测 ---------- */
-function detectEnvironment() {
-    var result = {
-        taskFetch: false,
-        httpClient: false,
-        persistentStore: false,
-        prefs: false,
-        notification: false,
-        notify: false
-    };
+/* ---------- 3. 安全读取 ---------- */
+function safeRead(callback, fallback) {
     try {
-        result.taskFetch =
-            typeof $task !== "undefined" &&
-            typeof $task.fetch === "function";
-    } catch (e) {}
-    try {
-        result.httpClient =
-            typeof $httpClient !== "undefined" &&
-            typeof $httpClient.get === "function";
-    } catch (e) {}
-    try {
-        result.persistentStore =
-            typeof $persistentStore !== "undefined" &&
-            typeof $persistentStore.read === "function";
-    } catch (e) {}
-    try {
-        result.prefs =
-            typeof $prefs !== "undefined" &&
-            typeof $prefs.valueForKey === "function";
-    } catch (e) {}
-    try {
-        result.notification =
-            typeof $notification !== "undefined" &&
-            typeof $notification.post === "function";
-    } catch (e) {}
-    try {
-        result.notify =
-            typeof $notify === "function";
-    } catch (e) {}
-    return result;
+        return callback();
+    } catch (e) {
+        return fallback;
+    }
 }
-/* ---------- 5. 响应状态检测 ---------- */
-function getStatusCode() {
-    try {
+/* ---------- 4. Surge 环境信息 ---------- */
+function inspectEnvironment() {
+    return safeRead(function () {
+        return {
+            system: $environment.system || "未知",
+            surgeVersion:
+                $environment["surge-version"] || "未知",
+            surgeBuild:
+                $environment["surge-build"] || "未知"
+        };
+    }, {
+        system: "不可读取",
+        surgeVersion: "不可读取",
+        surgeBuild: "不可读取"
+    });
+}
+/* ---------- 5. HTTP 状态检测 ---------- */
+function inspectStatus() {
+    return safeRead(function () {
         if (
-            typeof $response !== "undefined" &&
-            $response
+            typeof $response === "undefined" ||
+            !$response
         ) {
-            return (
-                $response.statusCode ||
-                $response.status ||
-                "未知"
-            );
+            return "响应对象不存在";
         }
-    } catch (e) {}
-    return "不可读取";
+        return (
+            typeof $response.status === "number"
+                ? $response.status
+                : "状态码不可读取"
+        );
+    }, "状态读取失败");
 }
-/* ---------- 6. 响应内容检测 ---------- */
-function inspectResponse() {
+/* ---------- 6. JSON 结构检测 ---------- */
+function inspectBody() {
     var result = {
         exists: false,
-        isJSON: false,
+        type: "未知",
         length: 0,
-        rootKeys: [],
-        hasSubscriber: false
+        validJSON: false,
+        rootType: "未知",
+        rootKeys: []
     };
     try {
         if (
@@ -121,93 +93,98 @@ function inspectResponse() {
         ) {
             return result;
         }
-        if (
-            typeof $response.body !== "string"
-        ) {
+        var body = $response.body;
+        if (typeof body !== "string") {
+            result.type = typeof body;
             return result;
         }
-        var body = $response.body;
         result.exists = true;
+        result.type = "string";
         result.length = body.length;
-        if (!body) {
+        if (body.length === 0) {
             return result;
         }
         var data;
         try {
             data = JSON.parse(body);
         } catch (parseError) {
+            result.rootType = "JSON解析失败";
             return result;
         }
-        result.isJSON = true;
-        // 只记录顶层字段名称
+        result.validJSON = true;
+        if (data === null) {
+            result.rootType = "null";
+        } else if (Array.isArray(data)) {
+            result.rootType = "array";
+        } else {
+            result.rootType = typeof data;
+        }
+        // 只记录顶层字段名称，不记录字段值
         if (
-            data &&
+            data !== null &&
             typeof data === "object" &&
             !Array.isArray(data)
         ) {
             result.rootKeys = Object.keys(data);
-            // 仅判断 subscriber 是否存在
-            // 不读取其内部账号或订阅信息
-            result.hasSubscriber =
-                Object.prototype.hasOwnProperty.call(
-                    data,
-                    "subscriber"
-                );
         }
     } catch (e) {
-        // 诊断异常不影响原始响应
+        result.rootType = "检测异常";
     }
     return result;
 }
 /* ---------- 7. 主程序 ---------- */
 function main() {
-    try {
-        log("--------------------------------");
-        log(
-            "启动诊断，版本：" + VERSION
-        );
-        // 检测当前客户端提供的接口
-        var env = detectEnvironment();
-        log(
-            "接口能力：" +
-            JSON.stringify(env)
-        );
-        // 获取 HTTP 状态码
-        var status = getStatusCode();
-        log(
-            "HTTP 状态：" + status
-        );
-        // 检查响应结构
-        var info = inspectResponse();
-        log(
-            "响应是否存在：" + info.exists
-        );
-        log(
-            "响应长度：" + info.length
-        );
-        log(
-            "JSON 格式：" + info.isJSON
-        );
-        log(
-            "顶层字段：" +
-            JSON.stringify(info.rootKeys)
-        );
-        log(
-            "是否存在 subscriber：" +
-            info.hasSubscriber
-        );
-        log("诊断完成");
-        log("--------------------------------");
-    } catch (e) {
-        log(
-            "诊断发生异常：" +
-            String(e)
-        );
-    } finally {
-        // 无论诊断成功还是失败，
-        // 都不主动修改原始响应
-        finish();
-    }
+    var startTime = Date.now();
+    log("================================");
+    log("脚本启动");
+    log("版本：" + VERSION);
+    // Surge 版本信息
+    var environment = inspectEnvironment();
+    log(
+        "运行环境：" +
+        JSON.stringify(environment)
+    );
+    // HTTP 状态
+    var status = inspectStatus();
+    log(
+        "HTTP 状态：" + status
+    );
+    // 响应体结构
+    var bodyInfo = inspectBody();
+    log(
+        "响应体存在：" + bodyInfo.exists
+    );
+    log(
+        "响应体类型：" + bodyInfo.type
+    );
+    log(
+        "响应体长度：" + bodyInfo.length
+    );
+    log(
+        "JSON 是否有效：" + bodyInfo.validJSON
+    );
+    log(
+        "JSON 根节点类型：" + bodyInfo.rootType
+    );
+    log(
+        "JSON 顶层字段：" +
+        JSON.stringify(bodyInfo.rootKeys)
+    );
+    log(
+        "诊断耗时：" +
+        (Date.now() - startTime) +
+        " ms"
+    );
+    log("诊断结束");
+    log("================================");
 }
-/* ---------- 8. 启动 ---------- */
-main();
+/* ---------- 8. 执行与放行 ---------- */
+try {
+    main();
+} catch (e) {
+    log("主程序异常：" + String(e));
+} finally {
+    // Surge 官方原样放行方式
+    // 不传入 body、headers、status
+    $done({});
+}
