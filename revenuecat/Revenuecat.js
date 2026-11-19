@@ -1,7 +1,7 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-18 21:51（精简发布版）
-规则：149 条精确规则（部分来自上游导入，标未核实）
+版本：2026-11-19 11:20（精简发布版）
+规则：151 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
       仍只有最优包一个；盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
@@ -558,7 +558,9 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'audiomack-iphone',             name: 'Premium1',                               id: 'com.audiomack.premium.2022',                       type: 'subscription', strict: false, verified: false },
         { match: 'MallocVPN',                    name: 'IOS_PRO',                                id: 'malloc_yearly_vpn',                                type: 'subscription', strict: false, verified: false },
         { match: 'Seamless',                     name: 'Seamless.Pro',                           id: 'net.shinystone.Seamless.Pro',                      type: 'subscription', strict: true, verified: false },
-        { match: 'markbuy',                      name: 'premium',                                id: 'com.markbuy.plus',                                 type: 'lifetime', strict: false }
+        { match: 'markbuy',                      name: 'premium',                                id: 'com.markbuy.plus',                                 type: 'lifetime', strict: false  },
+        { match: 'touchretouch',                 name: 'premium',                                id: 'tr5_yearlysubsc_15dlrs_2',                         type: 'subscription', strict: false, verified: false },
+        { match: 'bg remover',                   name: 'Premium',                                id: 'net.kaleidoscope.cutout.premium1',                 type: 'subscription', strict: false, verified: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
