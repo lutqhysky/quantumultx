@@ -2,6 +2,8 @@
 // 只能按接口名拦）。覆盖：活动横幅（铁路e卡通）、热门资讯、商品信息流
 // （铁路商城/铁路精选）、商业推广、铁路会员常见问题。公告与温馨服务
 // 随 initData 一并拦掉；若仍有残留，再按新抓包的 operation-type 补。
+// 注意：Surge 的 http-request 脚本里 $done() 是放行不是拦截（QuanX
+// 写法在 Surge 下失效），拦截必须返回一个 mock 响应，这里返回 404。
 const url = $request.url;
 const header = $request.headers;
 const contype = header["content-type"];
@@ -27,7 +29,7 @@ if (url.includes("/mobile.12306.cn/otsmobile/app/mgs/")) {
     // "com.cars.otsmobile.travelPage.initData", // 出行服务
   ];
   if (list12306?.includes(headopt)) {
-    $done();
+    $done({ response: { status: 404, body: "" } });
   } else {
     $done({});
   }
@@ -38,14 +40,14 @@ if (url.includes("/mobile.12306.cn/otsmobile/app/mgs/")) {
     "com.abchina.mbank.common.homepage.getStartParam"
   ];
   if (listbankabc?.includes(headopt)) {
-    $done();
+    $done({ response: { status: 404, body: "" } });
   } else {
     $done({});
   }
 } else if (url.includes("/sec.sginput.qq.com/q")) {
   // 搜狗输入法候选词推广
   if (contype === "application/octet-stream") {
-    $done();
+    $done({ response: { status: 404, body: "" } });
   } else {
     $done({});
   }
