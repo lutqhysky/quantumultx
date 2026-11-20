@@ -1,4 +1,7 @@
-
+// 12306 请求拦截：按 operation-type 头拦掉首页推广类接口（正文加密，
+// 只能按接口名拦）。覆盖：活动横幅（铁路e卡通）、热门资讯、商品信息流
+// （铁路商城/铁路精选）、商业推广、铁路会员常见问题。公告与温馨服务
+// 随 initData 一并拦掉；若仍有残留，再按新抓包的 operation-type 补。
 const url = $request.url;
 const header = $request.headers;
 const contype = header["content-type"];
