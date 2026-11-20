@@ -5,6 +5,8 @@
 //      返回 data.kaiPingShowFlag = '1'（开屏广告开启），改为 '0' 关掉
 //      右上角签到图标：data.signImg / signedImg / signUrl，置空去掉
 //      （右上角客服图标不在任何接口返回里，是 App 内置按钮，去不掉）
+//      另一处签到图标：m.client.10010.com/mobileserviceNine/api/v1/index/queryCfig
+//      返回 data.signImg / signedImg / signUrl，同样置空
 //   3) 首页背景横幅（联通会员礼包）：m.client.10010.com/clientIndex/homefusion/fuInter
 //      返回 HomeFusion.backGroundQuery.result（含 productName 会员礼包主题日），置空
 //   4) 悬浮窗广告（通通）：同一接口 HomeFusion.fuchuangAdv_A8.advCntList，置空
@@ -53,6 +55,26 @@
         }
         if (changed) {
           console.log('[联通去广告] 右上角签到图标已去掉');
+          $done({ body: JSON.stringify(data) });
+          return;
+        }
+      }
+      $done({});
+      return;
+    }
+
+    // 2b) 另一处签到图标：mobileserviceNine queryCfig，data.signImg/signedImg/signUrl 置空
+    if (url.indexOf('/mobileserviceNine/api/v1/index/queryCfig') !== -1) {
+      if (data.data && typeof data.data === 'object') {
+        let changed = false;
+        for (const k of ['signImg', 'signedImg', 'signUrl']) {
+          if (typeof data.data[k] === 'string' && data.data[k] !== '') {
+            data.data[k] = '';
+            changed = true;
+          }
+        }
+        if (changed) {
+          console.log('[联通去广告] 签到图标已去掉（queryCfig）');
           $done({ body: JSON.stringify(data) });
           return;
         }
