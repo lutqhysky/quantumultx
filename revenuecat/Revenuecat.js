@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-19 11:24（精简发布版）
+版本：2026-11-20 11:15（精简发布版）
 规则：151 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
@@ -28,6 +28,11 @@ const EXCLUDE_UA_PREFIXES = [
     'lilyfm', 'servercat', 'eplayerx', 'authenticator',
     'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader'
 ];
+// 预编译 UA 前缀正则（Gemini 审查 3-1）：每次请求直接复用，不再动态 new RegExp
+const EXCLUDE_UA_REGEXES = EXCLUDE_UA_PREFIXES.map((prefix) => {
+    const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('^' + esc + '\\b');
+});
 // C6：已知会检测/封禁 MITM 的 App（取自 Reheji.js forbiddenApps，2026-11-16），
 // UA 或 bundle 或请求体命中即放行，不改写
 const FORBIDDEN_APPS = [
@@ -107,13 +112,20 @@ function deriveEntitlementName(offeringId, packageId, productId, bid) {
     // product id 反推：取末段非档期、非纯数字、非通用词、非 BID 自身 token
     // '_' 复合 token（如 one_time、lifetime_v1）先按 [._] 切分；其片段（如 time、v1）同样判为噪声
     const raw = (productId || '').split('.').filter(Boolean);
-    const joined = new Set();
-    for (const q of raw) if (q.includes('_')) joined.add(q.toLowerCase());
-    const isFragment = (f) => {
-        for (const j of joined) if (j.length > f.length && j.includes(f)) return true;
-        return false;
+    // parts 与 partSeg 一一对应：partSeg[i] 是 parts[i] 所在的点分段（小写）。
+    // isFragment 只在同一段内比较（Gemini 审查 2-3/3-5）：token 是残片当且仅当
+    // 它所在的段是下划线复合词、比它长且包含它；跨段不再误杀——
+    // com.app.studio_pack.studio 的末段 "studio" 不再被 "studio_pack" 丢弃，
+    // 而同一段内 one_time 拆出的 time 仍被过滤。
+    const parts = [];
+    const partSeg = [];
+    for (const q of raw) {
+        const lq = q.toLowerCase();
+        for (const p of q.split('_').filter(Boolean)) { parts.push(p); partSeg.push(lq); }
+    }
+    const isFragment = (f, seg) => {
+        return !!seg && seg.includes('_') && seg.length > f.length && seg.includes(f);
     };
-    const parts = raw.join('.').split(/[._]/).filter(Boolean);
     const bidTokens = new Set((bid || '').toLowerCase().split('.').filter(t => t && t.length > 1));
     // App 名 token 常与产品 token 拼合（如 BID 的 example 与产品里的 exampleapp）：长 token（≥5 字符）按子串判
     const isBidLike = (t) => {
@@ -136,7 +148,7 @@ function deriveEntitlementName(offeringId, packageId, productId, bid) {
         if (ENT_WORDS.has(lt)) return t;  // 权益词直返（pro/premium/vip/plus/gold/unlock），不走片段判断
         if (!DURATION.has(lt) && !/^\d+$/.test(lt) && lt.length > 1
             && !BID_NOISE.has(lt) && !OFFER_NOISE.has(lt)
-            && !bidTokens.has(lt) && !isBidLike(lt) && !isFragment(lt)) return t;
+            && !bidTokens.has(lt) && !isBidLike(lt) && !isFragment(lt, partSeg[i])) return t;
     }
     // ★ 关键：与盲猜路径保持一致，回退到 <token>.pro
     return pickSingleGuessName(bid);
@@ -239,10 +251,7 @@ function httpGetJson(url, headers, onOk, onErr) {
     // 黑名单：bundle 精确匹配；UA 按前缀（词边界）或 "/xxx" 片段匹配。
     // 前缀加词边界：'forward' 不再误伤 'ForwardMail/2.0'（2026-10-15 审查 5.2）
     const isExcluded = EXCLUDE_BUNDLE_IDS.includes(lowerBID) ||
-        EXCLUDE_UA_PREFIXES.some(prefix => {
-            const esc = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            return new RegExp('^' + esc + '\\b').test(lowerUA) || lowerUA.includes('/' + prefix);
-        });
+        EXCLUDE_UA_PREFIXES.some((prefix, i) => EXCLUDE_UA_REGEXES[i].test(lowerUA) || lowerUA.includes('/' + prefix));
 
     if (isExcluded) {
         console.log(`[RC] 命中排除名单，放行: BID=${BID}, UA=${rawUA}`);
@@ -251,9 +260,11 @@ function httpGetJson(url, headers, onOk, onErr) {
     }
     // C6：forbiddenApps 命中即放行（UA / bundle / 请求体任一命中）
     const reqBodyStr = ($request && typeof $request.body === 'string') ? $request.body : '';
+    // 请求体小写只算一次（Gemini 审查 2-5）：循环内不再每次 toLowerCase
+    const lowerReqBody = reqBodyStr.toLowerCase();
     const isForbidden = FORBIDDEN_APPS.some(a => {
         const la = a.toLowerCase();
-        return lowerUA.includes(la) || lowerBID.includes(la) || reqBodyStr.toLowerCase().includes(la);
+        return lowerUA.includes(la) || lowerBID.includes(la) || lowerReqBody.includes(la);
     });
     if (isForbidden) {
         console.log(`[RC] 命中 forbiddenApps，放行: BID=${BID}, UA=${rawUA}`);
@@ -423,7 +434,7 @@ function httpGetJson(url, headers, onOk, onErr) {
         // 类型按 product id 关键词推断（lifetime/forever→买断，yearly/monthly→订阅）
         { match: 'accountit',     name: 'spenditPlus',                                        id: 'DesignTech.SIA.Spendit.Plus.Lifetime',      type: 'lifetime',     strict: false, verified: false },
         { match: 'byephotos',     name: 'ByePhotos access',                                  id: 'com.panicbyte.byephotos.lifetime.promotion', type: 'lifetime',     strict: false, verified: false },
-        { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: false, verified: false },
+        { match: 'photon',        name: 'photon.paid',                                       id: 'photon.bundle.yearly',                      type: 'subscription', strict: true, verified: false },
         { match: 'rats%20project', name: 'PandaTracker_Premiumv2',                           id: 'monthly_subscription_discount_idv3',          type: 'subscription', strict: false, verified: false },
         { match: 'lutcamera',     name: 'ProVersion',                                        id: 'com.uzero.funforcam.monthlysub',             type: 'subscription', strict: false, verified: false },
         // 'reader' 为常用词：2026-11-18 改为 'valo.reader'（BID 精确指向 Valo Reader），
@@ -585,11 +596,26 @@ function httpGetJson(url, headers, onOk, onErr) {
         return false;
     };
 
+    // 两轮匹配（Gemini 审查 2-1/3-2）：BID 优先于 UA，消除宽松 UA 关键词抢占。
+    // 第一轮只测含点号的规则（Bundle ID 型）对 lowerBID；第二轮只测不含点号的
+    // 规则（App 名型）对 lowerUA。例外：'col.or' 与 'timetrack.io' 来自 Reheji
+    // listua 区（UA 型）却含点号，分不干净，第一轮对 UA 与 BID 都测，保留旧行为。
     let rule = null;
+    const isBidRule = (r) => r.match.indexOf('.') !== -1;
+    const AMBIGUOUS_DOT_RULES = new Set(['col.or', 'timetrack.io']);
     for (const r of MappingRules) {
-        if (safeTest(r.match, lowerUA, r.strict) || safeTest(r.match, lowerBID, r.strict)) {
+        if (!isBidRule(r)) continue;
+        if (AMBIGUOUS_DOT_RULES.has(r.match.toLowerCase())) {
+            if (safeTest(r.match, lowerUA, r.strict) || safeTest(r.match, lowerBID, r.strict)) { rule = r; break; }
+        } else if (safeTest(r.match, lowerBID, r.strict)) {
             rule = r;
             break;
+        }
+    }
+    if (!rule) {
+        for (const r of MappingRules) {
+            if (isBidRule(r)) continue;
+            if (safeTest(r.match, lowerUA, r.strict)) { rule = r; break; }
         }
     }
 
@@ -632,10 +658,15 @@ function httpGetJson(url, headers, onOk, onErr) {
             };
         }
         const list = sub.non_subscriptions[productId] || [];
-        // 去重：已有真实购买记录时不追加（真实条目的 id 是交易号，不等于 product id，旧判据恒不成立）
+        // 去重：已有真实购买记录时不追加
         if (list.length === 0) {
+            // 模拟交易号（Gemini 审查 2-4/3-4）：官方 schema 里 non_subscriptions
+            // 条目的 id 是交易唯一标识（如 o1_1234567890），不是 productId；
+            // store_transaction_id 取时间戳后 10 位数字串，id 为 "o1_" + 该串
+            const txn = String(Date.now()).slice(-10);
             list.push({
-                "id": productId,
+                "id": "o1_" + txn,
+                "store_transaction_id": txn,
                 "is_sandbox": false,
                 "purchase_date": nowStr,
                 "original_purchase_date": origStr,
@@ -708,16 +739,23 @@ function httpGetJson(url, headers, onOk, onErr) {
         // management_url 已在结构补全时默认给 App Store 链接，此处不重复处理
     };
 
-    // 收尾：统一延期 → C3 重算 → 通知节流 → 日志 → $done（只调用一次）
+    // 收尾：按口径延期 → C3 重算 → 通知节流 → 日志 → $done（只调用一次）
     const finalizeInjection = () => {
-        // 统一延期现存 entitlement / subscription：把"已失效信号"（will_renew=false、
-        // unsubscribe_detected_at、billing_issues_detected_at、is_sandbox=true 等）统一刷成
-        // 正常订阅状态，只保留真实购买时间与 product_identifier。
+        // 按口径延期现存未过期的 entitlement / subscription（Gemini 审查 2-2/3-3）：
+        // 已过期且非本次注入目标的保持原状，不合并模板、不改过期时间；把其余项的
+        // "已失效信号"（will_renew=false、unsubscribe_detected_at、
+        // billing_issues_detected_at、is_sandbox=true 等）统一刷成正常订阅状态，
+        // 只保留真实购买时间与 product_identifier。
         // 注意展开顺序：真实值在前、模板在后，否则真实值会把模板盖掉（2026-10-15 审查发现）。
         // 终身（expires_date 为 null，含刚注入的 lifetime 与用户真实买断）保持 null。
         for (const name of Object.keys(sub.entitlements)) {
             const cur = sub.entitlements[name] || {};
             const isLifetime = cur.expires_date === null || cur.expires_date === undefined;
+            // 已过期的非终身权益不延期：解析失败或无过期时间按未过期处理
+            if (!isLifetime) {
+                const expDate = new Date(cur.expires_date);
+                if (!isNaN(expDate.getTime()) && expDate <= now) continue;
+            }
             sub.entitlements[name] = {
                 ...cur,
                 ...(isLifetime ? baseEntitlementLifetime : baseEntitlementSub),
@@ -732,6 +770,13 @@ function httpGetJson(url, headers, onOk, onErr) {
         }
         for (const pid of Object.keys(sub.subscriptions)) {
             const cur = sub.subscriptions[pid] || {};
+            // 只延 targetId 或未过期订阅：已过期且非本次注入目标的原样不动，
+            // 不合并模板、不改过期时间；解析失败或无过期时间按未过期处理
+            // （宁可多延，不可误删）
+            if (pid !== targetId) {
+                const expDate = new Date(cur.expires_date);
+                if (!isNaN(expDate.getTime()) && expDate <= now) continue;
+            }
             sub.subscriptions[pid] = {
                 ...cur,
                 ...baseSubscription,
