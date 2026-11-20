@@ -27,9 +27,53 @@
 //      uniAdmsInterface/getWelcomeAd、getHomePageAd 也已在模块 URL Rewrite 里 REJECT
 //  10) zztfly.com 是设备指纹校验 SDK（FLYVERIFY），不是广告，不动
 //  11) 穿山甲广告 SDK（zijieapi.com / volces.com）是共享域名，不动
+//  12) 首页客户端配置 getclientconfig（每次启动都拉，约 10KB）：
+//      疑似首页营销卡片（优选好货/铂金会员专享/合约购机等）的配置来源——
+//      六轮抓包里所有能读到的接口均无这些标题，唯独 getclientconfig
+//      因 URL 过长读不到正文。处理：递归清理其中标题含营销关键词的条目，
+//      其余配置原样保留；结构不对则原样放行。
 // 安全：解析失败或结构异常时一律原样返回，不破坏页面。
 
 (function main() {
+  // 营销卡片标题关键词（命中即移除该条目）
+  var MARKET_KEYS = ['优选好货', '铂金', '会员专享', '合约购机', '优惠会员', '官方靓号', '新装宽带', '流量特惠', '办副卡', '秒变舞者', '流量直送', '稀有靓号', '幸运号', '爱情号', '亲友靓号', '领会员', '苹果新品', '话费补贴', '升级起飞', '装宽带', '国补专区', '短剧会员', '宽带待升级', '套餐升级', '流量直送', '秒变舞者'];
+  function isMarketingTitle(s) {
+    if (typeof s !== 'string') return false;
+    for (var i = 0; i < MARKET_KEYS.length; i++) {
+      if (s.indexOf(MARKET_KEYS[i]) !== -1) return true;
+    }
+    return false;
+  }
+  function titleOf(item) {
+    if (!item || typeof item !== 'object') return '';
+    var keys = ['title', 'name', 'label', 'moduleName', 'cardTitle', 'headTitle'];
+    for (var i = 0; i < keys.length; i++) {
+      if (typeof item[keys[i]] === 'string') return item[keys[i]];
+    }
+    return '';
+  }
+  // 递归清理：数组里标题含营销关键词的条目去掉；对象里继续递归
+  function stripMarketing(node) {
+    var removed = 0;
+    if (Array.isArray(node)) {
+      for (var i = node.length - 1; i >= 0; i--) {
+        if (isMarketingTitle(titleOf(node[i]))) {
+          node.splice(i, 1);
+          removed++;
+        } else {
+          removed += stripMarketing(node[i]);
+        }
+      }
+    } else if (node && typeof node === 'object') {
+      for (var k in node) {
+        if (Object.prototype.hasOwnProperty.call(node, k)) {
+          removed += stripMarketing(node[k]);
+        }
+      }
+    }
+    return removed;
+  }
+
   try {
     const url = $request.url || '';
     const body = $response.body;
@@ -150,6 +194,18 @@
       if (data.data && data.data.res && Array.isArray(data.data.res.pageList) && data.data.res.pageList.length > 0) {
         data.data.res.pageList = [];
         console.log('[联通去广告] 推荐页商品瀑布流已清空');
+        $done({ body: JSON.stringify(data) });
+        return;
+      }
+      $done({});
+      return;
+    }
+
+    // 8) 首页客户端配置：递归清理标题含营销关键词的条目
+    if (url.indexOf('/mobileService/customer/getclientconfig.htm') !== -1) {
+      var removed = stripMarketing(data);
+      if (removed > 0) {
+        console.log('[联通去广告] 客户端配置已清理营销条目 ' + removed + ' 个');
         $done({ body: JSON.stringify(data) });
         return;
       }
