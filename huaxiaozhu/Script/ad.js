@@ -6,7 +6,8 @@
 // 开屏与进首页弹窗来自 res-new 的 activity/mget：
 //
 //  1) pLayout：移除 banner_position_list、home_market_resource、
-//     marketing_bubble 三个纯推广组件。
+//     marketing_bubble 三个纯推广组件，另加 home_right_top_common
+//     （右上角券入口，2026-11-20 用户点名不要）。
 //  2) pData：金刚区 king_kong_position_list 12 项只留
 //     顺风车/代驾/租车；new_marketing_bubble 的
 //     p_home_page_upper_right 置空（右上浮动花花福利社图标）。
@@ -27,7 +28,7 @@
   // 金刚区只留的功能项
   var KEEP_KINGKONG = ['顺风车', '代驾', '租车'];
   // 纯推广组件（从布局里移除）
-  var REMOVE_COMPONENTS = ['banner_position_list', 'home_market_resource', 'marketing_bubble'];
+  var REMOVE_COMPONENTS = ['banner_position_list', 'home_market_resource', 'marketing_bubble', 'home_right_top_common'];
 
   function kingkongName(item) {
     if (!item || typeof item !== 'object') return '';
