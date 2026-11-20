@@ -1,20 +1,26 @@
 // 花小猪 App 去广告
 // 依据：2026-11-20 抓包确认（会话 2026-11-20-192819）
 //
-// 首页由 pLayout 列出 21 个组件、pData 分批下发各组件数据：
-//   1) 金刚区推广：resource_position_list 的 king_kong_position_list
-//      共 12 项，只留功能项顺风车/代驾/租车，去掉 9 项推广
-//      （助力神券、赚现金、花花会员、省钱套餐、花花学生卡、
-//      得免单券、借钱、省钱中心、88元券包；各项 is_ad 均为 0，
-//      只能按名字过滤）。
-//   2) 右上浮动图标（花花福利社）：new_marketing_bubble 的
-//      p_home_page_upper_right 置空数组。
-//   3) 底部横幅与营销资源：banner_position_list、home_market_resource、
-//      marketing_bubble 三个纯推广组件——pData 里未下发其数据，
-//      改为从 pLayout 的 disorder_components 与 lazy_load_components
-//      里直接移除，App 不再渲染；pData 里若出现也一并移除。
+// 首页由 pLayout 列组件、pData 下发数据；但打车区下方的横幅、
+// 赏秋搭子、VIP 横幅等全部来自 casper-agent 的 feeds 卡片，
+// 开屏与进首页弹窗来自 res-new 的 activity/mget：
+//
+//  1) pLayout：移除 banner_position_list、home_market_resource、
+//     marketing_bubble 三个纯推广组件。
+//  2) pData：金刚区 king_kong_position_list 12 项只留
+//     顺风车/代驾/租车；new_marketing_bubble 的
+//     p_home_page_upper_right 置空（右上浮动花花福利社图标）。
+//  3) casper-agent /agent/v3/feeds：data.kf-pig-homev2.cards 置空
+//     数组——去掉花花福利社超级横幅、赏秋搭子（88元券包/
+//     网易云音乐/助力神券/全民助力）、V4 会员横幅、
+//     p_advertisement_home_brand_minds 广告卡、底部其他横幅。
+//     该 feeds 只含推广卡片，无打车功能组件。
+//  4) res-new /resapi/activity/mget：data.p_startpage 置空
+//     （开屏广告，staticImage）；data.p_home_popup 置空
+//     （进首页全屏弹窗「送你免单券」）。
+//
 // 不动的：快车/顺风车切换、地图、上车位置、天气、Hi 问候卡、
-// 顶部券入口、左侧注册司机入口、行程中等功能组件。
+// 顶部券入口、左侧注册司机入口、行程等功能组件。
 // 安全：解析失败或结构异常时一律原样返回，不破坏页面。
 
 (function main() {
@@ -69,7 +75,6 @@
     if (url.indexOf('/gulfstream/passenger-center/v1/other/pData') !== -1) {
       if (data.data && Array.isArray(data.data.components)) {
         let changed = false;
-        // 移除纯推广组件
         const before = data.data.components.length;
         data.data.components = data.data.components.filter(function (c) {
           return c && REMOVE_COMPONENTS.indexOf(c.name) === -1;
@@ -77,7 +82,6 @@
         if (data.data.components.length !== before) changed = true;
         for (const comp of data.data.components) {
           if (!comp || !comp.data || typeof comp.data !== 'object') continue;
-          // 金刚区只留功能项
           if (comp.name === 'resource_position_list' && Array.isArray(comp.data.king_kong_position_list)) {
             const kBefore = comp.data.king_kong_position_list.length;
             comp.data.king_kong_position_list = comp.data.king_kong_position_list.filter(function (it) {
@@ -85,7 +89,6 @@
             });
             if (comp.data.king_kong_position_list.length !== kBefore) changed = true;
           }
-          // 营销气泡置空
           if (comp.name === 'new_marketing_bubble' && Array.isArray(comp.data.p_home_page_upper_right) && comp.data.p_home_page_upper_right.length > 0) {
             comp.data.p_home_page_upper_right = [];
             changed = true;
@@ -96,6 +99,40 @@
           $done({ body: JSON.stringify(data) });
           return;
         }
+      }
+      $done({});
+      return;
+    }
+
+    // 3) casper-agent feeds：首页推广卡片全部置空
+    if (url.indexOf('/agent/v3/feeds') !== -1) {
+      if (data.data && data.data['kf-pig-homev2'] && Array.isArray(data.data['kf-pig-homev2'].cards) && data.data['kf-pig-homev2'].cards.length > 0) {
+        data.data['kf-pig-homev2'].cards = [];
+        console.log('[花小猪] 首页推广卡片已清空');
+        $done({ body: JSON.stringify(data) });
+        return;
+      }
+      $done({});
+      return;
+    }
+
+    // 4) res-new activity/mget：开屏与首页弹窗置空
+    if (url.indexOf('/resapi/activity/mget') !== -1) {
+      let changed = false;
+      if (data.data && typeof data.data === 'object') {
+        if (Array.isArray(data.data.p_startpage) && data.data.p_startpage.length > 0) {
+          data.data.p_startpage = [];
+          changed = true;
+        }
+        if (Array.isArray(data.data.p_home_popup) && data.data.p_home_popup.length > 0) {
+          data.data.p_home_popup = [];
+          changed = true;
+        }
+      }
+      if (changed) {
+        console.log('[花小猪] 开屏/弹窗已清空');
+        $done({ body: JSON.stringify(data) });
+        return;
       }
       $done({});
       return;
