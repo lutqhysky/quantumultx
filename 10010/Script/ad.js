@@ -3,6 +3,8 @@
 //   1) 商城弹窗：m.10010.com/mall-order/query/newFirstPage，返回 data 置空
 //   2) 开屏广告：m.client.10010.com/clientIndex/api/v1/index/queryIndexCfig
 //      返回 data.kaiPingShowFlag = '1'（开屏广告开启），改为 '0' 关掉
+//      右上角签到图标：data.signImg / signedImg / signUrl，置空去掉
+//      （右上角客服图标不在任何接口返回里，是 App 内置按钮，去不掉）
 //   3) 首页背景横幅（联通会员礼包）：m.client.10010.com/clientIndex/homefusion/fuInter
 //      返回 HomeFusion.backGroundQuery.result（含 productName 会员礼包主题日），置空
 //   4) 悬浮窗广告（通通）：同一接口 HomeFusion.fuchuangAdv_A8.advCntList，置空
@@ -34,13 +36,26 @@
       return;
     }
 
-    // 2) 开屏广告：kaiPingShowFlag 1 -> 0
+    // 2) 开屏广告：kaiPingShowFlag 1 -> 0；右上角签到图标置空
     if (url.indexOf('/clientIndex/api/v1/index/queryIndexCfig') !== -1) {
-      if (data.data && typeof data.data === 'object' && data.data.kaiPingShowFlag === '1') {
-        data.data.kaiPingShowFlag = '0';
-        console.log('[联通去广告] 开屏广告开关已关：kaiPingShowFlag 1 -> 0');
-        $done({ body: JSON.stringify(data) });
-        return;
+      if (data.data && typeof data.data === 'object') {
+        let changed = false;
+        if (data.data.kaiPingShowFlag === '1') {
+          data.data.kaiPingShowFlag = '0';
+          changed = true;
+          console.log('[联通去广告] 开屏广告开关已关：kaiPingShowFlag 1 -> 0');
+        }
+        for (const k of ['signImg', 'signedImg', 'signUrl']) {
+          if (typeof data.data[k] === 'string' && data.data[k] !== '') {
+            data.data[k] = '';
+            changed = true;
+          }
+        }
+        if (changed) {
+          console.log('[联通去广告] 右上角签到图标已去掉');
+          $done({ body: JSON.stringify(data) });
+          return;
+        }
       }
       $done({});
       return;
