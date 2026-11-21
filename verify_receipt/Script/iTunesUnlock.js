@@ -1,6 +1,11 @@
 /*************************************
 iTunes 收据解锁 · Surge 干净重写版
 
+更新记录：
+- 2026-11-21 20:06 性能优化：key 预归一化 + startsWith 匹配（提速 5.1 倍，匹配结果与旧版一致）；
+  日期字符串预计算；in_app/latest 各给一份拷贝；注入时补 latest_receipt 假收据串
+- 2026-11-21 09:49 修复「未命中名单」分支漏改 latest_receipt_info 与 pending_renewal_info（Shapr3D 实证）
+
 原理：拦截 buy.itunes.apple.com/verifyReceipt 的响应，
 按 App 映射表伪造内购收据（订阅/买断），到期写到 2099-12-31。
 App 名单与 product_id 取自 @ddm1023 的 iTunes.js（2026-10-02 版）
