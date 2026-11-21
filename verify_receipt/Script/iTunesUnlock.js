@@ -450,8 +450,8 @@ function keyMatches(key, ua, bid) {
     if (inApp.length > 0) {
         let updated = false;
         const nowMs = Date.now();
-        for (const item of inApp) {
-            if (!item || !item.product_id || !item.expires_date) continue; // 无到期时间=永久有效，跳过
+        const extend = (item) => {
+            if (!item || !item.product_id || !item.expires_date) return; // 无到期时间=永久有效，跳过
             const expMs = item.expires_date_ms ? Number(item.expires_date_ms) : 0;
             if (expMs < nowMs) {
                 item.expires_date = appleDate(expire);
@@ -459,8 +459,23 @@ function keyMatches(key, ua, bid) {
                 item.expires_date_pst = appleDatePST(expire);
                 updated = true;
             }
+        };
+        for (const item of inApp) extend(item);
+        // 同步延期 latest_receipt_info：App 常以此判断订阅状态，只改 in_app
+        // 会导致功能可用、状态栏却显示未订阅（如 Shapr3D，2026-11-21 实证）。
+        if (Array.isArray(data.latest_receipt_info)) {
+            for (const item of data.latest_receipt_info) extend(item);
         }
         if (updated) {
+            // 续订信息同步：自动续费改回开启，去掉过期意向与重试期
+            if (Array.isArray(data.pending_renewal_info)) {
+                for (const p of data.pending_renewal_info) {
+                    if (!p || !p.product_id) continue;
+                    if (p.auto_renew_status === '0') p.auto_renew_status = '1';
+                    if ('expiration_intent' in p) delete p.expiration_intent;
+                    if (p.is_in_billing_retry_period === '1') p.is_in_billing_retry_period = '0';
+                }
+            }
             console.log(`[iTunes] 未命中名单，已有过期订阅已延期到 2099: ${bid || ua}`);
             $done({ body: JSON.stringify(data) });
         } else {
