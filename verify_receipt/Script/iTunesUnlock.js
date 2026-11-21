@@ -350,29 +350,29 @@ function tryParse(raw) {
     }
     return null;
 }
-// 构造一条伪造交易记录
-function buildEntry(product, type, now, expire) {
+// 构造一条伪造交易记录（日期字符串由调用方预计算传入，避免每条记录重复 toISOString）
+function buildEntry(product, type, dates) {
     const tid = '49' + rand(16);
     const e = {
         quantity: '1',
         product_id: product,
         transaction_id: tid,
         original_transaction_id: tid,
-        purchase_date: appleDate(now),
-        purchase_date_ms: String(now.getTime()),
-        purchase_date_pst: appleDatePST(now),
-        original_purchase_date: appleDate(now),
-        original_purchase_date_ms: String(now.getTime()),
-        original_purchase_date_pst: appleDatePST(now),
+        purchase_date: dates.nowStr,
+        purchase_date_ms: dates.nowMs,
+        purchase_date_pst: dates.nowPst,
+        original_purchase_date: dates.nowStr,
+        original_purchase_date_ms: dates.nowMs,
+        original_purchase_date_pst: dates.nowPst,
         web_order_line_item_id: String(1000000000000000 + Math.floor(Math.random() * 899999999999999)),
         is_trial_period: 'false',
         is_in_intro_offer_period: 'false',
         in_app_ownership_type: 'PURCHASED'
     };
     if (type === 'sub') {
-        e.expires_date = appleDate(expire);
-        e.expires_date_ms = String(expire.getTime());
-        e.expires_date_pst = appleDatePST(expire);
+        e.expires_date = dates.expStr;
+        e.expires_date_ms = dates.expMs;
+        e.expires_date_pst = dates.expPst;
     }
     return e;
 }
@@ -382,13 +382,17 @@ function norm(s) {
     try { s = decodeURIComponent(s); } catch (e) {}
     return String(s).replace(/\s+/g, '').toLowerCase();
 }
-function keyMatches(key, ua, bid) {
-    const nk = norm(key).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // 按字面量匹配
-    let re;
-    try { re = new RegExp('^' + nk); } catch (e) { return false; }
-    if (re.test(norm(ua))) return true;
-    if (bid && re.test(norm(bid))) return true;
-    return false;
+// 加载时预归一化全部 key（优化，2026-11-21）：请求来时 UA/bundle_id 各算一次，
+// 循环里用 startsWith 比较开头，不再为每条 key 编译正则、不再重复归一化。
+// 匹配语义与旧版 keyMatches 完全一致（UA 开头或 bundle_id 开头）。
+// 注：bundle_id 型 key 也可能通过 UA 命中（如 UA 以 bundle_id 开头），
+// 所以不能把 bundle_id key 只放 Map 里查 bundle_id——等价测试证实那样会漏 84/364 例。
+// 故保留全量扫描，只换掉正则与重复归一化；startsWith 本身已足够快。
+const NORM_LIST = APP_LIST.map(([key, type, product]) => [norm(key), type, product]);
+// 伪造 latest_receipt（借自 ddm1023 原版）：部分 App 会读该字段，补一段假收据串提高兼容性
+function fakeReceipt() {
+    const s = 'receipt-' + Date.now() + '-' + Math.random();
+    try { return btoa(s + s); } catch (e) { return s; }
 }
 
 // ===== 主流程 =====
@@ -402,6 +406,9 @@ function keyMatches(key, ua, bid) {
 
     const ua = $request.headers['User-Agent'] || $request.headers['user-agent'] || '';
     const bid = String(data.receipt.bundle_id || data.receipt.Bundle_Id || '').toLowerCase();
+    // UA / bundle_id 各归一化一次，循环里复用
+    const normUA = norm(ua);
+    const normBid = norm(bid);
 
     // 排除名单：已购 App 直接放行
     if (bid && EXCLUDE_BUNDLE_IDS.includes(bid)) {
@@ -411,11 +418,12 @@ function keyMatches(key, ua, bid) {
     }
 
     // 名单匹配（同一 key 的多行全部注入，product 去重）
+    // 预归一化 key + startsWith，UA/bundle_id 各算一次
     const matched = [];
     const seenProducts = new Set();
-    for (const [key, type, product] of APP_LIST) {
+    for (const [nk, type, product] of NORM_LIST) {
         if (!product || seenProducts.has(product)) continue;
-        if (keyMatches(key, ua, bid)) {
+        if (normUA.startsWith(nk) || (normBid && normBid.startsWith(nk))) {
             matched.push([type, product]);
             seenProducts.add(product);
         }
@@ -423,15 +431,21 @@ function keyMatches(key, ua, bid) {
 
     const now = new Date();
     const expire = new Date(FAKE_EXPIRES);
+    // 日期字符串一次算好，buildEntry/extend 复用（原版每条记录都调 6 次 toISOString）
+    const dates = {
+        nowStr: appleDate(now), nowMs: String(now.getTime()), nowPst: appleDatePST(now),
+        expStr: appleDate(expire), expMs: String(expire.getTime()), expPst: appleDatePST(expire)
+    };
 
     if (matched.length > 0) {
         const subs = [], lifes = [];
         for (const [type, product] of matched) {
-            (type === 'sub' ? subs : lifes).push(buildEntry(product, type, now, expire));
+            (type === 'sub' ? subs : lifes).push(buildEntry(product, type, dates));
         }
         const all = subs.concat(lifes);
         data.receipt.in_app = all;
-        data.latest_receipt_info = all;
+        data.latest_receipt_info = all.slice(); // 各给一份拷贝，避免同一数组被两边共享
+        data.latest_receipt = fakeReceipt();
         if (subs.length > 0) {
             data.pending_renewal_info = subs.map(s => ({
                 product_id: s.product_id,
@@ -454,9 +468,9 @@ function keyMatches(key, ua, bid) {
             if (!item || !item.product_id || !item.expires_date) return; // 无到期时间=永久有效，跳过
             const expMs = item.expires_date_ms ? Number(item.expires_date_ms) : 0;
             if (expMs < nowMs) {
-                item.expires_date = appleDate(expire);
-                item.expires_date_ms = String(expire.getTime());
-                item.expires_date_pst = appleDatePST(expire);
+                item.expires_date = dates.expStr;
+                item.expires_date_ms = dates.expMs;
+                item.expires_date_pst = dates.expPst;
                 updated = true;
             }
         };
@@ -488,7 +502,7 @@ function keyMatches(key, ua, bid) {
     // 无任何购买记录
     if (ENABLE_BLIND_FALLBACK && bid) {
         const product = `${bid}.yearly`;
-        const entry = buildEntry(product, 'sub', now, expire);
+        const entry = buildEntry(product, 'sub', dates);
         data.receipt.in_app = [entry];
         data.latest_receipt_info = [entry];
         data.pending_renewal_info = [{
