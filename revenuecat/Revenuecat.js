@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-22 05:58（精简发布版）
+版本：2026-11-22 21:46（精简发布版）
 规则：152 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
@@ -26,7 +26,8 @@ const EXCLUDE_BUNDLE_IDS = [
 ];
 const EXCLUDE_UA_PREFIXES = [
     'lilyfm', 'servercat', 'eplayerx', 'authenticator',
-    'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader'
+    'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader',
+    'reader'
 ];
 // 预编译 UA 前缀正则（Gemini 审查 3-1）：每次请求直接复用，不再动态 new RegExp
 const EXCLUDE_UA_REGEXES = EXCLUDE_UA_PREFIXES.map((prefix) => {
