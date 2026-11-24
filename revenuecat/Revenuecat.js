@@ -1,7 +1,7 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-24 00:18（精简发布版）
-规则：152 条精确规则（部分来自上游导入，标未核实）
+版本：2026-11-24 22:37（精简发布版）
+规则：153 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
       仍只有最优包一个；盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
@@ -27,8 +27,7 @@ const EXCLUDE_BUNDLE_IDS = [
 ];
 const EXCLUDE_UA_PREFIXES = [
     'lilyfm', 'servercat', 'eplayerx', 'authenticator',
-    'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader',
-    'reader'
+    'reflix', 'fileball', 'aptv', 'forward', 'flutter_rss_reader'
 ];
 // 预编译 UA 前缀正则（Gemini 审查 3-1）：每次请求直接复用，不再动态 new RegExp
 const EXCLUDE_UA_REGEXES = EXCLUDE_UA_PREFIXES.map((prefix) => {
@@ -574,7 +573,8 @@ function httpGetJson(url, headers, onOk, onErr) {
         { match: 'markbuy',                      name: 'premium',                                id: 'com.markbuy.plus',                                 type: 'lifetime', strict: false  },
         { match: 'touchretouch',                 name: 'premium',                                id: 'tr5_yearlysubsc_15dlrs_2',                         type: 'subscription', strict: false },
         { match: 'bg remover',                   name: 'Premium',                                id: 'net.kaleidoscope.cutout.premium1',                 type: 'subscription', strict: false, verified: false },
-        { match: 'com.socialayf.joi',            names: ['pro', 'joi.pro'],                      id: 'com.socialayf.joi.pro.lifetime',                   type: 'lifetime', strict: false }
+        { match: 'com.socialayf.joi',            names: ['pro', 'joi.pro'],                      id: 'com.socialayf.joi.pro.lifetime',                   type: 'lifetime', strict: false },
+        { match: 'app.bookorbit.reader',         name: 'premium',                                id: 'app.bookorbit.reader.premium.lifetime',          type: 'lifetime', strict: false, verified: false }
     ];
 
     // 正则元字符转义；strict 模式加词边界，避免 'Law' 误杀 'Flawless'
