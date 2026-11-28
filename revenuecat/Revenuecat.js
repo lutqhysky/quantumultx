@@ -1,7 +1,7 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-24 22:37（精简发布版）
-规则：153 条精确规则（部分来自上游导入，标未核实）
+版本：2026-11-28 17:00（精简发布版）
+规则：154 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
       仍只有最优包一个；盲猜回退只注一个最可能权益名；终身写 non_subscriptions、
@@ -410,6 +410,14 @@ function httpGetJson(url, headers, onOk, onErr) {
         // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
         // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
         { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false, verified: false },
+        // ECG Tracker+（心电图记录）：product 已从真实 offerings 响应核实（2026-11-28 用户抓包）：
+        // 当前 offering default_v2 的三个包：$rc_annual→yearly_v2、$rc_lifetime→lifetime_v2、
+        // $rc_monthly→monthly_v2；另有 default_v3（同款产品）、default_v4（yearly_v3/monthly_v3/lifetime_v2）。
+        // 盲猜 ecgtrackerplus.pro + product com.ecgtrackerplus.app.subscription 未解开——offerings 里根本没有
+        // 这个 product，App 不认；entitlement 名不在 offerings 里、Reheji 也没有，用候选集注入；
+        // product 用三档 offering 共有的终身买断 lifetime_v2，按 lifetime 写 non_subscriptions。
+        // 规则 153→154 条。未核实，待用户更新模块后实机确认。
+        { match: 'com.ecgtrackerplus', names: GUESS_NAMES, id: 'lifetime_v2', type: 'lifetime', strict: false, verified: false },
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
         { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
         // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
