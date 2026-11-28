@@ -1,6 +1,6 @@
 /*************************************
 项目名称：RevenueCat 全能解锁 (2026 工业级重构版 · 修复版)
-版本：2026-11-28 17:06（精简发布版）
+版本：2026-11-28 17:11（精简发布版）
 规则：154 条精确规则（部分来自上游导入，标未核实）
 行为：无本地规则时请求真实 offerings 反推权益名与 product id，从全部可用包各推
       一个候选名（去重，最多 4 个）+ token.pro 回退名，最多注 5 个名；注入的产品
@@ -410,16 +410,14 @@ function httpGetJson(url, headers, onOk, onErr) {
         // kelo_premium_anual / kelo_premium / kelo_premium_anual_trial7 / kelo_premium_trial7；
         // kelo_premium_anual 按命名判定为年订阅，先按 subscription 注入；entitlement 名未核实，用候选集
         { match: 'kelo',         names: GUESS_NAMES,                                        id: 'kelo_premium_anual',                          type: 'subscription', strict: false, verified: false },
-        // ECG Tracker+（心电图记录）：product 已从真实 offerings 响应核实（2026-11-28 用户抓包）：
-        // 当前 offering default_v2 的三个包：$rc_annual→yearly_v2、$rc_lifetime→lifetime_v2、
-        // $rc_monthly→monthly_v2；另有 default_v3（同款产品）、default_v4（yearly_v3/monthly_v3/lifetime_v2）。
-        // 盲猜 ecgtrackerplus.pro + product com.ecgtrackerplus.app.subscription 未解开——offerings 里根本没有
-        // 这个 product，App 不认；entitlement 名不在 offerings 里、Reheji 也没有，用候选集注入；
-        // product 用三档 offering 共有的终身买断 lifetime_v2；2026-11-28 17:04 实机：按 lifetime
-        // 写 non_subscriptions 未解开（App 疑似查 subscriptions/active_subscriptions），改按
-        // subscription 注入（进 subscriptions、到期 2099、active_subscriptions 带上 lifetime_v2）再试。
-        // 规则 153→154 条。未核实，待用户更新模块后实机确认。
-        { match: 'com.ecgtrackerplus', names: GUESS_NAMES, id: 'lifetime_v2', type: 'subscription', strict: false, verified: false },
+        // ECG Tracker+（心电图记录）：entitlement 名与 product 均已核实——上游 Reheji.js
+        // 2026-11-28 当天新增：'ECG%20Tracker+': { name: 'ECG Tracker+', id: 'lifetime_v2', cm: 'sjc' }。
+        // 之前两次失败的根因是权益名猜错：盲猜 ecgtrackerplus.pro 与 40 名候选集里都没有
+        // 真名 'ECG Tracker+'（App 名本身带空格与加号），App 只认这个名。product lifetime_v2
+        // 已由用户抓包的 offerings 核实（default_v2：yearly_v2/lifetime_v2/monthly_v2）。
+        // cm sjc 经上游全表统计确认为终身型（50 条里 43 条终身产品、0 条订阅产品），
+        // 故按 lifetime 写 non_subscriptions。规则数不变（仍 154 条）。未核实，待用户实机确认。
+        { match: 'com.ecgtrackerplus', name: 'ECG Tracker+', id: 'lifetime_v2', type: 'lifetime', strict: false, verified: false },
         // DataCalc（素材容量计算）：product 与 entitlement 均已核实（2026-10-09 用户提供）
         { match: 'datacalc',      name: 'datacalc.pro',                                      id: 'datacalc.yearly.12',                          type: 'subscription', strict: false },
         // Chengyu Calendar（成语日历）：product 与 entitlement 均已核实（2026-10-14 用户提供）
